@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-humanitour}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-humanitour}
+      POSTGRES_DB: ${POSTGRES_DB:-humanitour}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # `--wait` de docker compose s'appuie dessus : sans ce test, `db:push`
+      # peut demarrer avant que PostgreSQL n'accepte les connexions.
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-humanitour} -d ${POSTGRES_DB:-humanitour}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    # Le site n'est pas construit en developpement : `docker compose up db` suffit.
+    profiles: ['production']
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-humanitour}:${POSTGRES_PASSWORD:-humanitour}@db:5432/${POSTGRES_DB:-humanitour}?schema=public
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET est obligatoire en production}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://humanitour.fr}
+      STORAGE_LOCAL_PATH: /var/storage
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    volumes:
+      - storage:/var/storage
+
+volumes:
+  db-data:
+  storage:

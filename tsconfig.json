@@ -13,8 +13,23 @@
 		"noImplicitOverride": true,
 		"moduleResolution": "bundler"
 	},
+	// On reprend la liste de .svelte-kit/tsconfig.json en y ajoutant prisma/ :
+	// le seed et la configuration sont du vrai code, ils doivent passer la meme
+	// porte que le reste.
+	"include": [
+		".svelte-kit/ambient.d.ts",
+		".svelte-kit/non-ambient.d.ts",
+		".svelte-kit/types/**/$types.d.ts",
+		"src/**/*.js",
+		"src/**/*.ts",
+		"src/**/*.svelte",
+		"prisma/**/*.ts",
+		"vite.config.ts",
+		"svelte.config.js",
+		"eslint.config.js",
+		"prisma.config.ts"
+	],
 	// Le client Prisma genere embarque un runtime JavaScript volumineux que
 	// `checkJs` ferait analyser : 2937 erreurs qui ne nous appartiennent pas.
-	// `.svelte-kit` n'est pas exclu : il porte les types ambiants du framework.
 	"exclude": ["node_modules/**", "build/**", "src/lib/server/prisma-client/**"]
 }
