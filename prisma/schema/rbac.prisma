@@ -1,0 +1,27 @@
+// Domaine droits.
+//
+// Le code ne connait que des permissions atomiques, declarees une seule fois dans
+// `src/lib/shared/permissions.ts`. Un role est un paquet de permissions cree et
+// renomme au back-office : ajouter un role ne demande aucun deploiement
+// (CLAUDE.md, decision 17).
+
+model Role {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+  description String?
+
+  /// Cles issues du registre de permissions. Une cle inconnue est ignoree a la
+  /// resolution : desinstaller une fonctionnalite ne casse pas les roles.
+  permissions String[]
+
+  /// Un role systeme ne peut etre ni supprime ni vide de ses permissions.
+  /// Garantit qu'il reste toujours un compte capable d'administrer.
+  isSystem Boolean @default(false)
+
+  users       User[]
+  invitations Invitation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

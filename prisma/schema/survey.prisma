@@ -1,0 +1,237 @@
+// Domaine sondage.
+//
+// Un sondage n'est pas un type TypeScript : c'est une ligne qui porte son propre
+// schema de questions. Creer une enquete ne produit aucun diff (CLAUDE.md).
+//
+// La decision structurante est `Answer.modalityKey`. Toute reponse, quel que soit
+// son type — choix, echelle, nombre, non-reponse — se resout en une cle de modalite
+// au moment de l'ecriture. L'agregation ne groupe que par cette cle et n'a donc
+// aucun cas particulier a traiter : c'est le « pointeur indirect » de Torvalds
+// applique a la non-reponse (AGENTS.md section 1.2).
+
+enum SurveyStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ResponseSource {
+  UPLOAD // fichier CSV ou XLSX depose au back-office
+  FORMS // connecteur forms.humanitour.fr
+  MANUAL // saisie terrain dans le back-office
+  API // ingestion authentifiee par un tiers
+}
+
+enum ImportStatus {
+  PENDING
+  VALIDATED // previsualise, en attente de confirmation
+  COMMITTED
+  REJECTED
+}
+
+model Survey {
+  id       String @id @default(cuid())
+  /// Segment d'URL publique. Fait partie du contrat de permalien : jamais renomme.
+  slug     String @unique
+  title    String
+  subtitle String?
+
+  /// Contexte editorial affiche en tete de la page publique.
+  description String?
+
+  /// Methodologie publiee : mode de collecte, construction de l'echantillon,
+  /// limites connues. Obligatoire avant publication, verifie applicativement.
+  methodology String?
+
+  status      SurveyStatus @default(DRAFT)
+  publishedAt DateTime?
+
+  /// Periode de terrain, affichee avec chaque resultat.
+  fieldworkStart DateTime?
+  fieldworkEnd   DateTime?
+
+  /// Surcharge locale du seuil de k-anonymat. `null` applique le reglage global
+  /// (AppSetting `anonymity.k`, defaut 5).
+  kAnonymityThreshold Int?
+
+  questions     Question[]
+  responses     Response[]
+  importBatches ImportBatch[]
+  cards         SurveyCard[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, publishedAt])
+}
+
+model Question {
+  id       String @id @default(cuid())
+  surveyId String
+  survey   Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  /// Identifiant stable utilise dans les permaliens de croisement
+  /// (`?x=priorite&y=region`). Fait partie du contrat : jamais renomme.
+  code     String
+  position Int
+
+  /// Libelle exact pose sur le terrain. Affiche avec chaque graphique, parce que
+  /// la formulation fait partie du resultat.
+  label String
+  help  String?
+
+  /// Cle du registre `src/lib/shared/questions/`. Ajouter un type de question
+  /// n'ajoute pas de colonne ici.
+  type String
+
+  /// Parametres propres au type : bornes d'une echelle, unite, tranches de
+  /// regroupement d'un nombre. Valide par le registre.
+  config Json @default("{}")
+
+  /// Les questions en texte libre ne sont pas croisables : trop de modalites,
+  /// et risque de reidentification.
+  isCrossable Boolean @default(true)
+
+  options QuestionOption[]
+  answers Answer[]
+
+  @@unique([surveyId, code])
+  @@index([surveyId, position])
+}
+
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  /// Cle de modalite stable, reprise telle quelle dans `Answer.modalityKey`.
+  code     String
+  label    String
+  position Int
+
+  /// « Sans opinion », « refus de repondre », « ne se prononce pas ».
+  /// Marquee, jamais exclue : le calcul la compte comme les autres, seul
+  /// l'affichage peut la mettre en retrait (AGENTS.md section 1.2).
+  isNonResponse Boolean @default(false)
+
+  /// Couleur imposee (nuance politique, par exemple). A defaut, la palette
+  /// categorielle du registre de visualisation s'applique.
+  color String?
+
+  answers Answer[]
+
+  @@unique([questionId, code])
+  @@index([questionId, position])
+}
+
+model Response {
+  id       String @id @default(cuid())
+  surveyId String
+  survey   Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  /// Date de l'entretien, pas de l'import : c'est elle qui porte les courbes.
+  collectedAt DateTime
+
+  source        ResponseSource
+  importBatchId String?
+  importBatch   ImportBatch?   @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+
+  /// Reference opaque de la source (identifiant de soumission cote
+  /// forms.humanitour.fr). Rend les reimports idempotents. Jamais affichee.
+  externalRef String?
+
+  answers Answer[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([surveyId, externalRef])
+  @@index([surveyId, collectedAt])
+}
+
+model Answer {
+  id         String   @id @default(cuid())
+  responseId String
+  response   Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  /// Renseigne pour les questions a choix. `null` pour un nombre ou un texte.
+  optionId String?
+  option   QuestionOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
+
+  valueNumber Float?
+  valueText   String?
+  valueDate   DateTime?
+
+  /// TOUJOURS renseignee, y compris pour une non-reponse. Seule colonne lue par
+  /// l'agregation. C'est ce qui supprime le cas particulier plutot que de le
+  /// brancher.
+  modalityKey String
+
+  @@index([questionId, modalityKey])
+  @@index([responseId])
+}
+
+model ImportBatch {
+  id       String @id @default(cuid())
+  surveyId String
+  survey   Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  filename String
+  /// Cle du registre `src/lib/server/import/` : csv, xlsx, json.
+  format   String
+  source   ResponseSource
+
+  status ImportStatus @default(PENDING)
+
+  rowCount      Int @default(0)
+  acceptedCount Int @default(0)
+  rejectedCount Int @default(0)
+
+  /// Correspondance colonne du fichier vers code de question, telle que validee
+  /// par l'operateur. Conservee pour rejouer ou auditer un import.
+  mapping Json @default("{}")
+
+  /// Lignes refusees, avec leur motif. Un import ne masque jamais un rejet.
+  errors Json @default("[]")
+
+  responses Response[]
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime  @default(now())
+  committedAt DateTime?
+
+  @@index([surveyId, createdAt])
+}
+
+/// Carte de visualisation publiee par le back-office : un croisement fige,
+/// editorialise, affiche sur la page publique du sondage. Le visiteur peut
+/// l'ouvrir dans l'explorateur pour en changer les axes.
+model SurveyCard {
+  id       String @id @default(cuid())
+  surveyId String
+  survey   Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  title    String
+  comment  String?
+  position Int     @default(0)
+
+  /// Cle du registre `src/lib/charts/`.
+  chart String
+
+  /// Codes de question portant les axes. `yCode` absent = distribution simple.
+  xCode String
+  yCode String?
+
+  /// Filtres appliques, au meme format que les parametres d'URL de l'explorateur.
+  filters Json @default("{}")
+
+  isPublished Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([surveyId, position])
+}

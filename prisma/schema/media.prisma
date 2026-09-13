@@ -1,0 +1,58 @@
+// Domaine mediatheque.
+//
+// Quatre natures de media (article redige, video ou reportage, podcast, revue de
+// presse). Les champs communs sont des colonnes, les champs propres a une nature
+// vivent dans `data`, valide par le registre `src/lib/shared/media/`.
+// Ajouter une nature de media n'ajoute pas de colonne ici.
+
+enum MediaKind {
+  ARTICLE
+  VIDEO
+  PODCAST
+  PRESS
+}
+
+enum MediaStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+model MediaItem {
+  id   String @id @default(cuid())
+  /// Segment d'URL publique. Contrat de permalien : jamais renomme.
+  slug String @unique
+
+  kind   MediaKind
+  status MediaStatus @default(DRAFT)
+
+  title   String
+  excerpt String?
+
+  /// Corps de l'article. Vide pour une video, un podcast ou une reprise de presse.
+  body String?
+
+  coverUrl String?
+  coverAlt String?
+
+  /// Champs propres a la nature : URL d'embarquement et duree pour une video,
+  /// piste audio et transcription pour un podcast, media d'origine pour une
+  /// reprise de presse.
+  data Json @default("{}")
+
+  /// Date de publication editoriale. Sert aussi de date de programmation quand
+  /// le statut est SCHEDULED.
+  publishedAt DateTime?
+
+  tags String[] @default([])
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([kind, status])
+}

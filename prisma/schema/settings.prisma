@@ -1,0 +1,14 @@
+// Reglages applicatifs modifiables au back-office.
+//
+// Cle notable : `anonymity.k`, le seuil de k-anonymat (defaut 5). Il est lu par la
+// couche d'agregation, jamais par un composant (AGENTS.md section 4).
+
+model AppSetting {
+  key   String @id
+  value Json
+
+  updatedById String?
+  updatedBy   User?   @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  updatedAt DateTime @updatedAt
+}

@@ -134,3 +134,13 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Projet
+.svelte-kit/
+build/
+var/
+src/lib/server/prisma-client/
+coverage/
+.env
+.env.*
+!.env.example

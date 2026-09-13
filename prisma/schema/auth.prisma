@@ -1,0 +1,81 @@
+// Domaine authentification.
+//
+// Aucune inscription publique : les comptes sont crees par invitation depuis le
+// back-office. Aucune delegation d'identite a un tiers (CLAUDE.md, decision 16).
+
+model User {
+  id    String @id @default(cuid())
+  email String @unique
+
+  /// Argon2id. Le hash porte ses propres parametres, la migration de cout se fait
+  /// donc a la connexion, sans invalider les comptes existants.
+  passwordHash String
+
+  displayName String
+
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  isActive Boolean @default(true)
+
+  /// TOTP, optionnel, propose aux comptes disposant de `user.manage`.
+  totpSecret     String?
+  totpEnabledAt  DateTime?
+
+  lastLoginAt DateTime?
+
+  sessions          Session[]
+  invitationsSent   Invitation[]  @relation("InvitationCreatedBy")
+  importBatches     ImportBatch[]
+  mediaItems        MediaItem[]
+  auditEvents       AuditEvent[]
+  settingsUpdated   AppSetting[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([roleId])
+}
+
+model Session {
+  /// SHA-256 du jeton de session. Le jeton en clair n'existe que dans le cookie :
+  /// une fuite de la base ne permet pas d'usurper une session en cours.
+  id String @id
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+
+  /// Contexte de connexion, affiche a l'utilisateur dans la liste de ses sessions.
+  userAgent String?
+  ipHash    String?
+
+  createdAt      DateTime @default(now())
+  lastSeenAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Invitation {
+  id    String @id @default(cuid())
+  email String
+
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  /// SHA-256 du jeton envoye par courriel, meme raison que pour les sessions.
+  tokenHash String @unique
+
+  expiresAt  DateTime
+  acceptedAt DateTime?
+
+  createdById String?
+  createdBy   User?   @relation("InvitationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+}

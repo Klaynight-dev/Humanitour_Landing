@@ -1,0 +1,11 @@
+// Point d'entree du schema. Les modeles vivent dans les fichiers voisins,
+// un par domaine metier (AGENTS.md section 2).
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../src/lib/server/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}

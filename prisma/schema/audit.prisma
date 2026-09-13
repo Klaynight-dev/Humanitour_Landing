@@ -1,0 +1,25 @@
+// Journal d'audit.
+//
+// Un institut qui reproche l'opacite aux autres doit pouvoir dire qui a publie
+// quoi, et quand. Toute action du back-office qui modifie une donnee publiee
+// laisse une trace.
+
+model AuditEvent {
+  id String @id @default(cuid())
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  /// Verbe normalise : survey.publish, import.commit, role.update, media.publish.
+  action String
+
+  entity   String
+  entityId String?
+
+  metadata Json @default("{}")
+
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
