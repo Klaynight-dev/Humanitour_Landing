@@ -2,6 +2,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { hash } from '@node-rs/argon2';
 import { PrismaClient, type Prisma } from '../src/lib/server/prisma-client/client';
 import { PERMISSION_KEYS } from '../src/lib/shared/permissions';
+import { requireMediaType } from '../src/lib/shared/media';
 import { requireQuestionType } from '../src/lib/shared/questions';
 import type { QuestionOptionLike } from '../src/lib/shared/questions/types';
 
@@ -461,6 +462,130 @@ async function seedResponses(surveyId: string) {
 	console.warn(`  reponses : ${RESPONSE_COUNT}`);
 }
 
+
+// --- Mediatheque de demonstration ------------------------------------------
+
+interface MediaSeed {
+	slug: string;
+	kind: 'ARTICLE' | 'VIDEO' | 'PODCAST' | 'PRESS';
+	title: string;
+	excerpt: string;
+	/** Paragraphes, joints a l'enregistrement : plus lisible qu'une chaine echappee. */
+	body?: string[];
+	publishedAt: string;
+	tags: string[];
+	data: Record<string, unknown>;
+}
+
+const MEDIA: MediaSeed[] = [
+	{
+		slug: 'pourquoi-nous-publions-les-donnees-brutes',
+		kind: 'ARTICLE',
+		title: 'Pourquoi nous publions les donnees brutes',
+		excerpt:
+			"Aucun institut prive ne diffuse ses reponses ligne a ligne. Voici pourquoi nous le faisons, et ce que cela nous oblige a changer dans notre facon de compter.",
+		body: [
+			"Un chiffre sans ses donnees est une affirmation, pas une mesure.",
+			"Quand un institut annonce qu'un candidat est a 28 %, personne ne peut verifier combien de personnes ont ete interrogees dans chaque region, combien n'ont pas voulu repondre, ni quel redressement a ete applique entre le comptage et la publication. Le lecteur doit croire sur parole.",
+			"Nous publions donc l'integralite du materiau. Chaque enquete expose son export complet, en CSV et en JSON, sans compte ni inscription. Quiconque veut refaire nos calculs le peut.",
+			"Cette promesse nous coute quelque chose, et c'est tant mieux. Elle nous interdit de ponderer nos resultats pour les rendre plus presentables. Elle nous oblige a compter les non-reponses au lieu de les faire disparaitre. Elle nous force a ecrire noir sur blanc les limites de notre echantillon : rencontrer les gens dehors surrepresente celles et ceux qui sortent.",
+			"Un sondage honnete n'est pas un sondage parfait. C'est un sondage dont on peut mesurer les defauts."
+		],
+		publishedAt: '2026-09-02',
+		tags: ['methodologie', 'open data'],
+		data: {
+			standfirst:
+				"La transparence n'est pas un argument de communication : c'est une contrainte technique."
+		}
+	},
+	{
+		slug: 'etape-12-le-pouvoir-d-achat-en-tete',
+		kind: 'ARTICLE',
+		title: "Etape 12 : le pouvoir d'achat arrive en tete, partout",
+		excerpt:
+			"Douze etapes, plus de neuf cents entretiens. Une priorite domine dans toutes les regions traversees, mais pas pour les memes raisons.",
+		body: [
+			"Sur les douze premieres etapes, une reponse revient plus que toutes les autres a la question de la priorite pour la France : le pouvoir d'achat.",
+			"Le croisement avec la categorie socioprofessionnelle raconte pourtant deux histoires differentes. Chez les ouvriers et les employes, la reponse arrive largement en tete. Chez les cadres, elle passe derriere l'ecologie et l'education.",
+			"La part de personnes qui ne se prononcent pas merite autant d'attention que les autres. Nous la comptons et nous l'affichons, parce qu'un refus de repondre est une information politique, pas un trou dans le tableau.",
+			"Vous pouvez refaire ce croisement vous-meme depuis la page des donnees."
+		],
+		publishedAt: '2026-08-18',
+		tags: ['resultats', 'le tour'],
+		data: {}
+	},
+	{
+		slug: 'sur-la-route-entre-deux-marches',
+		kind: 'VIDEO',
+		title: 'Sur la route, entre deux marches',
+		excerpt:
+			"Quinze minutes de rencontres filmees entre deux etapes, la ou les panels en ligne ne vont jamais.",
+		publishedAt: '2026-08-05',
+		tags: ['reportage', 'le tour'],
+		data: { sourceUrl: 'https://framatube.org/w/abcdefgh12345678' }
+	},
+	{
+		slug: 'episode-1-on-ne-me-demande-jamais-mon-avis',
+		kind: 'PODCAST',
+		title: "Episode 1 : « On ne me demande jamais mon avis »",
+		excerpt:
+			"Premier episode des echanges enregistres sur le terrain. Une heure de conversation avec des personnes que les sondages n'appellent pas.",
+		publishedAt: '2026-07-22',
+		tags: ['podcast', 'terrain'],
+		data: {
+			audioUrl: 'https://media.humanitour.fr/podcast/episode-1.mp3',
+			durationSeconds: 3720,
+			transcript:
+				"Transcription de demonstration. Elle rend l'episode accessible aux personnes sourdes et malentendantes, et indexable par les moteurs de recherche."
+		}
+	},
+	{
+		slug: 'reprise-un-institut-de-sondage-a-velo',
+		kind: 'PRESS',
+		title: 'Un institut de sondage a velo veut rendre les chiffres verifiables',
+		excerpt:
+			'Un media local consacre un article au projet et a sa methode de collecte en face-a-face.',
+		publishedAt: '2026-07-10',
+		tags: ['revue de presse'],
+		data: {
+			sourceName: "La Gazette des Cotes-d'Armor",
+			sourceUrl: 'https://exemple.fr/humanitour-institut-a-velo',
+			author: 'Redaction locale'
+		}
+	}
+];
+
+async function seedMedia() {
+	const author = await prisma.user.findFirst({ where: { role: { slug: 'administration' } } });
+
+	for (const item of MEDIA) {
+		// La validation passe par le registre : le seed ne peut pas fabriquer un
+		// media que le back-office refuserait.
+		const parsed = requireMediaType(item.kind).parseData(item.data);
+		if (!parsed.ok) throw new Error(`Media « ${item.slug} » invalide : ${parsed.reason}`);
+
+		const payload = {
+			kind: item.kind,
+			status: 'PUBLISHED' as const,
+			title: item.title,
+			excerpt: item.excerpt,
+			body: item.body?.join('\n\n') ?? null,
+			publishedAt: new Date(item.publishedAt),
+			tags: item.tags,
+			data: parsed.data as Prisma.InputJsonObject,
+			authorId: author?.id ?? null
+		};
+
+		await prisma.mediaItem.upsert({
+			where: { slug: item.slug },
+			create: { slug: item.slug, ...payload },
+			update: payload
+		});
+	}
+
+	console.warn(`  medias : ${MEDIA.length}`);
+}
+
 async function main() {
 	console.warn('Seed Humanitour');
 	await seedRoles();
@@ -468,6 +593,7 @@ async function main() {
 	await seedSettings();
 	const surveyId = await seedSurvey();
 	await seedResponses(surveyId);
+	await seedMedia();
 	console.warn('Termine.');
 }
 

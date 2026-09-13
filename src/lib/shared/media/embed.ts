@@ -4,9 +4,10 @@
  * Point sensible : une iframe execute du code tiers dans le contexte du site.
  * On ne fait donc JAMAIS confiance a l URL saisie au back-office. On reconnait
  * l hebergeur, on en extrait l identifiant, et on RECONSTRUIT l URL nous-memes.
- * Une URL dont l hebergeur n est pas dans la liste est refusee, pas affichee.
+ * Une URL dont l hebergeur n est pas dans la table est refusee, pas affichee.
  *
- * Ajouter un hebergeur ou une instance PeerTube = une ligne ici.
+ * Les hebergeurs sont des DONNEES, pas une chaine de `if` : ajouter YouTube a
+ * cote de Vimeo ne doit pas rendre la fonction plus compliquee a relire.
  */
 
 export interface EmbedTarget {
@@ -35,20 +36,83 @@ const PEERTUBE_HOSTS: readonly string[] = [
 	'tube.numerique.gouv.fr'
 ];
 
-/** Identifiant PeerTube : UUID court ou long, selon la version de l instance. */
-const PEERTUBE_ID = /^[\w-]{8,40}$/;
+interface Provider {
+	readonly key: string;
+	readonly label: string;
+	/** Hotes reconnus, sans le « www. » de tete. */
+	readonly hosts: readonly string[];
+	/** Extrait l identifiant, ou `null` si l adresse n en contient pas. */
+	extractId(url: URL): string | null;
+	/** Reconstruit les adresses a partir du seul identifiant valide. */
+	build(id: string, host: string): { embedUrl: string; watchUrl: string };
+}
 
 function youtubeId(url: URL): string | null {
-	if (url.hostname === 'youtu.be') return url.pathname.slice(1) || null;
-
+	if (url.hostname.endsWith('youtu.be')) return url.pathname.slice(1) || null;
 	if (url.pathname === '/watch') return url.searchParams.get('v');
-	// Formats /embed/ID et /shorts/ID.
-	const match = /^\/(?:embed|shorts|v)\/([\w-]{6,20})/.exec(url.pathname);
+
+	const match = /^\/(?:embed|shorts|v)\/([\w-]+)/.exec(url.pathname);
 	return match?.[1] ?? null;
 }
 
+function firstMatch(pattern: RegExp, value: string): string | null {
+	const match = pattern.exec(value);
+	if (!match) return null;
+	return match[1] ?? match[2] ?? null;
+}
+
+const PROVIDERS: readonly Provider[] = [
+	{
+		key: 'youtube',
+		label: 'YouTube',
+		hosts: ['youtube.com', 'youtu.be', 'youtube-nocookie.com', 'm.youtube.com'],
+		extractId: (url) => {
+			const id = youtubeId(url);
+			return id && /^[\w-]{6,20}$/.test(id) ? id : null;
+		},
+		build: (id) => ({
+			// Domaine « nocookie » : pas de cookie publicitaire tant que le visiteur
+			// n a pas lance la lecture.
+			embedUrl: `https://www.youtube-nocookie.com/embed/${id}`,
+			watchUrl: `https://www.youtube.com/watch?v=${id}`
+		})
+	},
+	{
+		key: 'vimeo',
+		label: 'Vimeo',
+		hosts: ['vimeo.com', 'player.vimeo.com'],
+		extractId: (url) => firstMatch(/\/(\d{6,12})/, url.pathname),
+		build: (id) => ({
+			embedUrl: `https://player.vimeo.com/video/${id}`,
+			watchUrl: `https://vimeo.com/${id}`
+		})
+	},
+	{
+		key: 'peertube',
+		label: 'PeerTube',
+		hosts: PEERTUBE_HOSTS,
+		extractId: (url) => {
+			const id = firstMatch(/\/w\/([\w-]+)|\/videos\/(?:watch|embed)\/([\w-]+)/, url.pathname);
+			return id && /^[\w-]{8,40}$/.test(id) ? id : null;
+		},
+		build: (id, host) => ({
+			embedUrl: `https://${host}/videos/embed/${id}`,
+			watchUrl: `https://${host}/w/${id}`
+		})
+	}
+];
+
 function normaliseHost(hostname: string): string {
 	return hostname.replace(/^www\./, '').toLowerCase();
+}
+
+function parseHttps(rawUrl: string): URL | null {
+	try {
+		const url = new URL(rawUrl.trim());
+		return url.protocol === 'https:' ? url : null;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -59,76 +123,37 @@ function normaliseHost(hostname: string): string {
  * une adresse dont nous controlons chaque caractere.
  */
 export function resolveEmbed(rawUrl: string): EmbedResult {
-	let url: URL;
-
-	try {
-		url = new URL(rawUrl.trim());
-	} catch {
-		return { ok: false, reason: "Ce n'est pas une adresse valide." };
-	}
-
-	if (url.protocol !== 'https:') {
-		return { ok: false, reason: 'Seules les adresses en HTTPS sont acceptees.' };
+	const url = parseHttps(rawUrl);
+	if (!url) {
+		return { ok: false, reason: "Adresse invalide : seules les adresses HTTPS sont acceptees." };
 	}
 
 	const host = normaliseHost(url.hostname);
+	const provider = PROVIDERS.find((candidate) => candidate.hosts.includes(host));
 
-	if (host === 'youtube.com' || host === 'youtu.be' || host === 'youtube-nocookie.com') {
-		const id = youtubeId(url);
-		if (!id || !/^[\w-]{6,20}$/.test(id)) {
-			return { ok: false, reason: 'Identifiant de video YouTube introuvable dans cette adresse.' };
-		}
+	if (!provider) {
 		return {
-			ok: true,
-			target: {
-				provider: 'youtube',
-				providerLabel: 'YouTube',
-				// Domaine « nocookie » : pas de cookie publicitaire tant que le
-				// visiteur n a pas lance la lecture.
-				embedUrl: `https://www.youtube-nocookie.com/embed/${id}`,
-				watchUrl: `https://www.youtube.com/watch?v=${id}`
-			}
+			ok: false,
+			reason: `Hebergeur non autorise : ${host}. Hebergeurs acceptes : ${allowedProviders().join(', ')}.`
 		};
 	}
 
-	if (host === 'vimeo.com' || host === 'player.vimeo.com') {
-		const match = /(\d{6,12})/.exec(url.pathname);
-		if (!match) return { ok: false, reason: 'Identifiant de video Vimeo introuvable.' };
-		return {
-			ok: true,
-			target: {
-				provider: 'vimeo',
-				providerLabel: 'Vimeo',
-				embedUrl: `https://player.vimeo.com/video/${match[1]}`,
-				watchUrl: `https://vimeo.com/${match[1]}`
-			}
-		};
-	}
-
-	if (PEERTUBE_HOSTS.includes(host)) {
-		const match = /\/w\/([\w-]+)|\/videos\/(?:watch|embed)\/([\w-]+)/.exec(url.pathname);
-		const id = match?.[1] ?? match?.[2];
-		if (!id || !PEERTUBE_ID.test(id)) {
-			return { ok: false, reason: 'Identifiant de video PeerTube introuvable.' };
-		}
-		return {
-			ok: true,
-			target: {
-				provider: 'peertube',
-				providerLabel: 'PeerTube',
-				embedUrl: `https://${host}/videos/embed/${id}`,
-				watchUrl: `https://${host}/w/${id}`
-			}
-		};
+	const id = provider.extractId(url);
+	if (!id) {
+		return { ok: false, reason: `Identifiant de video ${provider.label} introuvable dans cette adresse.` };
 	}
 
 	return {
-		ok: false,
-		reason: `Hebergeur non autorise : ${host}. Hebergeurs acceptes : YouTube, Vimeo, PeerTube (${PEERTUBE_HOSTS.join(', ')}).`
+		ok: true,
+		target: { provider: provider.key, providerLabel: provider.label, ...provider.build(id, host) }
 	};
 }
 
 /** Liste lisible des hebergeurs acceptes, pour l aide du back-office. */
 export function allowedProviders(): readonly string[] {
-	return ['YouTube', 'Vimeo', ...PEERTUBE_HOSTS.map((host) => `PeerTube (${host})`)];
+	return PROVIDERS.flatMap((provider) =>
+		provider.key === 'peertube'
+			? PEERTUBE_HOSTS.map((host) => `PeerTube (${host})`)
+			: [provider.label]
+	);
 }

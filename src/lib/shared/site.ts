@@ -99,5 +99,6 @@ export const RETENTION = {
  */
 export const NAV = [
 	{ href: '/donnees', label: 'Les donnees' },
+	{ href: '/medias', label: 'Medias' },
 	{ href: '/methodologie', label: 'Methodologie' }
 ] as const;

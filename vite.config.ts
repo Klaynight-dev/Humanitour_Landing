@@ -20,6 +20,7 @@ export default defineConfig({
 				'src/lib/server/db.ts',
 				'src/lib/server/survey/queries.ts',
 				'src/lib/server/survey/export-query.ts',
+				'src/lib/server/media/queries.ts',
 				// Constantes d'identite et de configuration : rien a executer.
 				'src/lib/shared/site.ts'
 			],
