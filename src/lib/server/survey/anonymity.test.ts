@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	DEFAULT_K_THRESHOLD,
+	pickThreshold,
 	protectDistribution,
 	protectTable,
 	SINGLE_COLUMN_KEY,
@@ -232,5 +233,33 @@ describe('protectDistribution', () => {
 		);
 
 		expect(table.suppressedCount).toBe(0);
+	});
+});
+
+describe('pickThreshold', () => {
+	it('donne la priorite a la surcharge du sondage', () => {
+		expect(pickThreshold(10, 5)).toBe(10);
+	});
+
+	it('retombe sur le reglage global quand le sondage ne surcharge rien', () => {
+		expect(pickThreshold(null, 8)).toBe(8);
+	});
+
+	it('retombe sur le defaut quand rien n est defini', () => {
+		expect(pickThreshold(null, undefined)).toBe(DEFAULT_K_THRESHOLD);
+	});
+
+	it('rejette un reglage qui desactiverait la protection', () => {
+		// Un seuil a zero ou negatif publierait toutes les cases : on prefere le
+		// defaut a une protection silencieusement levee.
+		expect(pickThreshold(null, 0)).toBe(DEFAULT_K_THRESHOLD);
+		expect(pickThreshold(null, -3)).toBe(DEFAULT_K_THRESHOLD);
+		expect(pickThreshold(0, 7)).toBe(7);
+	});
+
+	it('rejette un reglage qui n est pas un entier', () => {
+		expect(pickThreshold(null, '5')).toBe(DEFAULT_K_THRESHOLD);
+		expect(pickThreshold(null, 4.5)).toBe(DEFAULT_K_THRESHOLD);
+		expect(pickThreshold(null, null)).toBe(DEFAULT_K_THRESHOLD);
 	});
 });

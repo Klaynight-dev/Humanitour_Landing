@@ -208,3 +208,42 @@ describe('crosstab', () => {
 		expect(result.respondents).toBe(1);
 	});
 });
+
+describe('cas limites d agregation', () => {
+	it('trie alphabetiquement des modalites non numeriques non declarees', () => {
+		const ordered = orderModalities([], ['zebre', 'alpha', 'mimosa']);
+
+		expect(ordered.map((item) => item.key)).toEqual(['alpha', 'mimosa', 'zebre']);
+	});
+
+	it('trie les cles numeriques egales de facon stable', () => {
+		const ordered = orderModalities([], ['10', '10.0']);
+
+		expect(ordered).toHaveLength(2);
+	});
+
+	it('apparie un repondant ayant plusieurs modalites sur l axe croise', () => {
+		const x: AnswerRow[] = [{ responseId: 'a', modalityKey: 'bretagne' }];
+		const y: AnswerRow[] = [
+			{ responseId: 'a', modalityKey: 'sante' },
+			{ responseId: 'a', modalityKey: 'ecologie' }
+		];
+
+		const result = crosstab(x, y, [], [], { threshold: 1 });
+
+		expect(result.cells.get('bretagne')?.get('sante')?.count).toBe(1);
+		expect(result.cells.get('bretagne')?.get('ecologie')?.count).toBe(1);
+	});
+
+	it('ne compte pas deux fois un couple produit deux fois par le meme repondant', () => {
+		const x: AnswerRow[] = [
+			{ responseId: 'a', modalityKey: 'bretagne' },
+			{ responseId: 'a', modalityKey: 'bretagne' }
+		];
+		const y: AnswerRow[] = [{ responseId: 'a', modalityKey: 'sante' }];
+
+		const result = crosstab(x, y, [], [], { threshold: 1 });
+
+		expect(result.cells.get('bretagne')?.get('sante')?.count).toBe(1);
+	});
+});

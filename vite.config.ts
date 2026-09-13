@@ -11,7 +11,18 @@ export default defineConfig({
 			provider: 'v8',
 			reporter: ['text', 'html'],
 			include: ['src/lib/**/*.ts'],
-			exclude: ['src/lib/**/*.{test,spec}.ts', 'src/lib/server/prisma-client/**'],
+			exclude: [
+				'src/lib/**/*.{test,spec}.ts',
+				'src/lib/server/prisma-client/**',
+				// Acces base sans logique propre : les regles qu'ils portaient ont ete
+				// extraites en fonctions pures, testees a part. Les couvrir exigerait
+				// un PostgreSQL, ce qui n'est pas le role d'un test unitaire.
+				'src/lib/server/db.ts',
+				'src/lib/server/survey/queries.ts',
+				'src/lib/server/survey/export-query.ts',
+				// Constantes d'identite et de configuration : rien a executer.
+				'src/lib/shared/site.ts'
+			],
 			// Les seuils sont justifies dans AGENTS.md section 3.2 : on couvre ce qui
 			// produit des chiffres publies, pas le cablage.
 			thresholds: {

@@ -18,6 +18,25 @@
 
 export const DEFAULT_K_THRESHOLD = 5;
 
+/**
+ * Seuil applicable, par ordre de priorite : surcharge du sondage, reglage
+ * global, defaut.
+ *
+ * Fonction pure, separee de sa lecture en base : c est la regle qui compte, et
+ * elle doit etre verifiable sans PostgreSQL. Une valeur de reglage absurde
+ * (texte, zero, nombre a virgule) retombe sur le defaut plutot que de desactiver
+ * silencieusement la protection — un seuil a zero publierait tout.
+ */
+export function pickThreshold(surveyOverride: number | null, settingValue: unknown): number {
+	if (isUsableThreshold(surveyOverride)) return surveyOverride;
+	if (isUsableThreshold(settingValue)) return settingValue;
+	return DEFAULT_K_THRESHOLD;
+}
+
+function isUsableThreshold(value: unknown): value is number {
+	return typeof value === 'number' && Number.isInteger(value) && value > 0;
+}
+
 export interface CountedCell {
 	readonly xKey: string;
 	readonly yKey: string;
