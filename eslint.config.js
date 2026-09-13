@@ -49,6 +49,11 @@ export default ts.config(
 				{ prefer: 'type-imports', fixStyle: 'inline-type-imports' }
 			],
 
+			// Le site est servi a la racine du domaine : `base` est vide et envelopper
+			// chaque href dans resolve() n'apporterait rien. A reactiver le jour ou le
+			// site serait deploye sous un chemin de base.
+			'svelte/no-navigation-without-resolve': 'off',
+
 			eqeqeq: ['error', 'always'],
 			'no-console': ['warn', { allow: ['warn', 'error'] }],
 			'prefer-const': 'error',
