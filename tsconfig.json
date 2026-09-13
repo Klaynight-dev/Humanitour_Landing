@@ -12,5 +12,9 @@
 		"noUncheckedIndexedAccess": true,
 		"noImplicitOverride": true,
 		"moduleResolution": "bundler"
-	}
+	},
+	// Le client Prisma genere embarque un runtime JavaScript volumineux que
+	// `checkJs` ferait analyser : 2937 erreurs qui ne nous appartiennent pas.
+	// `.svelte-kit` n'est pas exclu : il porte les types ambiants du framework.
+	"exclude": ["node_modules/**", "build/**", "src/lib/server/prisma-client/**"]
 }

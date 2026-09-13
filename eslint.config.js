@@ -57,6 +57,12 @@ export default ts.config(
 		}
 	},
 	{
+		// Svelte 5 reassigne les props a chaque mise a jour : `let { x } = $props()`
+		// est la forme documentee, et `prefer-const` s y trompe.
+		files: ['**/*.svelte'],
+		rules: { 'prefer-const': 'off' }
+	},
+	{
 		// Les tests decrivent des cas limites : la profondeur y est structurelle.
 		files: ['**/*.{test,spec}.ts'],
 		rules: { 'max-nested-callbacks': 'off' }
