@@ -90,9 +90,14 @@ export const RETENTION = {
 	methodologyYears: 5
 } as const;
 
+/**
+ * Navigation principale.
+ *
+ * Ne contient que des routes existantes : un menu qui promet une page absente
+ * coute plus cher en confiance qu'une rubrique manquante. Les entrees /medias et
+ * /le-tour y entreront avec les pages correspondantes.
+ */
 export const NAV = [
 	{ href: '/donnees', label: 'Les donnees' },
-	{ href: '/medias', label: 'Medias' },
-	{ href: '/le-tour', label: 'Le tour' },
 	{ href: '/methodologie', label: 'Methodologie' }
 ] as const;
