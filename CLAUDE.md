@@ -61,6 +61,7 @@ médiathèque et le back-office.
 | Lint | ESLint 9 (flat config) + `eslint-plugin-svelte` | |
 | Exécution | Bun | |
 | Déploiement | `adapter-node` + Docker Compose sur VPS | Cohérent avec l'hébergement Contabo déjà déclaré |
+| Base en développement | **PGlite** servi par `pglite-server` | Un PostgreSQL compilé en WebAssembly, parlant le vrai protocole réseau. Zéro installation, mêmes types que la production — tableaux, énumérations et tout le reste |
 
 ---
 
@@ -193,7 +194,9 @@ chaque rôle la fonte d'origine qu'elle remplace.
 | Commande | Effet |
 | --- | --- |
 | `bun install` | Installe les dépendances |
-| `bun run dev` | Serveur de développement |
+| `bun run dev:local` | **Base embarquée + serveur de développement, en une commande** |
+| `bun run db:local` | PostgreSQL embarqué seul (PGlite, port 55432) |
+| `bun run dev` | Serveur de développement, contre une base déjà démarrée |
 | `bun run build` | Build de production |
 | `bun run lint` | ESLint |
 | `bun run typecheck` | `svelte-check` |
@@ -203,4 +206,5 @@ chaque rôle la fonte d'origine qu'elle remplace.
 | `bun run db:push` | Applique le schéma en développement |
 | `bun run db:migrate` | Crée une migration |
 | `bun run db:seed` | Jeu de données de démonstration |
-| `bun run services:up` | PostgreSQL via Docker Compose |
+| `bun run setup` | Schéma + seed, en une fois |
+| `bun run services:up` | PostgreSQL via Docker Compose (production) |

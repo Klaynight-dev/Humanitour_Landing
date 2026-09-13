@@ -54,14 +54,22 @@ techniques et non des intentions, se trouve dans [`AGENTS.md`](./AGENTS.md).
 
 ## Démarrer
 
+Aucune installation de base de données, aucun Docker : `dev:local` démarre un
+PostgreSQL embarqué (PGlite, compilé en WebAssembly) puis le serveur de
+développement.
+
 ```bash
 bun install
 cp .env.example .env
-bun run services:up   # PostgreSQL
-bun run db:push
-bun run db:seed
-bun run dev
+bun run db:local &   # PostgreSQL embarqué, port 55432
+bun run setup        # schéma + jeu de démonstration
+bun run dev:local    # base + serveur, en une commande
 ```
+
+Le compte de démonstration est `contact@humanitour.fr` / `humanitour-dev-2026`.
+Les données vivent dans `./var/pglite` : les supprimer remet tout à zéro.
+
+En production, `docker-compose.yml` monte un vrai PostgreSQL.
 
 ## Contribuer
 

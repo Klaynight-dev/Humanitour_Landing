@@ -1,4 +1,5 @@
 import { requireQuestionType, type QuestionOptionLike } from '$lib/shared/questions';
+import { toColumnKey } from '$lib/shared/slug';
 import { detectIdentifyingColumns, type RowSet } from './types';
 
 /**
@@ -153,23 +154,14 @@ export function suggestMapping(
 	rowSet: RowSet,
 	questions: readonly ImportableQuestion[]
 ): ColumnMapping {
-	const normalized = new Map(rowSet.columns.map((column) => [normalize(column), column]));
+	const normalized = new Map(rowSet.columns.map((column) => [toColumnKey(column), column]));
 	const mapping: Record<string, string> = {};
 
 	for (const question of questions) {
 		const match =
-			normalized.get(normalize(question.code)) ?? normalized.get(normalize(question.label));
+			normalized.get(toColumnKey(question.code)) ?? normalized.get(toColumnKey(question.label));
 		if (match) mapping[question.code] = match;
 	}
 
 	return mapping;
-}
-
-function normalize(value: string): string {
-	return value
-		.normalize('NFD')
-		.replace(/[̀-ͯ]/g, '')
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, '_')
-		.replace(/^_+|_+$/g, '');
 }
