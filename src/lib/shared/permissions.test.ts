@@ -4,6 +4,7 @@ import {
 	canAll,
 	canAny,
 	isPermission,
+	isSensitive,
 	PERMISSION_KEYS,
 	PERMISSIONS,
 	permissionsByGroup,
@@ -115,5 +116,19 @@ describe('permissionsByGroup', () => {
 
 		expect(groups.get('Sondages')).toContain('survey.import');
 		expect(groups.get('Equipe')).toContain('role.manage');
+	});
+});
+
+describe('isSensitive', () => {
+	it('reconnait une permission qui rend une donnee publique', () => {
+		expect(isSensitive('survey.publish')).toBe(true);
+		expect(isSensitive('media.publish')).toBe(true);
+	});
+
+	it('rend faux pour une permission qui ne declare pas le drapeau', () => {
+		// Le type litteral issu de `as const` ne porte pas la propriete du tout :
+		// c est exactement ce que l accesseur rattrape.
+		expect(isSensitive('survey.read')).toBe(false);
+		expect(isSensitive('media.read')).toBe(false);
 	});
 });

@@ -124,6 +124,17 @@ export function isPermission(value: string): value is Permission {
 }
 
 /**
+ * Une permission touche-t-elle a ce qui est publie, ou a qui peut publier ?
+ *
+ * Accesseur plutot que lecture directe de `.sensitive` : `as const` donne a
+ * chaque entree son type litteral, et celles qui ne declarent pas le drapeau
+ * n'ont tout simplement pas la propriete.
+ */
+export function isSensitive(key: Permission): boolean {
+	return 'sensitive' in PERMISSIONS[key] && PERMISSIONS[key].sensitive === true;
+}
+
+/**
  * Ne conserve que les cles encore connues du registre.
  *
  * Un role peut porter la permission d une fonctionnalite retiree depuis. On
