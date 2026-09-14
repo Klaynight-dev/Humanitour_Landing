@@ -19,7 +19,7 @@
 />
 
 {#if form?.message}
-	<div class="border-line bg-paper rounded-card mb-5 border px-4 py-3">
+	<div class="brut bg-paper rounded-card mb-5 px-4 py-3">
 		<p role="status" class="text-sm">{form.message}</p>
 		{#if form.invitationUrl}
 			<p class="text-muted mt-2 text-xs">Lien d'invitation, valable sept jours :</p>
@@ -43,12 +43,12 @@
 						type="email"
 						name="email"
 						required
-						class="border-line rounded-lg border px-3 py-2"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 					/>
 				</label>
 				<label class="flex flex-col gap-1.5">
 					<span class="text-sm font-semibold">Role</span>
-					<select name="roleId" class="border-line rounded-lg border px-3 py-2">
+					<select name="roleId" class="border-ink bg-paper rounded-lg border-2 px-3 py-2">
 						{#each data.roles as role (role.id)}
 							<option value={role.id}>{role.name}</option>
 						{/each}
@@ -56,7 +56,7 @@
 				</label>
 				<button
 					type="submit"
-					class="bg-ink text-paper rounded-pill px-5 py-2.5 text-sm font-semibold"
+					class="bg-ink text-white brut-sm brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 				>
 					Inviter
 				</button>
@@ -68,7 +68,7 @@
 		<Panel title="Invitations en attente">
 			<ul class="flex flex-col gap-2">
 				{#each data.invitations as invitation (invitation.id)}
-					<li class="border-line flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+					<li class="border-ink flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 p-3">
 						<div>
 							<p class="text-sm font-medium">{invitation.email}</p>
 							<p class="text-muted text-xs">
@@ -80,7 +80,7 @@
 								<input type="hidden" name="id" value={invitation.id} />
 								<button
 									type="submit"
-									class="border-danger/30 text-danger hover:bg-danger/5 rounded-pill border px-3 py-1.5 text-xs"
+									class="border-ink text-danger bg-paper brut-sm brut-press rounded-pill border-2 px-3 py-1.5 text-xs"
 								>
 									Revoquer
 								</button>
@@ -96,7 +96,7 @@
 		<div class="overflow-x-auto">
 			<table class="w-full min-w-[40rem] border-collapse text-sm">
 				<thead>
-					<tr class="border-line border-b text-left">
+					<tr class="border-ink border-b text-left">
 						<th scope="col" class="py-2 pr-3 font-semibold">Membre</th>
 						<th scope="col" class="px-3 py-2 font-semibold">Role</th>
 						<th scope="col" class="px-3 py-2 font-semibold">Derniere connexion</th>
@@ -105,7 +105,7 @@
 				</thead>
 				<tbody>
 					{#each data.users as member (member.id)}
-						<tr class="border-line border-b last:border-0">
+						<tr class="border-ink border-b last:border-0">
 							<td class="py-2.5 pr-3">
 								<p class="font-medium">{member.displayName}</p>
 								<p class="text-muted text-xs">{member.email}</p>
@@ -116,7 +116,7 @@
 										<input type="hidden" name="id" value={member.id} />
 										<select
 											name="roleId"
-											class="border-line rounded-lg border px-2 py-1 text-xs"
+											class="border-ink bg-paper rounded-lg border-2 px-2 py-1 text-xs"
 											onchange={(event) => event.currentTarget.form?.requestSubmit()}
 										>
 											{#each data.roles as role (role.id)}
@@ -126,7 +126,7 @@
 											{/each}
 										</select>
 										<noscript>
-											<button type="submit" class="border-line rounded-lg border px-2 text-xs">
+											<button type="submit" class="border-ink rounded-lg border px-2 text-xs">
 												OK
 											</button>
 										</noscript>
@@ -144,7 +144,7 @@
 										<input type="hidden" name="id" value={member.id} />
 										<button
 											type="submit"
-											class="border-line hover:bg-surface rounded-pill border px-3 py-1.5 text-xs font-medium"
+											class="border-ink brut-sm brut-press bg-paper rounded-pill border-2 px-3 py-1.5 text-xs font-medium"
 										>
 											{member.isActive ? 'Desactiver' : 'Reactiver'}
 										</button>

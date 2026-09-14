@@ -64,7 +64,7 @@
 
 		<ol class="mt-8 flex flex-col gap-5">
 			{#each RULES as rule, index (rule.title)}
-				<li class="border-line rounded-card border p-6 sm:p-7">
+				<li class="brut bg-paper rounded-card p-6 sm:p-7">
 					<div class="flex items-baseline gap-4">
 						<span class="text-coral-500 font-display tabular text-2xl font-semibold">
 							0{index + 1}
@@ -145,15 +145,15 @@
 		<div>
 			<h2 id="donnees" class="font-display text-3xl font-semibold">Conservation</h2>
 			<dl class="mt-6 flex flex-col gap-3 text-sm">
-				<div class="border-line flex justify-between gap-4 border-b pb-3">
+				<div class="border-ink flex justify-between gap-4 border-b-2 pb-3">
 					<dt class="text-ink-soft">Reponses brutes d'enquete</dt>
 					<dd class="tabular font-semibold">{RETENTION.rawSurveyMonths} mois</dd>
 				</div>
-				<div class="border-line flex justify-between gap-4 border-b pb-3">
+				<div class="border-ink flex justify-between gap-4 border-b-2 pb-3">
 					<dt class="text-ink-soft">Notes de methodologie</dt>
 					<dd class="tabular font-semibold">{RETENTION.methodologyYears} ans</dd>
 				</div>
-				<div class="border-line flex justify-between gap-4 border-b pb-3">
+				<div class="border-ink flex justify-between gap-4 border-b-2 pb-3">
 					<dt class="text-ink-soft">Sessions de connexion</dt>
 					<dd class="tabular font-semibold">{RETENTION.sessionDays} jours</dd>
 				</div>

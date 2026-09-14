@@ -27,7 +27,7 @@
 		{#if form?.message}
 			<p
 				role="alert"
-				class="border-danger/30 bg-danger/5 text-danger rounded-lg border px-4 py-3 text-sm"
+				class="border-ink text-danger bg-paper brut-sm rounded-lg border-2 px-4 py-3 text-sm"
 			>
 				{form.message}
 			</p>
@@ -41,7 +41,7 @@
 				required
 				autocomplete="username"
 				value={form?.email ?? ''}
-				class="border-line rounded-lg border px-3 py-2.5"
+				class="border-ink bg-paper rounded-lg border-2 px-3 py-2.5"
 			/>
 		</label>
 
@@ -52,13 +52,13 @@
 				name="password"
 				required
 				autocomplete="current-password"
-				class="border-line rounded-lg border px-3 py-2.5"
+				class="border-ink bg-paper rounded-lg border-2 px-3 py-2.5"
 			/>
 		</label>
 
 		<button
 			type="submit"
-			class="bg-ink text-paper hover:bg-coral-600 rounded-pill mt-2 px-5 py-3 font-semibold transition-colors"
+			class="bg-ink text-white brut brut-press rounded-pill mt-2 px-5 py-3 font-bold"
 		>
 			Se connecter
 		</button>

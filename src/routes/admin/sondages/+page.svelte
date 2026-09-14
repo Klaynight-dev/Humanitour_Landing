@@ -24,7 +24,7 @@
 			<button
 				type="button"
 				onclick={() => (creating = !creating)}
-				class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-4 py-2 text-sm font-semibold transition-colors"
+				class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-sm font-bold"
 			>
 				{creating ? 'Annuler' : 'Nouvelle enquete'}
 			</button>
@@ -35,7 +35,7 @@
 {#if form?.message}
 	<p
 		role="status"
-		class="border-line bg-paper rounded-card mb-5 border px-4 py-3 text-sm"
+		class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm"
 	>
 		{form.message}
 	</p>
@@ -55,12 +55,12 @@
 						required
 						minlength="3"
 						placeholder="Presidentielle 2027 — le tour de France"
-						class="border-line rounded-lg border px-3 py-2"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 					/>
 				</label>
 				<button
 					type="submit"
-					class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-5 py-2.5 text-sm font-semibold transition-colors"
+					class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 				>
 					Creer
 				</button>
@@ -75,10 +75,10 @@
 		description="Creez une enquete, ajoutez-lui des questions, puis importez les reponses recueillies sur le terrain."
 	/>
 {:else}
-	<div class="border-line bg-paper rounded-card overflow-x-auto border">
+	<div class="border-ink bg-paper rounded-card overflow-x-auto border">
 		<table class="w-full min-w-[44rem] border-collapse text-sm">
 			<thead>
-				<tr class="border-line bg-surface border-b text-left">
+				<tr class="border-ink bg-surface border-b text-left">
 					<th scope="col" class="px-5 py-3 font-semibold">Enquete</th>
 					<th scope="col" class="px-3 py-3 font-semibold">Statut</th>
 					<th scope="col" class="px-3 py-3 text-right font-semibold">Questions</th>
@@ -88,7 +88,7 @@
 			</thead>
 			<tbody>
 				{#each data.surveys as survey (survey.id)}
-					<tr class="border-line border-b last:border-0">
+					<tr class="border-ink border-b last:border-0">
 						<td class="px-5 py-3">
 							<a href="/admin/sondages/{survey.id}" class="font-semibold hover:underline">
 								{survey.title}
@@ -105,7 +105,7 @@
 								{#if can(data.user, 'survey.import')}
 									<a
 										href="/admin/sondages/{survey.id}/import"
-										class="border-line hover:bg-surface rounded-pill border px-3 py-1.5 text-xs font-medium"
+										class="border-ink brut-sm brut-press bg-paper rounded-pill border-2 px-3 py-1.5 text-xs font-medium"
 									>
 										Importer
 									</a>
@@ -117,7 +117,7 @@
 											<input type="hidden" name="id" value={survey.id} />
 											<button
 												type="submit"
-												class="border-line hover:bg-surface rounded-pill border px-3 py-1.5 text-xs font-medium"
+												class="border-ink brut-sm brut-press bg-paper rounded-pill border-2 px-3 py-1.5 text-xs font-medium"
 											>
 												Depublier
 											</button>
@@ -131,7 +131,7 @@
 												title={survey.canPublish
 													? undefined
 													: 'Renseignez la methodologie et au moins une question avant de publier.'}
-												class="bg-ink text-paper rounded-pill px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+												class="bg-ink text-white brut-sm brut-press rounded-pill px-3 py-1.5 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40"
 											>
 												Publier
 											</button>

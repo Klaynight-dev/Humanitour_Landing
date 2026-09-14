@@ -24,7 +24,7 @@
 			<button
 				type="button"
 				onclick={() => (creating = !creating)}
-				class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-4 py-2 text-sm font-semibold transition-colors"
+				class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-sm font-bold"
 			>
 				{creating ? 'Annuler' : 'Nouveau media'}
 			</button>
@@ -33,7 +33,7 @@
 </PageHeader>
 
 {#if form?.message}
-	<p role="status" class="border-line bg-paper rounded-card mb-5 border px-4 py-3 text-sm">
+	<p role="status" class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm">
 		{form.message}
 	</p>
 {/if}
@@ -44,11 +44,11 @@
 			<form method="POST" action="?/create" use:enhance class="flex flex-wrap items-end gap-3">
 				<label class="flex min-w-56 flex-1 flex-col gap-1.5">
 					<span class="text-sm font-semibold">Titre</span>
-					<input name="title" required minlength="3" class="border-line rounded-lg border px-3 py-2" />
+					<input name="title" required minlength="3" class="border-ink bg-paper rounded-lg border-2 px-3 py-2" />
 				</label>
 				<label class="flex flex-col gap-1.5">
 					<span class="text-sm font-semibold">Nature</span>
-					<select name="kind" class="border-line rounded-lg border px-3 py-2">
+					<select name="kind" class="border-ink bg-paper rounded-lg border-2 px-3 py-2">
 						{#each data.kinds as kind (kind.key)}
 							<option value={kind.key}>{kind.label}</option>
 						{/each}
@@ -56,7 +56,7 @@
 				</label>
 				<button
 					type="submit"
-					class="bg-ink text-paper rounded-pill px-5 py-2.5 text-sm font-semibold"
+					class="bg-ink text-white brut-sm brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 				>
 					Creer
 				</button>
@@ -71,10 +71,10 @@
 		description="Les echanges enregistres sur le terrain, une fois montes, viendront ici."
 	/>
 {:else}
-	<div class="border-line bg-paper rounded-card overflow-x-auto border">
+	<div class="border-ink bg-paper rounded-card overflow-x-auto border">
 		<table class="w-full min-w-[40rem] border-collapse text-sm">
 			<thead>
-				<tr class="border-line bg-surface border-b text-left">
+				<tr class="border-ink bg-surface border-b text-left">
 					<th scope="col" class="px-5 py-3 font-semibold">Titre</th>
 					<th scope="col" class="px-3 py-3 font-semibold">Nature</th>
 					<th scope="col" class="px-3 py-3 font-semibold">Statut</th>
@@ -83,7 +83,7 @@
 			</thead>
 			<tbody>
 				{#each data.items as item (item.id)}
-					<tr class="border-line border-b last:border-0">
+					<tr class="border-ink border-b last:border-0">
 						<td class="px-5 py-3">
 							<a href="/admin/medias/{item.id}" class="font-semibold hover:underline">
 								{item.title}
@@ -100,7 +100,7 @@
 							<div class="flex justify-end gap-2">
 								<a
 									href="/admin/medias/{item.id}"
-									class="border-line hover:bg-surface rounded-pill border px-3 py-1.5 text-xs font-medium"
+									class="border-ink brut-sm brut-press bg-paper rounded-pill border-2 px-3 py-1.5 text-xs font-medium"
 								>
 									Modifier
 								</a>
@@ -109,7 +109,7 @@
 										<input type="hidden" name="id" value={item.id} />
 										<button
 											type="submit"
-											class="border-danger/30 text-danger hover:bg-danger/5 rounded-pill border px-3 py-1.5 text-xs"
+											class="border-ink text-danger bg-paper brut-sm brut-press rounded-pill border-2 px-3 py-1.5 text-xs"
 										>
 											Supprimer
 										</button>

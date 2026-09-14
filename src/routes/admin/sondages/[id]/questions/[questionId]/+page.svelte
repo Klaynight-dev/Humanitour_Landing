@@ -20,7 +20,7 @@
 />
 
 {#if form?.message}
-	<p role="status" class="border-line bg-paper rounded-card mb-5 border px-4 py-3 text-sm">
+	<p role="status" class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm">
 		{form.message}
 	</p>
 {/if}
@@ -39,13 +39,13 @@
 						name="label"
 						rows="2"
 						required
-						class="border-line rounded-lg border px-3 py-2">{data.question.label}</textarea
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{data.question.label}</textarea
 					>
 				</label>
 
 				<label class="flex flex-col gap-1.5">
 					<span class="text-sm font-semibold">Aide a la passation</span>
-					<textarea name="help" rows="2" class="border-line rounded-lg border px-3 py-2"
+					<textarea name="help" rows="2" class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 						>{data.question.help ?? ''}</textarea
 					>
 				</label>
@@ -60,7 +60,7 @@
 						name="config"
 						rows="6"
 						spellcheck="false"
-						class="border-line rounded-lg border px-3 py-2 font-mono text-xs"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2 font-mono text-xs"
 						>{data.question.config}</textarea
 					>
 				</label>
@@ -89,7 +89,7 @@
 				<div>
 					<button
 						type="submit"
-						class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-5 py-2.5 text-sm font-semibold transition-colors"
+						class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 					>
 						Enregistrer
 					</button>
@@ -109,7 +109,7 @@
 				{:else}
 					<ul class="flex flex-col gap-2">
 						{#each data.options as option (option.id)}
-							<li class="border-line rounded-lg border p-3">
+							<li class="border-ink rounded-lg border-2 p-3">
 								<form
 									method="POST"
 									action="?/updateOption"
@@ -123,7 +123,7 @@
 										<input
 											name="label"
 											value={option.label}
-											class="border-line rounded-lg border px-2.5 py-1.5 text-sm"
+											class="border-ink bg-paper rounded-lg border-2 px-2.5 py-1.5 text-sm"
 										/>
 									</label>
 
@@ -133,7 +133,7 @@
 											type="color"
 											name="color"
 											value={option.color ?? '#FF5757'}
-											class="border-line h-9 w-14 rounded-lg border px-1"
+											class="border-ink h-9 w-14 rounded-lg border-2 px-1"
 										/>
 									</label>
 
@@ -149,7 +149,7 @@
 
 									<button
 										type="submit"
-										class="border-line hover:bg-surface rounded-pill border px-3 py-1.5 text-xs font-medium"
+										class="border-ink brut-sm brut-press bg-paper rounded-pill border-2 px-3 py-1.5 text-xs font-medium"
 									>
 										Enregistrer
 									</button>
@@ -163,7 +163,7 @@
 										<input type="hidden" name="optionId" value={option.id} />
 										<button
 											type="submit"
-											class="border-danger/30 text-danger hover:bg-danger/5 rounded-pill border px-2.5 py-1 text-xs"
+											class="border-ink text-danger bg-paper rounded-pill border-2 px-2.5 py-1 text-xs"
 										>
 											Supprimer
 										</button>
@@ -182,7 +182,7 @@
 								name="label"
 								required
 								placeholder="Le pouvoir d'achat"
-								class="border-line bg-paper rounded-lg border px-3 py-2 text-sm"
+								class="border-ink bg-paper rounded-lg border-2 px-3 py-2 text-sm"
 							/>
 						</label>
 						<label class="flex items-center gap-2 pb-2 text-xs">
@@ -191,7 +191,7 @@
 						</label>
 						<button
 							type="submit"
-							class="bg-ink text-paper rounded-pill px-4 py-2 text-sm font-semibold"
+							class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-sm font-bold"
 						>
 							Ajouter
 						</button>

@@ -12,7 +12,7 @@
 
 <!-- Lecteur natif du navigateur : pas d'integration tierce, donc aucun traceur
      chez la personne qui ecoute. -->
-<div class="border-line bg-surface rounded-card border p-5">
+<div class="brut bg-surface rounded-card p-5">
 	<div class="flex flex-wrap items-baseline justify-between gap-2">
 		<p class="font-display font-semibold">{title}</p>
 		{#if durationSeconds}

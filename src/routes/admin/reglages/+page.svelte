@@ -13,7 +13,7 @@
 <PageHeader title="Reglages" description="Ce qui s'applique a l'ensemble de la plateforme." />
 
 {#if form?.message}
-	<p role="status" class="border-line bg-paper rounded-card mb-5 border px-4 py-3 text-sm">
+	<p role="status" class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm">
 		{form.message}
 	</p>
 {/if}
@@ -36,7 +36,7 @@
 					min="2"
 					required
 					value={data.threshold}
-					class="border-line w-32 rounded-lg border px-3 py-2"
+					class="border-ink bg-paper w-32 rounded-lg border-2 px-3 py-2"
 				/>
 			</label>
 
@@ -49,7 +49,7 @@
 			<div>
 				<button
 					type="submit"
-					class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-5 py-2.5 text-sm font-semibold transition-colors"
+					class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 				>
 					Enregistrer
 				</button>

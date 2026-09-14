@@ -19,7 +19,7 @@
 			{xLabel} croise avec {yLabel}. Chaque case indique la part en ligne et l effectif.
 		</caption>
 		<thead>
-			<tr class="border-line border-b">
+			<tr class="border-ink border-b">
 				<th scope="col" class="py-2 pr-4 text-left font-semibold">{xLabel}</th>
 				{#each data.yModalities as modality (modality.key)}
 					<th scope="col" class="px-3 py-2 text-right font-semibold whitespace-nowrap">
@@ -31,7 +31,7 @@
 		</thead>
 		<tbody>
 			{#each data.xModalities as xModality (xModality.key)}
-				<tr class="border-line border-b last:border-0">
+				<tr class="border-ink border-b last:border-0">
 					<th scope="row" class="py-2.5 pr-4 text-left font-medium">{xModality.label}</th>
 					{#each data.yModalities as yModality (yModality.key)}
 						{@const cell = data.cells.get(xModality.key)?.get(yModality.key)}

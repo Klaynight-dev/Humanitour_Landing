@@ -10,7 +10,7 @@
 	let { title, description, action }: Props = $props();
 </script>
 
-<div class="border-line bg-paper rounded-card border border-dashed p-10 text-center">
+<div class="brut bg-paper rounded-card border-dashed p-10 text-center">
 	<p class="font-display text-lg font-semibold">{title}</p>
 	{#if description}
 		<p class="text-muted mx-auto mt-2 max-w-md text-sm">{description}</p>

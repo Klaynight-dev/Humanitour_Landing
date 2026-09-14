@@ -79,13 +79,13 @@
 
 		<!-- Les filtres tiennent sur une rangee au-dessus du graphique. Formulaire
 		     GET : l'explorateur fonctionne sans JavaScript et chaque etat a son URL. -->
-		<form method="GET" class="border-line bg-surface rounded-card mt-6 border p-5">
+		<form method="GET" class="brut bg-surface rounded-card mt-6 p-5">
 			<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				<label class="flex flex-col gap-1.5">
 					<span class="text-xs font-semibold tracking-wide uppercase">Question</span>
 					<select
 						name="x"
-						class="border-line bg-paper rounded-lg border px-3 py-2 text-sm"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2 text-sm"
 						value={data.selection.x}
 					>
 						{#each data.questions.filter((q) => q.isCrossable) as question (question.code)}
@@ -98,7 +98,7 @@
 					<span class="text-xs font-semibold tracking-wide uppercase">Croiser avec</span>
 					<select
 						name="y"
-						class="border-line bg-paper rounded-lg border px-3 py-2 text-sm"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2 text-sm"
 						value={data.selection.y ?? ''}
 					>
 						<option value="">Aucun croisement</option>
@@ -112,7 +112,7 @@
 					<span class="text-xs font-semibold tracking-wide uppercase">Affichage</span>
 					<select
 						name="chart"
-						class="border-line bg-paper rounded-lg border px-3 py-2 text-sm"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2 text-sm"
 						value={data.selection.chart}
 					>
 						{#each data.charts as option (option.key)}
@@ -134,7 +134,7 @@
 					</label>
 					<button
 						type="submit"
-						class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-5 py-2.5 text-sm font-semibold transition-colors"
+						class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 					>
 						Afficher
 					</button>
@@ -143,7 +143,7 @@
 		</form>
 
 		<!-- Graphique -->
-		<div class="border-line rounded-card mt-6 border p-6 sm:p-8">
+		<div class="brut rounded-card bg-paper mt-6 p-6 sm:p-8">
 			{#if chart}
 				{@const Chart = chart.component}
 				{#if data.result.shape === 'crosstab'}
@@ -157,7 +157,7 @@
 				{/if}
 			{/if}
 
-			<footer class="border-line text-muted mt-8 flex flex-col gap-2 border-t pt-4 text-xs">
+			<footer class="border-ink text-muted mt-8 flex flex-col gap-2 border-t pt-4 text-xs">
 				<p>
 					{#if data.result.shape === 'crosstab'}
 						{formatBase(data.result.crosstab.respondents)} ayant repondu aux deux questions.
@@ -182,7 +182,7 @@
 				<a
 					href={exploreUrl({ chart: option.key })}
 					aria-current={option.key === data.selection.chart ? 'true' : undefined}
-					class="border-line rounded-pill border px-3.5 py-1.5 text-xs font-medium"
+					class="border-ink bg-paper rounded-pill border-2 px-3.5 py-1.5 text-xs font-medium"
 					class:bg-ink={option.key === data.selection.chart}
 					class:text-paper={option.key === data.selection.chart}
 				>
@@ -203,7 +203,7 @@
 	{/if}
 
 	<!-- Donnees brutes -->
-	<section class="border-line bg-surface rounded-card mt-16 border p-8" aria-labelledby="brut">
+	<section class="brut bg-surface rounded-card mt-16 p-8" aria-labelledby="brut">
 		<h2 id="brut" class="font-display text-2xl font-semibold">Les donnees brutes</h2>
 		<p class="text-ink-soft mt-3 max-w-2xl">
 			Le jeu complet, reponse par reponse, sans compte ni inscription. C'est ce que les instituts
@@ -212,7 +212,7 @@
 		<div class="mt-6 flex flex-wrap gap-3">
 			<a
 				href="/donnees/{data.survey.slug}/export.csv"
-				class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-5 py-2.5 text-sm font-semibold transition-colors"
+				class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 			>
 				Telecharger en CSV
 			</a>

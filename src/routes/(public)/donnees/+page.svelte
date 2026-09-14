@@ -35,7 +35,7 @@
 	</header>
 
 	{#if data.surveys.length === 0}
-		<p class="border-line bg-surface rounded-card mt-12 border p-8 text-center">
+		<p class="brut bg-surface rounded-card mt-12 p-8 text-center">
 			Aucune enquete n'est encore publiee. Le tour est en cours.
 		</p>
 	{:else}
@@ -44,7 +44,7 @@
 				<li>
 					<a
 						href="/donnees/{survey.slug}"
-						class="border-line hover:border-coral-500 rounded-card flex h-full flex-col border p-6 transition-colors"
+						class="brut brut-press bg-paper rounded-card flex h-full flex-col p-6"
 					>
 						<h2 class="font-display text-xl font-semibold">{survey.title}</h2>
 						{#if survey.subtitle}
@@ -53,7 +53,7 @@
 						<p class="text-muted mt-4 text-xs">
 							{formatFieldwork(survey.fieldworkStart, survey.fieldworkEnd)}
 						</p>
-						<div class="border-line mt-auto flex gap-6 border-t pt-4">
+						<div class="border-ink mt-auto flex gap-6 border-t-2 pt-4">
 							<span class="tabular text-sm">
 								<strong>{formatCount(survey.responseCount)}</strong>
 								<span class="text-muted">reponses</span>

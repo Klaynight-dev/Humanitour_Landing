@@ -19,7 +19,7 @@
 		<button
 			type="button"
 			onclick={() => (creating = !creating)}
-			class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-4 py-2 text-sm font-semibold transition-colors"
+			class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-sm font-bold"
 		>
 			{creating ? 'Annuler' : 'Nouveau role'}
 		</button>
@@ -27,7 +27,7 @@
 </PageHeader>
 
 {#if form?.message}
-	<p role="status" class="border-line bg-paper rounded-card mb-5 border px-4 py-3 text-sm">
+	<p role="status" class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm">
 		{form.message}
 	</p>
 {/if}
@@ -43,16 +43,16 @@
 						required
 						minlength="3"
 						placeholder="Benevole region Sud"
-						class="border-line rounded-lg border px-3 py-2"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 					/>
 				</label>
 				<label class="flex min-w-56 flex-1 flex-col gap-1.5">
 					<span class="text-sm font-semibold">Description</span>
-					<input name="description" class="border-line rounded-lg border px-3 py-2" />
+					<input name="description" class="border-ink bg-paper rounded-lg border-2 px-3 py-2" />
 				</label>
 				<button
 					type="submit"
-					class="bg-ink text-paper rounded-pill px-5 py-2.5 text-sm font-semibold"
+					class="bg-ink text-white brut-sm brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 				>
 					Creer
 				</button>
@@ -75,20 +75,20 @@
 				<div class="grid gap-4 sm:grid-cols-2">
 					<label class="flex flex-col gap-1.5">
 						<span class="text-sm font-semibold">Nom</span>
-						<input name="name" value={role.name} class="border-line rounded-lg border px-3 py-2" />
+						<input name="name" value={role.name} class="border-ink bg-paper rounded-lg border-2 px-3 py-2" />
 					</label>
 					<label class="flex flex-col gap-1.5">
 						<span class="text-sm font-semibold">Description</span>
 						<input
 							name="description"
 							value={role.description ?? ''}
-							class="border-line rounded-lg border px-3 py-2"
+							class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 						/>
 					</label>
 				</div>
 
 				{#each data.groups as group (group.group)}
-					<fieldset class="border-line rounded-lg border p-4">
+					<fieldset class="border-ink rounded-lg border-2 p-4">
 						<legend class="px-1 text-xs font-semibold tracking-wide uppercase">
 							{group.group}
 						</legend>
@@ -117,7 +117,7 @@
 				<div class="flex flex-wrap gap-2">
 					<button
 						type="submit"
-						class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-5 py-2.5 text-sm font-semibold transition-colors"
+						class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 					>
 						Enregistrer
 					</button>
@@ -125,7 +125,7 @@
 						<button
 							type="submit"
 							formaction="?/delete"
-							class="border-danger/30 text-danger hover:bg-danger/5 rounded-pill border px-4 py-2.5 text-sm font-medium"
+							class="border-ink text-danger bg-paper brut-sm brut-press rounded-pill border-2 px-4 py-2.5 text-sm font-medium"
 						>
 							Supprimer ce role
 						</button>

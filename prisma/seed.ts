@@ -339,7 +339,7 @@ const VOTE_BY_PRIORITY: Record<string, readonly (readonly [string, number])[]> =
 	immigration: [['extreme_droite', 52], ['droite', 22], ['centre', 8], ['gauche', 4], ['blanc', 4], ['abstention', 4], ['',6]]
 };
 
-const REGIONS: readonly (readonly [string, number])[] = [
+const Regions: readonly (readonly [string, number])[] = [
 	['idf', 18], ['aura', 13], ['nouvelle_aquitaine', 10], ['occitanie', 10], ['hauts_de_france', 9],
 	['grand_est', 9], ['paca', 8], ['pays_de_la_loire', 6], ['bretagne', 6], ['normandie', 5],
 	['bfc', 4], ['cvl', 4]
@@ -424,7 +424,7 @@ async function seedResponses(surveyId: string) {
 		const csp = pick(CSPS);
 		const priority = pick(PRIORITY_BY_CSP[csp] ?? DEFAULT_PRIORITY);
 		const vote = pick(VOTE_BY_PRIORITY[priority] ?? VOTE_BY_PRIORITY.pouvoir_achat!);
-		const region = pick(REGIONS);
+		const region = pick(Regions);
 		const age = 18 + Math.floor(random() * 72);
 
 		// Valeurs BRUTES, telles qu'elles arriveraient d'un fichier importe : c'est
@@ -467,7 +467,7 @@ async function seedResponses(surveyId: string) {
 
 interface MediaSeed {
 	slug: string;
-	kind: 'ARTICLE' | 'VIDEO' | 'PODCAST' | 'PRESS';
+	kind: 'ARTICLE' | 'Video' | 'PODCAST' | 'PRESS';
 	title: string;
 	excerpt: string;
 	/** Paragraphes, joints a l'enregistrement : plus lisible qu'une chaine echappee. */
@@ -516,7 +516,7 @@ const MEDIA: MediaSeed[] = [
 	},
 	{
 		slug: 'sur-la-route-entre-deux-marches',
-		kind: 'VIDEO',
+		kind: 'Video',
 		title: 'Sur la route, entre deux marches',
 		excerpt:
 			"Quinze minutes de rencontres filmees entre deux etapes, la ou les panels en ligne ne vont jamais.",

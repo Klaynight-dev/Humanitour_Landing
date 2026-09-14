@@ -2,22 +2,26 @@
 
 /* Polices auto-hebergees. Le CDN Google Fonts transfere l'IP du visiteur hors UE :
    incompatible avec la politique « aucun tiers » du projet. */
-@import '@fontsource-variable/fraunces';
-@import '@fontsource-variable/manrope';
+@import '@fontsource-variable/syne';
+@import '@fontsource-variable/plus-jakarta-sans';
+@import '@fontsource-variable/jetbrains-mono';
 @import '@fontsource-variable/caveat';
 
 /*
- * Identite Humanitour, extraite des documents de communication (docs/sources/).
+ * Identite Humanitour.
  *
- * Les documents d'origine sont composes en Crusoe Text, SLTFCuro et BadgerScript,
- * trois polices Canva non redistribuables. Les substituts libres retenus :
+ * Neo-brutalisme editorial chaleureux : fond creme, aplats noirs francs, ombres
+ * portees nettes sans flou, titrages massifs. Les documents d'origine sont
+ * composes en SLTF Curo, Crusoe Text et Budger Script, trois polices Canva non
+ * redistribuables. Les substituts libres retenus :
  *
- *   Crusoe Text (serif editorial) -> Fraunces  : meme chaleur, axe optique variable
- *   SLTFCuro    (sans arrondi)    -> Manrope   : geometrique adouci, deja en usage interne
- *   BadgerScript(manuscrit)       -> Caveat    : accent manuscrit, usage strictement decoratif
+ *   SLTF Curo    (titrage blocky) -> Syne 800/900
+ *   corps        (sans lisible)   -> Plus Jakarta Sans
+ *   Budger Script(manuscrit)      -> Caveat, en accent uniquement
+ *   chiffres     (data)           -> JetBrains Mono
  */
 @theme {
-	/* Les trois couleurs relevees dans les documents sources. */
+	/* Les trois couleurs de la charte. */
 	--color-coral-500: #ff5757;
 	--color-pink-400: #ff88b7;
 	--color-orange-500: #ff751f;
@@ -31,45 +35,50 @@
 	--color-orange-50: #fff4ec;
 	--color-orange-600: #e8600a;
 
-	/* Encre et papier : le contraste porte le discours, les couleurs l'accompagnent. */
-	--color-ink: #0a0a0a;
+	/* Encre et papier. Le noir est pur : c'est lui qui porte le trait. */
+	--color-ink: #000000;
 	--color-ink-soft: #3f3f46;
-	--color-muted: #71717a;
-	--color-line: #e4e4e7;
+	--color-muted: #6b6560;
+
+	/* Le fond de page est creme, pas blanc : les cartes blanches s'en detachent. */
+	--color-cream: #fff1eb;
 	--color-paper: #ffffff;
-	--color-surface: #fbfafa;
+	--color-surface: #ffe8de;
+	--color-line: #000000;
 
 	/* Etats. Le vert et le rouge ne servent jamais a coder une opinion politique. */
-	--color-danger: #dc2626;
+	--color-danger: #d32020;
 	--color-success: #15803d;
 	--color-warning: #b45309;
 
-	--font-display: 'Fraunces Variable', ui-serif, Georgia, 'Times New Roman', serif;
-	--font-sans: 'Manrope Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-display: 'Syne Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
 	--font-hand: 'Caveat Variable', ui-rounded, cursive;
+	--font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
 
-	--radius-card: 1rem;
+	--radius-card: 0.75rem;
 	--radius-pill: 999px;
 }
 
 :root {
+	/* Le degrade de marque, exactement celui de la charte. */
+	--gradient-line: linear-gradient(135deg, #ff88b7 0%, #ff5757 50%, #ff751f 100%);
+
 	/*
-	 * Le degrade mesh signature : blanc -> corail -> rose -> orange.
-	 * Reproduit les fonds des documents sources, ou trois halos se recouvrent.
+	 * Le degrade mesh signature : trois halos qui se recouvrent, comme sur les
+	 * fonds des documents d'origine.
 	 */
 	--gradient-mesh:
-		radial-gradient(at 8% 12%, #ffffff 0%, transparent 48%),
-		radial-gradient(at 28% 30%, var(--color-coral-500) 0%, transparent 58%),
-		radial-gradient(at 78% 58%, var(--color-pink-400) 0%, transparent 60%),
-		radial-gradient(at 88% 96%, var(--color-orange-500) 0%, transparent 62%),
-		linear-gradient(135deg, var(--color-coral-500), var(--color-orange-500));
+		radial-gradient(at 8% 12%, #ffffff 0%, transparent 46%),
+		radial-gradient(at 30% 32%, var(--color-pink-400) 0%, transparent 58%),
+		radial-gradient(at 74% 56%, var(--color-coral-500) 0%, transparent 60%),
+		radial-gradient(at 92% 96%, var(--color-orange-500) 0%, transparent 62%),
+		linear-gradient(135deg, #ff88b7 0%, #ff5757 50%, #ff751f 100%);
 
-	--gradient-line: linear-gradient(
-		90deg,
-		var(--color-coral-500),
-		var(--color-pink-400),
-		var(--color-orange-500)
-	);
+	/* L'ombre nette, sans flou : la signature du neo-brutalisme. */
+	--shadow-brut: 5px 5px 0 var(--color-ink);
+	--shadow-brut-sm: 3px 3px 0 var(--color-ink);
+	--shadow-brut-lg: 8px 8px 0 var(--color-ink);
 
 	color-scheme: light;
 }
@@ -93,7 +102,7 @@ html {
 }
 
 body {
-	background-color: var(--color-paper);
+	background-color: var(--color-cream);
 	color: var(--color-ink);
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
@@ -116,8 +125,42 @@ body {
 	background-color: var(--color-coral-500);
 }
 
-/* Les chiffres publies se lisent en colonne : on force les chasses fixes. */
+/*
+ * Bloc brutaliste : trait noir franc et ombre portee nette.
+ *
+ * Declare une fois ici plutot que recopie en quatre classes Tailwind sur chaque
+ * carte : changer l'epaisseur du trait doit se faire a un seul endroit.
+ */
+@utility brut {
+	border: 2px solid var(--color-ink);
+	box-shadow: var(--shadow-brut);
+}
+
+@utility brut-sm {
+	border: 2px solid var(--color-ink);
+	box-shadow: var(--shadow-brut-sm);
+}
+
+/* Au survol, le bloc s'enfonce : l'ombre se reduit d'autant qu'il se deplace. */
+@utility brut-press {
+	transition:
+		transform 120ms ease,
+		box-shadow 120ms ease;
+
+	&:hover {
+		transform: translate(2px, 2px);
+		box-shadow: var(--shadow-brut-sm);
+	}
+
+	&:active {
+		transform: translate(5px, 5px);
+		box-shadow: 0 0 0 var(--color-ink);
+	}
+}
+
+/* Les chiffres publies se lisent en colonne : chasse fixe et monospace. */
 @utility tabular {
+	font-family: var(--font-mono);
 	font-variant-numeric: tabular-nums;
 	font-feature-settings: 'tnum' 1;
 }
@@ -127,18 +170,22 @@ body {
 	h2,
 	h3 {
 		font-family: var(--font-display);
-		font-weight: 600;
-		letter-spacing: -0.02em;
+		font-weight: 800;
+		letter-spacing: -0.03em;
 		text-wrap: balance;
 	}
 
+	h1 {
+		font-weight: 900;
+	}
+
 	:focus-visible {
-		outline: 3px solid var(--color-coral-500);
-		outline-offset: 2px;
+		outline: 3px solid var(--color-ink);
+		outline-offset: 3px;
 	}
 
 	::selection {
-		background-color: var(--color-coral-200);
+		background-color: var(--color-pink-400);
 		color: var(--color-ink);
 	}
 }

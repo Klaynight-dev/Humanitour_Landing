@@ -64,7 +64,7 @@
 		{/if}
 	</header>
 
-	{#if media.coverUrl && media.kind !== 'VIDEO'}
+	{#if media.coverUrl && media.kind !== 'Video'}
 		<img
 			src={media.coverUrl}
 			alt={media.coverAlt ?? ''}
@@ -73,7 +73,7 @@
 	{/if}
 
 	<!-- Le rendu suit la nature du media, via le registre. -->
-	{#if media.kind === 'VIDEO' && text('embedUrl')}
+	{#if media.kind === 'Video' && text('embedUrl')}
 		<div class="mt-8">
 			<VideoEmbed embedUrl={text('embedUrl')!} title={media.title} />
 			{#if text('watchUrl')}
@@ -116,14 +116,14 @@
 	{#if media.tags.length > 0}
 		<ul class="mt-10 flex flex-wrap gap-2">
 			{#each media.tags as tag (tag)}
-				<li class="border-line text-muted rounded-pill border px-3 py-1 text-xs">{tag}</li>
+				<li class="border-ink text-muted bg-paper rounded-pill border-2 px-3 py-1 text-xs">{tag}</li>
 			{/each}
 		</ul>
 	{/if}
 </article>
 
 {#if data.related.length > 0}
-	<section class="border-line mx-auto max-w-6xl border-t px-4 py-12 sm:px-6" aria-labelledby="suite">
+	<section class="border-ink mx-auto max-w-6xl border-t-2 px-4 py-12 sm:px-6" aria-labelledby="suite">
 		<h2 id="suite" class="font-display text-2xl font-semibold">A lire et a ecouter ensuite</h2>
 		<ul class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{#each data.related as item (item.slug)}

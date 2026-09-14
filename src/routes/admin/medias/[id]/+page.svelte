@@ -32,7 +32,7 @@
 </PageHeader>
 
 {#if form?.message}
-	<p role="status" class="border-line bg-paper rounded-card mb-5 border px-4 py-3 text-sm">
+	<p role="status" class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm">
 		{form.message}
 	</p>
 {/if}
@@ -48,7 +48,7 @@
 						required
 						value={data.item.title}
 						disabled={!editable}
-						class="border-line rounded-lg border px-3 py-2"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 					/>
 				</label>
 
@@ -61,7 +61,7 @@
 						name="excerpt"
 						rows="2"
 						disabled={!editable}
-						class="border-line rounded-lg border px-3 py-2">{data.item.excerpt ?? ''}</textarea
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{data.item.excerpt ?? ''}</textarea
 					>
 				</label>
 
@@ -75,7 +75,7 @@
 							name="body"
 							rows="16"
 							disabled={!editable}
-							class="border-line rounded-lg border px-3 py-2">{data.item.body ?? ''}</textarea
+							class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{data.item.body ?? ''}</textarea
 						>
 					</label>
 				{/if}
@@ -98,7 +98,7 @@
 									name="data.{field.name}"
 									rows="6"
 									disabled={!editable}
-									class="border-line rounded-lg border px-3 py-2">{field.value}</textarea
+									class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{field.value}</textarea
 								>
 							{:else}
 								<input
@@ -106,13 +106,13 @@
 									name="data.{field.name}"
 									value={field.value}
 									disabled={!editable}
-									class="border-line rounded-lg border px-3 py-2"
+									class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 								/>
 							{/if}
 						</label>
 					{/each}
 
-					{#if data.item.kind === 'VIDEO'}
+					{#if data.item.kind === 'Video'}
 						<p class="text-muted text-xs">
 							Hebergeurs acceptes : {data.providers.join(', ')}. L'adresse d'integration est
 							reconstruite par nos soins : aucun parametre de suivi de l'adresse d'origine n'est
@@ -137,14 +137,14 @@
 						name="publishedAt"
 						value={dateTimeValue(data.item.publishedAt)}
 						disabled={!editable}
-						class="border-line rounded-lg border px-3 py-2"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 					/>
 				</label>
 
 				{#if editable}
 					<button
 						type="submit"
-						class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-5 py-2.5 text-sm font-semibold transition-colors"
+						class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 					>
 						Enregistrer
 					</button>
@@ -158,7 +158,7 @@
 							<button
 								type="submit"
 								formaction="?/unpublish"
-								class="border-line hover:bg-paper rounded-pill border px-4 py-2 text-xs font-medium"
+								class="border-ink brut-sm brut-press bg-paper rounded-pill border-2 px-4 py-2 text-xs font-medium"
 							>
 								Repasser en brouillon
 							</button>
@@ -166,7 +166,7 @@
 							<button
 								type="submit"
 								formaction="?/publish"
-								class="bg-ink text-paper rounded-pill px-4 py-2 text-xs font-semibold"
+								class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-xs font-bold"
 							>
 								Publier
 							</button>
@@ -185,7 +185,7 @@
 						name="coverUrl"
 						value={data.item.coverUrl ?? ''}
 						disabled={!editable}
-						class="border-line rounded-lg border px-3 py-2"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 					/>
 				</label>
 
@@ -198,7 +198,7 @@
 						name="coverAlt"
 						value={data.item.coverAlt ?? ''}
 						disabled={!editable}
-						class="border-line rounded-lg border px-3 py-2"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 					/>
 				</label>
 
@@ -220,7 +220,7 @@
 					name="tags"
 					value={data.item.tags}
 					disabled={!editable}
-					class="border-line rounded-lg border px-3 py-2"
+					class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 				/>
 			</label>
 		</Panel>

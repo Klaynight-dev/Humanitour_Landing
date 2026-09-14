@@ -11,10 +11,10 @@
 </script>
 
 <div class="flex flex-col gap-1">
-	<span class="tabular font-display text-4xl leading-none font-semibold sm:text-5xl">
+	<span class="tabular text-4xl leading-none font-bold tracking-tighter sm:text-5xl">
 		{value}
 	</span>
-	<span class="text-sm font-semibold tracking-wide uppercase">{label}</span>
+	<span class="font-display text-sm font-bold tracking-wide uppercase">{label}</span>
 	{#if hint}
 		<span class="text-muted text-xs">{hint}</span>
 	{/if}

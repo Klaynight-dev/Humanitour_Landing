@@ -33,7 +33,7 @@
 		<a
 			href="/medias"
 			aria-current={data.activeKind === null ? 'page' : undefined}
-			class="border-line rounded-pill border px-4 py-2 text-sm font-medium transition-colors"
+			class="border-ink bg-paper rounded-pill border-2 px-4 py-2 text-sm font-medium transition-colors"
 			class:bg-ink={data.activeKind === null}
 			class:text-paper={data.activeKind === null}
 		>
@@ -44,7 +44,7 @@
 				<a
 					href="/medias?type={type.key}"
 					aria-current={data.activeKind === type.key ? 'page' : undefined}
-					class="border-line rounded-pill border px-4 py-2 text-sm font-medium transition-colors"
+					class="border-ink bg-paper rounded-pill border-2 px-4 py-2 text-sm font-medium transition-colors"
 					class:bg-ink={data.activeKind === type.key}
 					class:text-paper={data.activeKind === type.key}
 				>
@@ -55,7 +55,7 @@
 	</nav>
 
 	{#if data.items.length === 0}
-		<p class="border-line bg-surface rounded-card mt-10 border p-8 text-center">
+		<p class="brut bg-surface rounded-card mt-10 p-8 text-center">
 			{#if data.activeKind}
 				Aucun media de cette nature pour l'instant.
 			{:else}

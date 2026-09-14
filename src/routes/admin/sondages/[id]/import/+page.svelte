@@ -34,7 +34,7 @@
 />
 
 {#if form?.message}
-	<p role="status" class="border-line bg-paper rounded-card mb-5 border px-4 py-3 text-sm">
+	<p role="status" class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm">
 		{form.message}
 	</p>
 {/if}
@@ -62,12 +62,12 @@
 						name="file"
 						required
 						accept={data.formats.flatMap((f) => f.extensions).join(',')}
-						class="border-line rounded-lg border px-3 py-2 text-sm"
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2 text-sm"
 					/>
 				</label>
 				<button
 					type="submit"
-					class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-5 py-2.5 text-sm font-semibold transition-colors"
+					class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 				>
 					Deposer
 				</button>
@@ -89,7 +89,7 @@
 				<div class="overflow-x-auto">
 					<table class="w-full min-w-[40rem] border-collapse text-sm">
 						<thead>
-							<tr class="border-line border-b text-left">
+							<tr class="border-ink border-b text-left">
 								<th scope="col" class="py-2 pr-3 font-semibold">Fichier</th>
 								<th scope="col" class="px-3 py-2 font-semibold">Statut</th>
 								<th scope="col" class="px-3 py-2 text-right font-semibold">Acceptees</th>
@@ -99,7 +99,7 @@
 						</thead>
 						<tbody>
 							{#each data.batches as batch (batch.id)}
-								<tr class="border-line border-b last:border-0">
+								<tr class="border-ink border-b last:border-0">
 									<td class="py-2.5 pr-3">
 										<p class="font-medium">{batch.filename}</p>
 										<p class="text-muted text-xs">
@@ -119,7 +119,7 @@
 											{#if batch.status !== 'COMMITTED'}
 												<a
 													href="?lot={batch.id}"
-													class="border-line hover:bg-surface rounded-pill border px-2.5 py-1 text-xs"
+													class="border-ink bg-paper rounded-pill border-2 px-2.5 py-1 text-xs"
 												>
 													Reprendre
 												</a>
@@ -128,7 +128,7 @@
 												<input type="hidden" name="batchId" value={batch.id} />
 												<button
 													type="submit"
-													class="border-danger/30 text-danger hover:bg-danger/5 rounded-pill border px-2.5 py-1 text-xs"
+													class="border-ink text-danger bg-paper rounded-pill border-2 px-2.5 py-1 text-xs"
 													title={batch.status === 'COMMITTED'
 														? 'Supprime aussi les reponses issues de ce lot.'
 														: undefined}
@@ -161,7 +161,7 @@
 				<input type="hidden" name="batchId" value={data.active.id} />
 
 				{#each data.questions as question (question.code)}
-					<div class="border-line flex flex-wrap items-center gap-3 rounded-lg border p-3">
+					<div class="border-ink flex flex-wrap items-center gap-3 rounded-lg border-2 p-3">
 						<div class="min-w-0 flex-1">
 							<p class="text-sm font-medium">{question.label}</p>
 							<code class="text-muted bg-surface rounded px-1.5 py-0.5 text-xs">
@@ -173,7 +173,7 @@
 							<span class="sr-only">Colonne pour « {question.label} »</span>
 							<select
 								name="map:{question.code}"
-								class="border-line bg-paper min-w-48 rounded-lg border px-2.5 py-1.5 text-sm"
+								class="border-ink bg-paper min-w-48 rounded-lg border-2 px-2.5 py-1.5 text-sm"
 							>
 								<option value="">— ne pas importer —</option>
 								{#each data.active.columns as column (column)}
@@ -190,13 +190,13 @@
 				<div class="mt-2 flex flex-wrap gap-2">
 					<button
 						type="submit"
-						class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-5 py-2.5 text-sm font-semibold transition-colors"
+						class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 					>
 						Verifier
 					</button>
 					<a
 						href="/admin/sondages/{data.survey.id}/import"
-						class="border-line hover:bg-surface rounded-pill border px-5 py-2.5 text-sm font-medium"
+						class="border-ink brut-sm brut-press bg-paper rounded-pill border-2 px-5 py-2.5 text-sm font-medium"
 					>
 						Retour
 					</a>
@@ -233,7 +233,7 @@
 						</p>
 						<ul class="mt-3 flex flex-col gap-1.5">
 							{#each accepted(data.active.errors) as issue, index (index)}
-								<li class="border-line rounded-lg border px-3 py-2 text-xs">
+								<li class="border-ink bg-paper rounded-lg border-2 px-3 py-2 text-xs">
 									<span class="font-semibold">Ligne {issue.line}</span>
 									<span class="text-muted">— colonne « {issue.column} »</span>
 									{#if issue.value}<span class="text-muted"> — « {issue.value} »</span>{/if}
@@ -250,7 +250,7 @@
 							<input type="hidden" name="batchId" value={data.active.id} />
 							<button
 								type="submit"
-								class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-5 py-2.5 text-sm font-semibold transition-colors"
+								class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 							>
 								Confirmer l'import de {formatCount(data.active.acceptedCount)} reponses
 							</button>

@@ -36,7 +36,7 @@
 </svelte:head>
 
 <div class="bg-surface min-h-full">
-	<header class="border-line bg-paper border-b">
+	<header class="border-ink bg-paper border-b">
 		<div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
 			<a href="/admin" class="flex items-center gap-2.5">
 				<span class="surface-mesh h-8 w-8 rounded-lg" aria-hidden="true"></span>
@@ -54,7 +54,7 @@
 				<form method="POST" action="/deconnexion">
 					<button
 						type="submit"
-						class="border-line hover:bg-surface rounded-pill border px-3.5 py-1.5 text-sm font-medium"
+						class="border-ink hover:bg-surface rounded-pill border px-3.5 py-1.5 text-sm font-medium"
 					>
 						Se deconnecter
 					</button>

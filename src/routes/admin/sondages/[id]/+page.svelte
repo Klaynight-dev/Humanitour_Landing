@@ -33,7 +33,7 @@
 		{#if can(data.user, 'survey.import')}
 			<a
 				href="/admin/sondages/{data.survey.id}/import"
-				class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-4 py-2 text-sm font-semibold transition-colors"
+				class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-sm font-bold"
 			>
 				Importer des reponses
 			</a>
@@ -42,7 +42,7 @@
 </PageHeader>
 
 {#if form?.message}
-	<p role="status" class="border-line bg-paper rounded-card mb-5 border px-4 py-3 text-sm">
+	<p role="status" class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm">
 		{form.message}
 	</p>
 {/if}
@@ -61,7 +61,7 @@
 			{:else}
 				<ul class="flex flex-col gap-2">
 					{#each data.questions as question, index (question.id)}
-						<li class="border-line rounded-lg border p-3">
+						<li class="border-ink rounded-lg border-2 p-3">
 							<div class="flex flex-wrap items-start justify-between gap-3">
 								<div class="min-w-0">
 									<p class="font-medium">{question.label}</p>
@@ -81,7 +81,7 @@
 									<div class="flex shrink-0 flex-wrap gap-1.5">
 										<a
 											href="/admin/sondages/{data.survey.id}/questions/{question.id}"
-											class="border-line hover:bg-surface rounded-pill border px-2.5 py-1 text-xs"
+											class="border-ink bg-paper rounded-pill border-2 px-2.5 py-1 text-xs"
 										>
 											Modifier
 										</a>
@@ -91,7 +91,7 @@
 											<button
 												type="submit"
 												disabled={index === 0}
-												class="border-line hover:bg-surface rounded-pill border px-2.5 py-1 text-xs disabled:opacity-30"
+												class="border-ink bg-paper rounded-pill border-2 px-2.5 py-1 text-xs disabled:opacity-30"
 												aria-label="Monter « {question.label} »"
 											>
 												↑
@@ -103,7 +103,7 @@
 											<button
 												type="submit"
 												disabled={index === data.questions.length - 1}
-												class="border-line hover:bg-surface rounded-pill border px-2.5 py-1 text-xs disabled:opacity-30"
+												class="border-ink bg-paper rounded-pill border-2 px-2.5 py-1 text-xs disabled:opacity-30"
 												aria-label="Descendre « {question.label} »"
 											>
 												↓
@@ -113,7 +113,7 @@
 											<input type="hidden" name="questionId" value={question.id} />
 											<button
 												type="submit"
-												class="border-danger/30 text-danger hover:bg-danger/5 rounded-pill border px-2.5 py-1 text-xs"
+												class="border-ink text-danger bg-paper rounded-pill border-2 px-2.5 py-1 text-xs"
 											>
 												Supprimer
 											</button>
@@ -141,14 +141,14 @@
 								required
 								minlength="3"
 								placeholder="Quelle est votre priorite pour la France ?"
-								class="border-line bg-paper rounded-lg border px-3 py-2 text-sm"
+								class="border-ink bg-paper rounded-lg border-2 px-3 py-2 text-sm"
 							/>
 						</label>
 						<label class="flex flex-col gap-1">
 							<span class="text-xs font-semibold">Type</span>
 							<select
 								name="type"
-								class="border-line bg-paper rounded-lg border px-3 py-2 text-sm"
+								class="border-ink bg-paper rounded-lg border-2 px-3 py-2 text-sm"
 							>
 								{#each data.questionTypes as type (type.key)}
 									<option value={type.key}>{type.label}</option>
@@ -157,7 +157,7 @@
 						</label>
 						<button
 							type="submit"
-							class="bg-ink text-paper rounded-pill px-4 py-2 text-sm font-semibold"
+							class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-sm font-bold"
 						>
 							Ajouter
 						</button>
@@ -179,7 +179,7 @@
 							required
 							value={data.survey.title}
 							disabled={!editable}
-							class="border-line rounded-lg border px-3 py-2"
+							class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 						/>
 					</label>
 
@@ -189,7 +189,7 @@
 							name="subtitle"
 							value={data.survey.subtitle ?? ''}
 							disabled={!editable}
-							class="border-line rounded-lg border px-3 py-2"
+							class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 						/>
 					</label>
 
@@ -200,7 +200,7 @@
 							name="fieldworkStart"
 							value={dateValue(data.survey.fieldworkStart)}
 							disabled={!editable}
-							class="border-line rounded-lg border px-3 py-2"
+							class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 						/>
 					</label>
 
@@ -211,7 +211,7 @@
 							name="fieldworkEnd"
 							value={dateValue(data.survey.fieldworkEnd)}
 							disabled={!editable}
-							class="border-line rounded-lg border px-3 py-2"
+							class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
 						/>
 					</label>
 				</div>
@@ -222,7 +222,7 @@
 						name="description"
 						rows="3"
 						disabled={!editable}
-						class="border-line rounded-lg border px-3 py-2">{data.survey.description ?? ''}</textarea
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{data.survey.description ?? ''}</textarea
 					>
 				</label>
 
@@ -237,7 +237,7 @@
 						name="methodology"
 						rows="8"
 						disabled={!editable}
-						class="border-line rounded-lg border px-3 py-2">{data.survey.methodology ?? ''}</textarea
+						class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{data.survey.methodology ?? ''}</textarea
 					>
 				</label>
 
@@ -253,7 +253,7 @@
 						min="1"
 						value={data.survey.kAnonymityThreshold ?? ''}
 						disabled={!editable}
-						class="border-line w-32 rounded-lg border px-3 py-2"
+						class="border-ink bg-paper w-32 rounded-lg border-2 px-3 py-2"
 					/>
 				</label>
 
@@ -261,7 +261,7 @@
 					<div>
 						<button
 							type="submit"
-							class="bg-ink text-paper hover:bg-coral-600 rounded-pill px-5 py-2.5 text-sm font-semibold transition-colors"
+							class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 						>
 							Enregistrer
 						</button>

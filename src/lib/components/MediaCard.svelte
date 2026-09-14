@@ -25,7 +25,7 @@
 	const isOutbound = $derived(media.kind === 'PRESS');
 </script>
 
-<article class="border-line hover:border-coral-500 rounded-card flex h-full flex-col overflow-hidden border transition-colors">
+<article class="brut brut-press rounded-card bg-paper flex h-full flex-col overflow-hidden">
 	{#if media.coverUrl}
 		<img
 			src={media.coverUrl}
