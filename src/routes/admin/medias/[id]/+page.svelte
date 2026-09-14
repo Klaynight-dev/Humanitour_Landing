@@ -112,7 +112,7 @@
 						</label>
 					{/each}
 
-					{#if data.item.kind === 'Video'}
+					{#if data.item.kind === 'VIDEO'}
 						<p class="text-muted text-xs">
 							Hebergeurs acceptes : {data.providers.join(', ')}. L'adresse d'integration est
 							reconstruite par nos soins : aucun parametre de suivi de l'adresse d'origine n'est

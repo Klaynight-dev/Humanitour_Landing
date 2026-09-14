@@ -467,7 +467,7 @@ async function seedResponses(surveyId: string) {
 
 interface MediaSeed {
 	slug: string;
-	kind: 'ARTICLE' | 'Video' | 'PODCAST' | 'PRESS';
+	kind: 'ARTICLE' | 'VIDEO' | 'PODCAST' | 'PRESS';
 	title: string;
 	excerpt: string;
 	/** Paragraphes, joints a l'enregistrement : plus lisible qu'une chaine echappee. */
@@ -516,7 +516,7 @@ const MEDIA: MediaSeed[] = [
 	},
 	{
 		slug: 'sur-la-route-entre-deux-marches',
-		kind: 'Video',
+		kind: 'VIDEO',
 		title: 'Sur la route, entre deux marches',
 		excerpt:
 			"Quinze minutes de rencontres filmees entre deux etapes, la ou les panels en ligne ne vont jamais.",

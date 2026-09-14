@@ -64,7 +64,7 @@
 		{/if}
 	</header>
 
-	{#if media.coverUrl && media.kind !== 'Video'}
+	{#if media.coverUrl && media.kind !== 'VIDEO'}
 		<img
 			src={media.coverUrl}
 			alt={media.coverAlt ?? ''}
@@ -73,7 +73,7 @@
 	{/if}
 
 	<!-- Le rendu suit la nature du media, via le registre. -->
-	{#if media.kind === 'Video' && text('embedUrl')}
+	{#if media.kind === 'VIDEO' && text('embedUrl')}
 		<div class="mt-8">
 			<VideoEmbed embedUrl={text('embedUrl')!} title={media.title} />
 			{#if text('watchUrl')}

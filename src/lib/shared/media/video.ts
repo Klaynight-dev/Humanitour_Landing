@@ -11,9 +11,9 @@ import { readPositiveInt, readString, type MediaType } from './types';
  */
 export const videoType: MediaType = {
 	key: 'VIDEO',
-	label: 'Video',
-	plural: 'Videos et reportages',
-	description: 'Une video hebergee sur YouTube, Vimeo ou une instance PeerTube.',
+	label: 'Vidéo',
+	plural: 'Vidéos et reportages',
+	description: 'Une vidéo hébergée sur YouTube, Vimeo ou une instance PeerTube.',
 	hasBody: false,
 	isOutbound: true,
 	fields: [
