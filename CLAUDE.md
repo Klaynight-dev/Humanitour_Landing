@@ -165,6 +165,17 @@ raison, pas une préférence.
 | 22 | Langue | Interface en français, code en anglais, chaînes externalisées |
 | 23 | Attribution | Les commits ne portent **aucune ligne de co-auteur** |
 
+### Ce qui reste à construire
+
+| Sujet | État |
+| --- | --- |
+| Pages légales `/legal/*` | À récupérer depuis `forms.humanitour.fr` (décision 13) |
+| Page « Le tour » et carte du parcours | À construire |
+| Carte choroplèthe | Bloquée : il faut une géométrie des régions sous licence compatible (ODbL ou Etalab) |
+| Courbe d'évolution temporelle | À construire ; la donnée existe déjà (`Response.collectedAt`) |
+| Textes du back-office | Encore sans accents, contrairement au site public |
+| URL de la campagne HelloAsso | `TODO` explicite dans `src/lib/shared/site.ts` |
+
 ---
 
 ## L'identité visuelle

@@ -212,6 +212,18 @@ deux documents de communication de l'association.
 **Nommage.** `kebab-case` pour les fichiers, `PascalCase` pour les composants Svelte
 et les types, `camelCase` pour le reste. Pas d'abréviation inventée.
 
+**Le texte visible s'écrit, il ne se génère pas.** Les commentaires de code sont
+sans accents ; **tout ce que lit un visiteur ou un membre de l'équipe est en
+français correct**, accents compris. Cette règle a été apprise à la dure : une
+substitution mot à mot a été tentée puis annulée, parce qu'elle avait accentué des
+routes (`/données`), un `slug`, une valeur d'énumération Prisma et un rôle ARIA.
+Et parce qu'un dictionnaire ne sait pas écrire : « a vélo » veut « à », « tache »
+n'est pas « tâche ». On corrige phrase par phrase, ou pas du tout.
+
+Corollaire : **un `code`, un `slug` et un `href` restent en ASCII.** Ce sont des
+adresses et des identifiants, pas de la prose. Un code de modalité accentué
+invaliderait les réponses déjà enregistrées et les permaliens déjà partagés.
+
 **Commits.** Conventional Commits, en anglais, à l'impératif.
 `feat(survey): add stacked bar chart`. Un changement = un commit. Un fichier
 découpé = un commit dédié, sans reformulation du corps déplacé.
