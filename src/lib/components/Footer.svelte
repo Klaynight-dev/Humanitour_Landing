@@ -71,7 +71,7 @@
 				<a class="underline hover:text-white" href={LICENSES.code.url} target="_blank" rel="noopener noreferrer">
 					{LICENSES.code.name}
 				</a>
-				— données sous
+				- données sous
 				<a class="underline hover:text-white" href={LICENSES.data.url} target="_blank" rel="noopener noreferrer">
 					{LICENSES.data.name}
 				</a>

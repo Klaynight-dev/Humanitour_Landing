@@ -250,3 +250,20 @@ exactement la garantie qu'on veut.
   de session est le seul cookie du site public.
 - **Pas d'image sous droits.** Les documents sources contiennent une photo de
   couverture de livre (Bourdieu) : elle ne part pas en production.
+
+<!-- antislop:start -->
+## antislop
+
+Pour tout travail d'interface, de texte, d'accessibilité ou de layout mobile,
+lire `DESIGN.md` (direction artistique du projet) puis invoquer le skill
+correspondant via l'outil Skill (paquet `antislop`, déjà installé) :
+- Visuel / UI : `antislop:antislop-ui`
+- Copywriting : `antislop:antislop-copywriting`
+- Accessibilité : `antislop:antislop-human`
+- Mobile / responsive : `antislop:antislop-layoutmobile`
+- Commentaires de code : `antislop:antislop-code`
+
+Avant de commencer, demander à l'utilisateur si antislop s'applique PENDANT le
+travail ou APRÈS (audit).
+<!-- antislop:end -->
+

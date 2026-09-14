@@ -219,3 +219,20 @@ chaque rôle la fonte d'origine qu'elle remplace.
 | `bun run db:seed` | Jeu de données de démonstration |
 | `bun run setup` | Schéma + seed, en une fois |
 | `bun run services:up` | PostgreSQL via Docker Compose (production) |
+
+<!-- antislop:start -->
+## antislop
+
+Pour tout travail d'interface, de texte, d'accessibilité ou de layout mobile,
+lire `DESIGN.md` (direction artistique du projet) puis invoquer le skill
+correspondant via l'outil Skill (paquet `antislop`, déjà installé) :
+- Visuel / UI : `antislop:antislop-ui`
+- Copywriting : `antislop:antislop-copywriting`
+- Accessibilité : `antislop:antislop-human`
+- Mobile / responsive : `antislop:antislop-layoutmobile`
+- Commentaires de code : `antislop:antislop-code`
+
+Avant de commencer, demander à l'utilisateur si antislop s'applique PENDANT le
+travail ou APRÈS (audit).
+<!-- antislop:end -->
+

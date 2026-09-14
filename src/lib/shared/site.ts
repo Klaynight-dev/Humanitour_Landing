@@ -100,6 +100,7 @@ export const RETENTION = {
  * coute plus cher en confiance qu'une rubrique manquante.
  */
 export const NAV = [
+	{ href: '/le-tour', label: 'Le tour' },
 	{ href: '/donnees', label: 'Les données' },
 	{ href: '/medias', label: 'Médias' },
 	{ href: '/methodologie', label: 'Méthodologie' }
