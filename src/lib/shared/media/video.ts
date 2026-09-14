@@ -19,14 +19,14 @@ export const videoType: MediaType = {
 	fields: [
 		{
 			name: 'sourceUrl',
-			label: 'Adresse de la video',
-			help: 'Collez l adresse de la page de la video.',
+			label: 'Adresse de la vidéo',
+			help: "Collez l'adresse de la page de la vidéo.",
 			type: 'url',
 			required: true
 		},
 		{
 			name: 'durationSeconds',
-			label: 'Duree en secondes',
+			label: 'Durée en secondes',
 			type: 'number',
 			required: false
 		}
@@ -34,7 +34,7 @@ export const videoType: MediaType = {
 
 	parseData(raw) {
 		const sourceUrl = readString(raw, 'sourceUrl');
-		if (!sourceUrl) return { ok: false, reason: "L'adresse de la video est obligatoire." };
+		if (!sourceUrl) return { ok: false, reason: "L'adresse de la vidéo est obligatoire." };
 
 		const embed = resolveEmbed(sourceUrl);
 		if (!embed.ok) return { ok: false, reason: embed.reason };

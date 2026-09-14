@@ -15,7 +15,7 @@ const configSchema = z.object({}).loose();
 export const singleChoice: QuestionType = {
 	key: 'single_choice',
 	label: 'Choix unique',
-	description: 'Une seule reponse parmi une liste de modalites declarees.',
+	description: 'Une seule réponse parmi une liste de modalités déclarées.',
 	usesOptions: true,
 	multiValued: false,
 	crossable: true,
@@ -27,11 +27,11 @@ export const singleChoice: QuestionType = {
 	normalize(raw, context): NormalizeResult {
 		if (isBlank(raw)) return { ok: true, values: [nonResponseValue()] };
 		if (typeof raw !== 'string' && typeof raw !== 'number') {
-			return { ok: false, reason: 'Valeur attendue : texte ou nombre.' };
+			return { ok: false, reason: 'Valeur attendue : un texte ou un nombre.' };
 		}
 		const option = findOption(context.options, String(raw));
 		if (!option) {
-			return { ok: false, reason: `Modalite inconnue : « ${String(raw).trim()} ».` };
+			return { ok: false, reason: `Modalité inconnue : « ${String(raw).trim()} ».` };
 		}
 		// Une option explicitement marquee « sans opinion » rejoint la non-reponse :
 		// une seule cle pour un seul concept, sinon les deux se comptent separement.

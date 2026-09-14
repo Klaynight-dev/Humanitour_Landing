@@ -18,7 +18,7 @@ export const jsonFormat: ImportFormat = {
 		const parsed: unknown = JSON.parse(text);
 
 		if (!Array.isArray(parsed)) {
-			throw new Error('Le fichier JSON doit contenir un tableau d objets.');
+			throw new Error("Le fichier JSON doit contenir un tableau d'objets.");
 		}
 
 		const rows = parsed.filter(
@@ -27,7 +27,7 @@ export const jsonFormat: ImportFormat = {
 		);
 
 		if (rows.length !== parsed.length) {
-			throw new Error('Toutes les entrees du tableau doivent etre des objets.');
+			throw new Error('Toutes les entrées du tableau doivent être des objets.');
 		}
 
 		const columns = [...new Set(rows.flatMap((row) => Object.keys(row)))];

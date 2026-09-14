@@ -33,7 +33,7 @@ export function exportableQuestions(
 
 /** Libelle d une modalite, pour un fichier lisible sans documentation annexe. */
 function modalityLabel(question: PublicQuestion, key: string): string {
-	if (key === NON_RESPONSE_KEY) return 'Sans reponse';
+	if (key === NON_RESPONSE_KEY) return 'Sans réponse';
 
 	const declared = question.options.find((option) => option.code === key);
 	if (declared) return declared.label;
@@ -59,7 +59,7 @@ function cellsFor(
 			.map((answer) => modalityLabel(question, answer.modalityKey));
 
 		// Aucune ligne pour cette question : le repondant ne l a pas vue passer.
-		if (values.length === 0) return 'Sans reponse';
+		if (values.length === 0) return 'Sans réponse';
 
 		return values.join(';');
 	});
@@ -112,10 +112,10 @@ export interface JsonExport {
 }
 
 export const EXPORT_NOTICE =
-	'Effectifs bruts, sans ponderation ni redressement. Les non-reponses sont comptees comme une modalite. ' +
-	'Les valeurs numeriques sont regroupees en tranches et les verbatims sont exclus, pour empecher la reidentification.';
+	'Effectifs bruts, sans pondération ni redressement. Les non-réponses sont comptées comme une modalité. ' +
+	"Les valeurs numériques sont regroupées en tranches et les verbatims sont exclus, pour empêcher la réidentification.";
 
-export const EXPORT_LICENSE = 'ODbL 1.0 — attribution a Humanitour et partage a l identique.';
+export const EXPORT_LICENSE = "ODbL 1.0 — attribution à Humanitour et partage à l'identique.";
 
 export function toJson(
 	survey: {
@@ -144,7 +144,7 @@ export function toJson(
 			type: question.type,
 			modalities: [
 				...question.options.map((option) => ({ key: option.code, label: option.label })),
-				{ key: NON_RESPONSE_KEY, label: 'Sans reponse' }
+				{ key: NON_RESPONSE_KEY, label: 'Sans réponse' }
 			]
 		})),
 		responses: responses.map((response) => {

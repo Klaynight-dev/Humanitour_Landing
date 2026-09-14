@@ -18,7 +18,7 @@ const configSchema = z
 	})
 	.loose()
 	.refine((config) => config.max > config.min, {
-		message: 'La borne haute doit etre superieure a la borne basse.'
+		message: 'La borne haute doit être supérieure à la borne basse.'
 	});
 
 function bounds(context: QuestionContext): { min: number; max: number } {
@@ -29,8 +29,8 @@ function bounds(context: QuestionContext): { min: number; max: number } {
 
 export const scale: QuestionType = {
 	key: 'scale',
-	label: 'Echelle',
-	description: 'Une note entiere entre deux bornes, par exemple de 1 a 10.',
+	label: 'Échelle',
+	description: 'Une note entière entre deux bornes, par exemple de 1 à 10.',
 	usesOptions: false,
 	multiValued: false,
 	crossable: true,

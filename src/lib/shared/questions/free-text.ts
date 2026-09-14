@@ -24,7 +24,7 @@ const configSchema = z
 export const freeText: QuestionType = {
 	key: 'free_text',
 	label: 'Texte libre',
-	description: 'Un verbatim. Conserve et exporte, mais jamais propose au croisement.',
+	description: 'Un verbatim. Conservé et exporté, mais jamais proposé au croisement.',
 	usesOptions: false,
 	multiValued: false,
 	crossable: false,
@@ -45,7 +45,7 @@ export const freeText: QuestionType = {
 		if (text.length > maxLength) {
 			return {
 				ok: false,
-				reason: `Verbatim trop long : ${text.length} caracteres (max ${maxLength}).`
+				reason: `Verbatim trop long : ${text.length} caractères (maximum ${maxLength}).`
 			};
 		}
 
@@ -66,7 +66,7 @@ export const freeText: QuestionType = {
 
 	modalities(context): readonly ModalityDescriptor[] {
 		return [
-			{ key: 'answered', label: 'A repondu', isNonResponse: false },
+			{ key: 'answered', label: 'A répondu', isNonResponse: false },
 			nonResponseModality(context.options)
 		];
 	}

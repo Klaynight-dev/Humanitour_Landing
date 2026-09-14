@@ -28,7 +28,7 @@ const configSchema = z
 	.refine(
 		(config) => config.min === undefined || config.max === undefined || config.max > config.min,
 		{
-			message: 'La borne haute doit etre superieure a la borne basse.'
+			message: 'La borne haute doit être supérieure à la borne basse.'
 		}
 	);
 
@@ -57,7 +57,7 @@ export function bucketKey(value: number, { size, start }: Bucketing): string {
 export const numberQuestion: QuestionType = {
 	key: 'number',
 	label: 'Nombre',
-	description: 'Une valeur numerique, regroupee en tranches pour les croisements.',
+	description: 'Une valeur numérique, regroupée en tranches pour les croisements.',
 	usesOptions: false,
 	multiValued: false,
 	crossable: true,

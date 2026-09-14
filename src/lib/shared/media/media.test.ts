@@ -103,7 +103,7 @@ describe('resolveEmbed', () => {
 
 		expect(result.ok).toBe(false);
 		if (result.ok) return;
-		expect(result.reason).toMatch(/non autorise/i);
+		expect(result.reason).toMatch(/non autorisé/i);
 	});
 
 	it('refuse un hebergeur inconnu', () => {
@@ -209,7 +209,7 @@ describe('pressType.parseData', () => {
 
 		expect(result.ok).toBe(false);
 		if (result.ok) return;
-		expect(result.reason).toMatch(/nom du media/i);
+		expect(result.reason).toMatch(/nom du média/i);
 	});
 
 	it('exige l adresse de l article', () => {

@@ -49,7 +49,7 @@
 
 <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6">
 	<nav class="text-muted mb-6 text-sm" aria-label="Fil d'Ariane">
-		<a href="/donnees" class="hover:text-ink underline">Les donnees</a>
+		<a href="/donnees" class="hover:text-ink underline">Les données</a>
 		<span aria-hidden="true"> / </span>
 		<span>{data.survey.title}</span>
 	</nav>
@@ -61,7 +61,7 @@
 		{/if}
 		<p class="text-muted mt-4 text-sm">
 			{formatFieldwork(data.survey.fieldworkStart, data.survey.fieldworkEnd)}
-			· {formatCount(data.survey.responseCount)} reponses recueillies
+			· {formatCount(data.survey.responseCount)} réponses recueillies
 		</p>
 	</header>
 
@@ -74,7 +74,7 @@
 		<h2 id="explorateur" class="font-display text-2xl font-semibold">Explorer</h2>
 		<p class="text-muted mt-1 text-sm">
 			Choisissez une question, ajoutez-en une seconde pour la croiser, puis partagez l'adresse de
-			la page : elle reste valable.
+			la page : elle restera valable.
 		</p>
 
 		<!-- Les filtres tiennent sur une rangee au-dessus du graphique. Formulaire
@@ -130,7 +130,7 @@
 							checked={data.selection.includeNonResponses}
 							class="accent-coral-500 h-4 w-4"
 						/>
-						<span>Afficher les non-reponses</span>
+						<span>Afficher les non-réponses</span>
 					</label>
 					<button
 						type="submit"
@@ -160,17 +160,17 @@
 			<footer class="border-ink text-muted mt-8 flex flex-col gap-2 border-t pt-4 text-xs">
 				<p>
 					{#if data.result.shape === 'crosstab'}
-						{formatBase(data.result.crosstab.respondents)} ayant repondu aux deux questions.
+						{formatBase(data.result.crosstab.respondents)} ayant répondu aux deux questions.
 					{:else}
 						{formatBase(data.result.distribution.respondents)}.
 					{/if}
-					Effectifs bruts, sans ponderation ni redressement.
+					Effectifs bruts, sans pondération ni redressement.
 				</p>
 				{#if suppressed > 0}
 					<p>
 						{suppressed}
-						{suppressed > 1 ? 'cases sont masquees' : 'case est masquee'} : elles portent sur moins
-						de {data.threshold} repondants. Les publier permettrait d'identifier une personne.
+						{suppressed > 1 ? 'cases sont masquées' : 'case est masquée'} : elles portent sur moins
+						de {data.threshold} répondants. Les publier permettrait d'identifier une personne.
 					</p>
 				{/if}
 			</footer>
@@ -179,12 +179,13 @@
 		<!-- Autres affichages disponibles, en un clic, sans perdre le croisement. -->
 		<div class="mt-4 flex flex-wrap gap-2">
 			{#each data.charts as option (option.key)}
+				{@const active = option.key === data.selection.chart}
 				<a
 					href={exploreUrl({ chart: option.key })}
-					aria-current={option.key === data.selection.chart ? 'true' : undefined}
-					class="border-ink bg-paper rounded-pill border-2 px-3.5 py-1.5 text-xs font-medium"
-					class:bg-ink={option.key === data.selection.chart}
-					class:text-paper={option.key === data.selection.chart}
+					aria-current={active ? 'true' : undefined}
+					class="border-ink rounded-pill border-2 px-3.5 py-1.5 text-xs font-bold {active
+						? 'bg-ink text-white'
+						: 'bg-paper text-ink'}"
 				>
 					{option.label}
 				</a>
@@ -195,7 +196,7 @@
 	<!-- Methodologie -->
 	{#if data.survey.methodology}
 		<section class="mt-16 max-w-3xl" aria-labelledby="methodologie">
-			<h2 id="methodologie" class="font-display text-2xl font-semibold">Methodologie</h2>
+			<h2 id="methodologie" class="font-display text-2xl font-semibold">Méthodologie</h2>
 			<p class="text-ink-soft mt-4 leading-relaxed whitespace-pre-line">
 				{data.survey.methodology}
 			</p>
@@ -204,30 +205,30 @@
 
 	<!-- Donnees brutes -->
 	<section class="brut bg-surface rounded-card mt-16 p-8" aria-labelledby="brut">
-		<h2 id="brut" class="font-display text-2xl font-semibold">Les donnees brutes</h2>
+		<h2 id="brut" class="font-display text-2xl font-semibold">Les données brutes</h2>
 		<p class="text-ink-soft mt-3 max-w-2xl">
-			Le jeu complet, reponse par reponse, sans compte ni inscription. C'est ce que les instituts
-			prives ne publient pas.
+			Le jeu complet, réponse par réponse, sans compte ni inscription. C'est ce que les instituts
+			privés ne publient pas.
 		</p>
 		<div class="mt-6 flex flex-wrap gap-3">
 			<a
 				href="/donnees/{data.survey.slug}/export.csv"
 				class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
 			>
-				Telecharger en CSV
+				Télécharger en CSV
 			</a>
 			<a
 				href="/donnees/{data.survey.slug}/export.json"
 				class="border-ink hover:bg-ink hover:text-paper rounded-pill border-2 px-5 py-2.5 text-sm font-semibold transition-colors"
 			>
-				Telecharger en JSON
+				Télécharger en JSON
 			</a>
 		</div>
 		<p class="text-muted mt-4 text-xs">
 			Sous licence
 			<a class="underline" href={LICENSES.data.url} target="_blank" rel="noopener noreferrer">
 				{LICENSES.data.name}
-			</a>. Citez Humanitour et rouvrez vos derives.
+			</a>. Citez Humanitour et rouvrez vos dérivés.
 		</p>
 	</section>
 </div>

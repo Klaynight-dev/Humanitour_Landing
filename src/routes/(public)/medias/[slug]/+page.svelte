@@ -33,7 +33,7 @@
 
 <article class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
 	<nav class="text-muted mb-6 text-sm" aria-label="Fil d'Ariane">
-		<a href="/medias" class="hover:text-ink underline">Medias</a>
+		<a href="/medias" class="hover:text-ink underline">Médias</a>
 		<span aria-hidden="true"> / </span>
 		<span>{type?.label ?? media.kind}</span>
 	</nav>
@@ -78,7 +78,7 @@
 			<VideoEmbed embedUrl={text('embedUrl')!} title={media.title} />
 			{#if text('watchUrl')}
 				<p class="text-muted mt-3 text-xs">
-					Heberge par {text('providerLabel')} —
+					Hébergé par {text('providerLabel')} —
 					<a
 						class="underline"
 						href={text('watchUrl')!}
@@ -124,7 +124,7 @@
 
 {#if data.related.length > 0}
 	<section class="border-ink mx-auto max-w-6xl border-t-2 px-4 py-12 sm:px-6" aria-labelledby="suite">
-		<h2 id="suite" class="font-display text-2xl font-semibold">A lire et a ecouter ensuite</h2>
+		<h2 id="suite" class="font-display text-2xl font-semibold">À lire et à écouter ensuite</h2>
 		<ul class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{#each data.related as item (item.slug)}
 				<li><MediaCard media={item} /></li>

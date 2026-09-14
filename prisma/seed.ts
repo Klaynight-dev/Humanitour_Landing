@@ -55,7 +55,7 @@ const ROLES = [
 	{
 		slug: 'administration',
 		name: 'Administration',
-		description: "Acces complet, y compris les reglages et la gestion des comptes.",
+		description: "Accès complet, y compris les réglages et la gestion des comptes.",
 		// Le role systeme porte la liste complete : il n'existe pas de joker dans
 		// la resolution des permissions (voir shared/permissions.ts).
 		permissions: [...PERMISSION_KEYS],
@@ -64,14 +64,14 @@ const ROLES = [
 	{
 		slug: 'redaction',
 		name: 'Redaction',
-		description: 'Redige et publie les articles, videos, podcasts et reprises de presse.',
+		description: 'Rédige et publie les articles, vidéos, podcasts et reprises de presse.',
 		permissions: ['media.read', 'media.write', 'media.publish', 'survey.read'],
 		isSystem: false
 	},
 	{
 		slug: 'analyse',
 		name: 'Analyse',
-		description: 'Importe les reponses, construit les questionnaires et les cartes.',
+		description: 'Importe les réponses, construit les questionnaires et les cartes.',
 		permissions: ['survey.read', 'survey.write', 'survey.import', 'card.write', 'media.read'],
 		isSystem: false
 	},
@@ -148,14 +148,14 @@ interface QuestionSeed {
 const QUESTIONS: QuestionSeed[] = [
 	{
 		code: 'priorite',
-		label: 'Quelle est votre priorite pour la France ?',
+		label: 'Quelle est votre priorité pour la France ?',
 		type: 'single_choice',
 		options: [
 			{ code: 'pouvoir_achat', label: "Le pouvoir d'achat" },
-			{ code: 'sante', label: 'La sante' },
-			{ code: 'securite', label: 'La securite' },
-			{ code: 'ecologie', label: "L'ecologie" },
-			{ code: 'education', label: "L'education" },
+			{ code: 'sante', label: 'La santé' },
+			{ code: 'securite', label: 'La sécurité' },
+			{ code: 'ecologie', label: "L'écologie" },
+			{ code: 'education', label: "L'éducation" },
 			{ code: 'immigration', label: "L'immigration" },
 			{ code: 'nsp', label: 'Ne se prononce pas', isNonResponse: true }
 		]
@@ -168,7 +168,7 @@ const QUESTIONS: QuestionSeed[] = [
 			{ code: 'gauche', label: 'Un candidat de gauche' },
 			{ code: 'centre', label: 'Un candidat du centre' },
 			{ code: 'droite', label: 'Un candidat de droite' },
-			{ code: 'extreme_droite', label: "Un candidat d'extreme droite" },
+			{ code: 'extreme_droite', label: "Un candidat d'extrême droite" },
 			{ code: 'blanc', label: 'Vote blanc ou nul' },
 			{ code: 'abstention', label: 'Je ne compte pas voter' },
 			{ code: 'indecis', label: "Je ne sais pas encore", isNonResponse: true }
@@ -182,28 +182,28 @@ const QUESTIONS: QuestionSeed[] = [
 			{ code: 'gauche', label: 'Un candidat de gauche' },
 			{ code: 'centre', label: 'Un candidat du centre' },
 			{ code: 'droite', label: 'Un candidat de droite' },
-			{ code: 'extreme_droite', label: "Un candidat d'extreme droite" },
+			{ code: 'extreme_droite', label: "Un candidat d'extrême droite" },
 			{ code: 'aucun', label: "Aucun, je peux voter pour n'importe qui" },
 			{ code: 'nsp', label: 'Ne se prononce pas', isNonResponse: true }
 		]
 	},
 	{
 		code: 'region',
-		label: 'Dans quelle region habitez-vous ?',
+		label: 'Dans quelle région habitez-vous ?',
 		type: 'single_choice',
 		options: [
 			{ code: 'bretagne', label: 'Bretagne' },
 			{ code: 'normandie', label: 'Normandie' },
-			{ code: 'idf', label: 'Ile-de-France' },
+			{ code: 'idf', label: 'Île-de-France' },
 			{ code: 'grand_est', label: 'Grand Est' },
 			{ code: 'nouvelle_aquitaine', label: 'Nouvelle-Aquitaine' },
 			{ code: 'occitanie', label: 'Occitanie' },
-			{ code: 'aura', label: 'Auvergne-Rhone-Alpes' },
-			{ code: 'paca', label: "Provence-Alpes-Cote d'Azur" },
+			{ code: 'aura', label: 'Auvergne-Rhône-Alpes' },
+			{ code: 'paca', label: "Provence-Alpes-Côte d'Azur" },
 			{ code: 'hauts_de_france', label: 'Hauts-de-France' },
 			{ code: 'pays_de_la_loire', label: 'Pays de la Loire' },
 			{ code: 'cvl', label: 'Centre-Val de Loire' },
-			{ code: 'bfc', label: 'Bourgogne-Franche-Comte' }
+			{ code: 'bfc', label: 'Bourgogne-Franche-Comté' }
 		]
 	},
 	{
@@ -212,13 +212,13 @@ const QUESTIONS: QuestionSeed[] = [
 		type: 'single_choice',
 		options: [
 			{ code: 'rural', label: 'Rurale' },
-			{ code: 'periurbain', label: 'Periurbaine' },
+			{ code: 'periurbain', label: 'Périurbaine' },
 			{ code: 'urbain', label: 'Urbaine' }
 		]
 	},
 	{
 		code: 'age',
-		label: 'Quel age avez-vous ?',
+		label: 'Quel âge avez-vous ?',
 		type: 'number',
 		config: { min: 18, max: 97, bucketSize: 10, bucketStart: 18, unit: 'ans' }
 	},
@@ -230,29 +230,29 @@ const QUESTIONS: QuestionSeed[] = [
 			{ code: 'femme', label: 'Femme' },
 			{ code: 'homme', label: 'Homme' },
 			{ code: 'autre', label: 'Autre' },
-			{ code: 'refus', label: 'Refus de repondre', isNonResponse: true }
+			{ code: 'refus', label: 'Refus de répondre', isNonResponse: true }
 		]
 	},
 	{
 		code: 'csp',
-		label: 'Quelle est votre categorie socioprofessionnelle ?',
+		label: 'Quelle est votre catégorie socioprofessionnelle ?',
 		type: 'single_choice',
 		options: [
 			{ code: 'agriculteur', label: 'Agriculteur' },
-			{ code: 'artisan', label: 'Artisan, commercant, chef d entreprise' },
+			{ code: 'artisan', label: "Artisan, commerçant, chef d'entreprise" },
 			{ code: 'cadre', label: 'Cadre et profession intellectuelle' },
-			{ code: 'intermediaire', label: 'Profession intermediaire' },
-			{ code: 'employe', label: 'Employe' },
+			{ code: 'intermediaire', label: 'Profession intermédiaire' },
+			{ code: 'employe', label: 'Employé' },
 			{ code: 'ouvrier', label: 'Ouvrier' },
-			{ code: 'retraite', label: 'Retraite' },
-			{ code: 'etudiant', label: 'Etudiant' },
+			{ code: 'retraite', label: 'Retraité' },
+			{ code: 'etudiant', label: 'Étudiant' },
 			{ code: 'sans_emploi', label: 'Sans emploi' },
-			{ code: 'refus', label: 'Refus de repondre', isNonResponse: true }
+			{ code: 'refus', label: 'Refus de répondre', isNonResponse: true }
 		]
 	},
 	{
 		code: 'confiance_sondages',
-		label: 'Quelle confiance accordez-vous aux sondages d opinion ?',
+		label: "Quelle confiance accordez-vous aux sondages d'opinion ?",
 		type: 'scale',
 		config: { min: 1, max: 10, minLabel: 'aucune confiance', maxLabel: 'confiance totale' }
 	},
@@ -271,18 +271,26 @@ async function seedSurvey() {
 		where: { slug: SURVEY_SLUG },
 		create: {
 			slug: SURVEY_SLUG,
-			title: 'Presidentielle 2027 — le tour de France',
-			subtitle: '5 000 kilometres a velo, a la rencontre des habitants',
+			title: 'Présidentielle 2027 — le tour de France',
+			subtitle: '5 000 kilomètres à vélo, à la rencontre des habitants',
 			description:
-				"Enquete menee en face-a-face pendant le tour de France a velo d'Humanitour. Chaque reponse a ete recueillie sur le terrain, sans panel ni remuneration.",
+				"Enquête menée en face-à-face pendant le tour de France à vélo d'Humanitour. Chaque réponse a été recueillie sur le terrain, sans panel ni rémunération.",
 			methodology:
-				"Collecte en face-a-face, sur la voie publique et dans les commerces, le long d'un parcours de 5 000 kilometres traversant les regions metropolitaines. Aucun redressement n'est applique : les effectifs publies sont des comptages bruts. Les non-reponses, refus et « sans opinion » sont comptes comme des modalites a part entiere. L'echantillon n'est pas representatif au sens des instituts prives : il est decrit tel qu'il est, region par region.",
+				"Collecte en face-à-face, sur la voie publique et dans les commerces, le long d'un parcours de 5 000 kilomètres traversant les régions métropolitaines. Aucun redressement n'est appliqué : les effectifs publiés sont des comptages bruts. Les non-réponses, refus et « sans opinion » sont comptés comme des modalités à part entière. L'échantillon n'est pas représentatif au sens des instituts privés : il est décrit tel qu'il est, région par région.",
 			status: 'PUBLISHED',
 			publishedAt: new Date('2026-09-01'),
 			fieldworkStart: new Date('2026-06-15'),
 			fieldworkEnd: new Date('2026-08-20')
 		},
-		update: { status: 'PUBLISHED' }
+		// On rafraichit les textes : un seed qui cree mais ne met jamais a jour
+		// laisse croire qu'une correction de libelle n'a pas pris.
+		update: {
+			status: 'PUBLISHED',
+			title: 'Présidentielle 2027 — le tour de France',
+			subtitle: '5 000 kilomètres à vélo, à la rencontre des habitants',
+			description:
+				"Enquête menée en face-à-face pendant le tour de France à vélo d'Humanitour. Chaque réponse a été recueillie sur le terrain, sans panel ni rémunération."
+		}
 	});
 
 	await prisma.question.deleteMany({ where: { surveyId: survey.id } });
@@ -481,15 +489,15 @@ const MEDIA: MediaSeed[] = [
 	{
 		slug: 'pourquoi-nous-publions-les-donnees-brutes',
 		kind: 'ARTICLE',
-		title: 'Pourquoi nous publions les donnees brutes',
+		title: 'Pourquoi nous publions les données brutes',
 		excerpt:
-			"Aucun institut prive ne diffuse ses reponses ligne a ligne. Voici pourquoi nous le faisons, et ce que cela nous oblige a changer dans notre facon de compter.",
+			"Aucun institut privé ne diffuse ses réponses ligne à ligne. Voici pourquoi nous le faisons, et ce que cela nous oblige à changer dans notre façon de compter.",
 		body: [
-			"Un chiffre sans ses donnees est une affirmation, pas une mesure.",
-			"Quand un institut annonce qu'un candidat est a 28 %, personne ne peut verifier combien de personnes ont ete interrogees dans chaque region, combien n'ont pas voulu repondre, ni quel redressement a ete applique entre le comptage et la publication. Le lecteur doit croire sur parole.",
-			"Nous publions donc l'integralite du materiau. Chaque enquete expose son export complet, en CSV et en JSON, sans compte ni inscription. Quiconque veut refaire nos calculs le peut.",
-			"Cette promesse nous coute quelque chose, et c'est tant mieux. Elle nous interdit de ponderer nos resultats pour les rendre plus presentables. Elle nous oblige a compter les non-reponses au lieu de les faire disparaitre. Elle nous force a ecrire noir sur blanc les limites de notre echantillon : rencontrer les gens dehors surrepresente celles et ceux qui sortent.",
-			"Un sondage honnete n'est pas un sondage parfait. C'est un sondage dont on peut mesurer les defauts."
+			"Un chiffre sans ses données est une affirmation, pas une mesure.",
+			"Quand un institut annonce qu'un candidat est à 28 %, personne ne peut vérifier combien de personnes ont été interrogées dans chaque région, combien n'ont pas voulu répondre, ni quel redressement a été appliqué entre le comptage et la publication. Le lecteur doit croire sur parole.",
+			"Nous publions donc l'intégralité du matériau. Chaque enquête expose son export complet, en CSV et en JSON, sans compte ni inscription. Quiconque veut refaire nos calculs le peut.",
+			"Cette promesse nous coûte quelque chose, et c'est tant mieux. Elle nous interdit de pondérer nos résultats pour les rendre plus présentables. Elle nous oblige à compter les non-réponses au lieu de les faire disparaître. Elle nous force à écrire noir sur blanc les limites de notre échantillon : rencontrer les gens dehors surreprésente celles et ceux qui sortent.",
+			"Un sondage honnête n'est pas un sondage parfait. C'est un sondage dont on peut mesurer les défauts."
 		],
 		publishedAt: '2026-09-02',
 		tags: ['methodologie', 'open data'],
@@ -501,14 +509,14 @@ const MEDIA: MediaSeed[] = [
 	{
 		slug: 'etape-12-le-pouvoir-d-achat-en-tete',
 		kind: 'ARTICLE',
-		title: "Etape 12 : le pouvoir d'achat arrive en tete, partout",
+		title: "Étape 12 : le pouvoir d'achat arrive en tête, partout",
 		excerpt:
-			"Douze etapes, plus de neuf cents entretiens. Une priorite domine dans toutes les regions traversees, mais pas pour les memes raisons.",
+			"Douze étapes, plus de neuf cents entretiens. Une priorité domine dans toutes les régions traversées, mais pas pour les mêmes raisons.",
 		body: [
-			"Sur les douze premieres etapes, une reponse revient plus que toutes les autres a la question de la priorite pour la France : le pouvoir d'achat.",
-			"Le croisement avec la categorie socioprofessionnelle raconte pourtant deux histoires differentes. Chez les ouvriers et les employes, la reponse arrive largement en tete. Chez les cadres, elle passe derriere l'ecologie et l'education.",
-			"La part de personnes qui ne se prononcent pas merite autant d'attention que les autres. Nous la comptons et nous l'affichons, parce qu'un refus de repondre est une information politique, pas un trou dans le tableau.",
-			"Vous pouvez refaire ce croisement vous-meme depuis la page des donnees."
+			"Sur les douze premières étapes, une réponse revient plus que toutes les autres à la question de la priorité pour la France : le pouvoir d'achat.",
+			"Le croisement avec la catégorie socioprofessionnelle raconte pourtant deux histoires différentes. Chez les ouvriers et les employés, la réponse arrive largement en tête. Chez les cadres, elle passe derrière l'écologie et l'éducation.",
+			"La part de personnes qui ne se prononcent pas mérite autant d'attention que les autres. Nous la comptons et nous l'affichons, parce qu'un refus de répondre est une information politique, pas un trou dans le tableau.",
+			"Vous pouvez refaire ce croisement vous-même depuis la page des données."
 		],
 		publishedAt: '2026-08-18',
 		tags: ['resultats', 'le tour'],
@@ -517,9 +525,9 @@ const MEDIA: MediaSeed[] = [
 	{
 		slug: 'sur-la-route-entre-deux-marches',
 		kind: 'VIDEO',
-		title: 'Sur la route, entre deux marches',
+		title: 'Sur la route, entre deux marchés',
 		excerpt:
-			"Quinze minutes de rencontres filmees entre deux etapes, la ou les panels en ligne ne vont jamais.",
+			"Quinze minutes de rencontres filmées entre deux étapes, là où les panels en ligne ne vont jamais.",
 		publishedAt: '2026-08-05',
 		tags: ['reportage', 'le tour'],
 		data: { sourceUrl: 'https://framatube.org/w/abcdefgh12345678' }
@@ -527,30 +535,30 @@ const MEDIA: MediaSeed[] = [
 	{
 		slug: 'episode-1-on-ne-me-demande-jamais-mon-avis',
 		kind: 'PODCAST',
-		title: "Episode 1 : « On ne me demande jamais mon avis »",
+		title: "Épisode 1 : « On ne me demande jamais mon avis »",
 		excerpt:
-			"Premier episode des echanges enregistres sur le terrain. Une heure de conversation avec des personnes que les sondages n'appellent pas.",
+			"Premier épisode des échanges enregistrés sur le terrain. Une heure de conversation avec des personnes que les sondages n'appellent pas.",
 		publishedAt: '2026-07-22',
 		tags: ['podcast', 'terrain'],
 		data: {
 			audioUrl: 'https://media.humanitour.fr/podcast/episode-1.mp3',
 			durationSeconds: 3720,
 			transcript:
-				"Transcription de demonstration. Elle rend l'episode accessible aux personnes sourdes et malentendantes, et indexable par les moteurs de recherche."
+				"Transcription de démonstration. Elle rend l'épisode accessible aux personnes sourdes et malentendantes, et indexable par les moteurs de recherche."
 		}
 	},
 	{
 		slug: 'reprise-un-institut-de-sondage-a-velo',
 		kind: 'PRESS',
-		title: 'Un institut de sondage a velo veut rendre les chiffres verifiables',
+		title: 'Un institut de sondage à vélo veut rendre les chiffres vérifiables',
 		excerpt:
-			'Un media local consacre un article au projet et a sa methode de collecte en face-a-face.',
+			'Un média local consacre un article au projet et à sa méthode de collecte en face-à-face.',
 		publishedAt: '2026-07-10',
 		tags: ['revue de presse'],
 		data: {
-			sourceName: "La Gazette des Cotes-d'Armor",
+			sourceName: "La Gazette des Côtes-d'Armor",
 			sourceUrl: 'https://exemple.fr/humanitour-institut-a-velo',
-			author: 'Redaction locale'
+			author: 'Rédaction locale'
 		}
 	}
 ];

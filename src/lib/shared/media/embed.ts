@@ -125,7 +125,7 @@ function parseHttps(rawUrl: string): URL | null {
 export function resolveEmbed(rawUrl: string): EmbedResult {
 	const url = parseHttps(rawUrl);
 	if (!url) {
-		return { ok: false, reason: "Adresse invalide : seules les adresses HTTPS sont acceptees." };
+		return { ok: false, reason: 'Adresse invalide : seules les adresses HTTPS sont acceptées.' };
 	}
 
 	const host = normaliseHost(url.hostname);
@@ -134,13 +134,13 @@ export function resolveEmbed(rawUrl: string): EmbedResult {
 	if (!provider) {
 		return {
 			ok: false,
-			reason: `Hebergeur non autorise : ${host}. Hebergeurs acceptes : ${allowedProviders().join(', ')}.`
+			reason: `Hébergeur non autorisé : ${host}. Hébergeurs acceptés : ${allowedProviders().join(', ')}.`
 		};
 	}
 
 	const id = provider.extractId(url);
 	if (!id) {
-		return { ok: false, reason: `Identifiant de video ${provider.label} introuvable dans cette adresse.` };
+		return { ok: false, reason: `Identifiant de vidéo ${provider.label} introuvable dans cette adresse.` };
 	}
 
 	return {

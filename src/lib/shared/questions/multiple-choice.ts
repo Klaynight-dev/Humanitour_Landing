@@ -31,7 +31,7 @@ function splitRaw(raw: unknown, separator: string): string[] {
 export const multipleChoice: QuestionType = {
 	key: 'multiple_choice',
 	label: 'Choix multiple',
-	description: 'Plusieurs reponses possibles parmi une liste de modalites declarees.',
+	description: 'Plusieurs réponses possibles parmi une liste de modalités déclarées.',
 	usesOptions: true,
 	multiValued: true,
 	crossable: true,
@@ -54,7 +54,7 @@ export const multipleChoice: QuestionType = {
 
 		for (const part of parts) {
 			const option = findOption(context.options, part);
-			if (!option) return { ok: false, reason: `Modalite inconnue : « ${part} ».` };
+			if (!option) return { ok: false, reason: `Modalité inconnue : « ${part} ».` };
 			// Une modalite citee deux fois dans la meme cellule ne compte qu une fois,
 			// sans quoi ce repondant pesera double dans sa propre part.
 			if (option.isNonResponse || seen.has(option.code)) continue;
@@ -73,7 +73,7 @@ export const multipleChoice: QuestionType = {
 
 		const max = context.config.maxChoices;
 		if (typeof max === 'number' && values.length > max) {
-			return { ok: false, reason: `Au plus ${max} reponses attendues, ${values.length} trouvees.` };
+			return { ok: false, reason: `Au plus ${max} réponses attendues, ${values.length} trouvées.` };
 		}
 
 		return { ok: true, values };

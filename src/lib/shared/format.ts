@@ -48,9 +48,9 @@ export function formatShare(ratio: number | null): string {
  * dire sans savoir si c est sur 12 ou sur 1 200 personnes.
  */
 export function formatBase(respondents: number): string {
-	if (respondents === 0) return 'aucun repondant';
-	if (respondents === 1) return 'base : 1 repondant';
-	return `base : ${COUNT_FORMAT.format(respondents)} repondants`;
+	if (respondents === 0) return 'aucun répondant';
+	if (respondents === 1) return 'base : 1 répondant';
+	return `base : ${COUNT_FORMAT.format(respondents)} répondants`;
 }
 
 export function formatDate(value: Date | string | null): string {
@@ -67,6 +67,6 @@ export function formatFieldwork(start: Date | string | null, end: Date | string 
 
 	if (from && to) return `Terrain du ${from} au ${to}`;
 	if (from) return `Terrain depuis le ${from}`;
-	if (to) return `Terrain jusqu au ${to}`;
+	if (to) return `Terrain jusqu'au ${to}`;
 	return '';
 }

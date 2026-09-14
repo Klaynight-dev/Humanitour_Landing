@@ -5,14 +5,14 @@ export const articleType: MediaType = {
 	key: 'ARTICLE',
 	label: 'Article',
 	plural: 'Articles',
-	description: "Un texte redige par l'equipe, publie ici.",
+	description: "Un texte rédigé par l'équipe, publié ici.",
 	hasBody: true,
 	isOutbound: false,
 	fields: [
 		{
 			name: 'standfirst',
-			label: 'Chapo',
-			help: "Phrase d'accroche affichee sous le titre.",
+			label: 'Chapô',
+			help: "Phrase d'accroche affichée sous le titre.",
 			type: 'textarea',
 			required: false
 		}

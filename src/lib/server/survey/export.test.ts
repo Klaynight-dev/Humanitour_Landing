@@ -99,7 +99,7 @@ describe('toCsv', () => {
 	it('nomme explicitement la non-reponse', () => {
 		const csv = toCsv(responses, [PRIORITE]);
 
-		expect(csv).toContain('Sans reponse');
+		expect(csv).toContain('Sans réponse');
 	});
 
 	it('exporte la tranche, jamais la valeur exacte', () => {
@@ -120,7 +120,7 @@ describe('toCsv', () => {
 	it('vaut « sans reponse » quand la question n a aucune ligne', () => {
 		const csv = toCsv([response('r1', {})], [PRIORITE]);
 
-		expect(csv).toContain('Sans reponse');
+		expect(csv).toContain('Sans réponse');
 	});
 
 	it('produit une ligne par reponse, en plus de l en-tete', () => {
@@ -148,7 +148,7 @@ describe('toJson', () => {
 	it('annonce l absence de ponderation et la licence', () => {
 		const output = toJson(survey, [], [PRIORITE]);
 
-		expect(output.notice).toMatch(/sans ponderation/i);
+		expect(output.notice).toMatch(/sans pondération/i);
 		expect(output.license).toMatch(/ODbL/);
 	});
 

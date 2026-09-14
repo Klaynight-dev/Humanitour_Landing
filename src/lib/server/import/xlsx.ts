@@ -44,7 +44,7 @@ export const xlsxFormat: ImportFormat = {
 		// l erreur dans sa correspondance de colonnes.
 		if (columns.length === 0) {
 			throw new Error(
-				"Le fichier ne contient aucune colonne exploitable. Verifiez qu'il s'agit bien d'un classeur et que la premiere ligne porte les en-tetes."
+				"Le fichier ne contient aucune colonne exploitable. Vérifiez qu'il s'agit bien d'un classeur et que la première ligne porte les en-têtes."
 			);
 		}
 

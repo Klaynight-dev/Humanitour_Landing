@@ -75,7 +75,7 @@
 			{formatCount(data.respondents)}
 		</text>
 		<text x="80" y="92" text-anchor="middle" class="fill-current text-[10px] opacity-60">
-			repondants
+			répondants
 		</text>
 	</svg>
 

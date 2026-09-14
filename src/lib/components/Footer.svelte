@@ -27,12 +27,12 @@
 				{#each NAV as item (item.href)}
 					<a href={item.href} class="text-sm text-white/70 hover:text-white">{item.label}</a>
 				{/each}
-				<a href="/donnees" class="text-sm text-white/70 hover:text-white">Donnees brutes</a>
+				<a href="/donnees" class="text-sm text-white/70 hover:text-white">Données brutes</a>
 			</nav>
 
 			<nav aria-labelledby="footer-legal" class="flex flex-col gap-2">
 				<h2 id="footer-legal" class="font-display text-sm font-bold tracking-wide uppercase">
-					Informations legales
+					Informations légales
 				</h2>
 				{#each LEGAL_PAGES as item (item.slug)}
 					<a href="/legal/{item.slug}" class="text-sm text-white/70 hover:text-white">
@@ -71,7 +71,7 @@
 				<a class="underline hover:text-white" href={LICENSES.code.url} target="_blank" rel="noopener noreferrer">
 					{LICENSES.code.name}
 				</a>
-				— donnees sous
+				— données sous
 				<a class="underline hover:text-white" href={LICENSES.data.url} target="_blank" rel="noopener noreferrer">
 					{LICENSES.data.name}
 				</a>

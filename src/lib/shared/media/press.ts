@@ -11,18 +11,18 @@ export const pressType: MediaType = {
 	key: 'PRESS',
 	label: 'Revue de presse',
 	plural: 'Revue de presse',
-	description: "Un article paru dans un autre media, avec un lien vers la source.",
+	description: "Un article paru dans un autre média, avec un lien vers la source.",
 	hasBody: false,
 	isOutbound: true,
 	fields: [
-		{ name: 'sourceName', label: 'Nom du media', type: 'text', required: true },
+		{ name: 'sourceName', label: 'Nom du média', type: 'text', required: true },
 		{ name: 'sourceUrl', label: "Adresse de l'article", type: 'url', required: true },
 		{ name: 'author', label: "Signature de l'article", type: 'text', required: false }
 	],
 
 	parseData(raw) {
 		const sourceName = readString(raw, 'sourceName');
-		if (!sourceName) return { ok: false, reason: 'Le nom du media source est obligatoire.' };
+		if (!sourceName) return { ok: false, reason: 'Le nom du média source est obligatoire.' };
 
 		const sourceUrl = readString(raw, 'sourceUrl');
 		if (!sourceUrl) return { ok: false, reason: "L'adresse de l'article est obligatoire." };

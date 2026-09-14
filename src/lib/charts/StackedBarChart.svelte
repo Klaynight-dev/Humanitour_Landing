@@ -14,7 +14,7 @@
 
 <figure class="flex flex-col gap-5">
 	<figcaption class="text-ink-soft text-sm">
-		{xLabel} croise avec {yLabel}. Chaque barre vaut 100 % de sa ligne.
+		{xLabel} croisé avec {yLabel}. Chaque barre vaut 100 % de sa ligne.
 	</figcaption>
 
 	<!-- Legende toujours presente des deux series : l identite ne repose jamais
@@ -41,7 +41,7 @@
 			<li class="flex flex-col gap-1.5">
 				<div class="flex items-baseline justify-between gap-4">
 					<span class="text-sm font-medium">{xModality.label}</span>
-					<span class="tabular text-muted text-xs">{formatCount(total ?? null)} repondants</span>
+					<span class="tabular text-muted text-xs">{formatCount(total ?? null)} répondants</span>
 				</div>
 
 				<!-- 2px de fond entre les segments : sans cet ecart, deux teintes

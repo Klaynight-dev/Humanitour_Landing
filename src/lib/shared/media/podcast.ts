@@ -10,7 +10,7 @@ export const podcastType: MediaType = {
 	key: 'PODCAST',
 	label: 'Podcast',
 	plural: 'Podcasts',
-	description: 'Un echange enregistre sur le terrain, diffuse en audio.',
+	description: 'Un échange enregistré sur le terrain, diffusé en audio.',
 	hasBody: false,
 	isOutbound: false,
 	fields: [
@@ -21,11 +21,11 @@ export const podcastType: MediaType = {
 			type: 'url',
 			required: true
 		},
-		{ name: 'durationSeconds', label: 'Duree en secondes', type: 'number', required: false },
+		{ name: 'durationSeconds', label: 'Durée en secondes', type: 'number', required: false },
 		{
 			name: 'transcript',
 			label: 'Transcription',
-			help: "Rend l'episode accessible aux personnes sourdes et indexable.",
+			help: "Rend l'épisode accessible aux personnes sourdes et indexable par les moteurs.",
 			type: 'textarea',
 			required: false
 		}
@@ -36,7 +36,7 @@ export const podcastType: MediaType = {
 		if (!audioUrl) return { ok: false, reason: "L'adresse du fichier audio est obligatoire." };
 
 		if (!audioUrl.startsWith('https://') && !audioUrl.startsWith('/')) {
-			return { ok: false, reason: "L'adresse audio doit etre en HTTPS ou interne au site." };
+			return { ok: false, reason: "L'adresse audio doit être en HTTPS ou interne au site." };
 		}
 
 		const durationSeconds = readPositiveInt(raw, 'durationSeconds');

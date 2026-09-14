@@ -16,7 +16,7 @@
 <div class="overflow-x-auto">
 	<table class="w-full min-w-[36rem] border-collapse text-sm">
 		<caption class="text-muted pb-3 text-left text-sm">
-			{xLabel} croise avec {yLabel}. Chaque case indique la part en ligne et l effectif.
+			{xLabel} croisé avec {yLabel}. Chaque case indique la part en ligne et son effectif.
 		</caption>
 		<thead>
 			<tr class="border-ink border-b">

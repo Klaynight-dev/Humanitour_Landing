@@ -22,6 +22,6 @@
 	<audio controls preload="metadata" class="mt-4 w-full" {src}>
 		<track kind="captions" />
 		Votre navigateur ne sait pas lire cet audio.
-		<a href={src} download>Telecharger l'episode</a>
+		<a href={src} download>Télécharger l'épisode</a>
 	</audio>
 </div>

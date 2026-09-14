@@ -38,29 +38,29 @@
 </script>
 
 <svelte:head>
-	<title>Methodologie — Humanitour</title>
+	<title>Méthodologie — Humanitour</title>
 	<meta
 		name="description"
-		content="Comment Humanitour collecte, calcule et publie. Aucun redressement, non-reponses comptees, donnees brutes ouvertes."
+		content="Comment Humanitour collecte, calcule et publie. Aucun redressement, non-réponses comptées, données brutes ouvertes."
 	/>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl px-4 py-14 sm:px-6">
 	<header class="max-w-3xl">
-		<p class="text-coral-600 text-sm font-semibold tracking-[0.2em] uppercase">Methodologie</p>
+		<p class="text-coral-600 text-sm font-semibold tracking-[0.2em] uppercase">Méthodologie</p>
 		<h1 class="font-display mt-3 text-4xl font-semibold sm:text-5xl">
 			Comment nous mesurons, et ce que nous ne faisons pas
 		</h1>
 		<p class="text-ink-soft mt-5 text-lg">
-			Reprocher l'opacite aux autres oblige a une contrainte simple : tout ce qui suit doit etre
-			verifiable. Nos regles ne sont pas des intentions, ce sont des contraintes ecrites dans un
+			Reprocher l'opacité aux autres oblige à une contrainte simple : tout ce qui suit doit être
+			vérifiable. Nos règles ne sont pas des intentions, ce sont des contraintes écrites dans un
 			code public.
 		</p>
 	</header>
 
 	<!-- Les regles -->
 	<section class="mt-14" aria-labelledby="regles">
-		<h2 id="regles" class="font-display text-3xl font-semibold">Nos regles</h2>
+		<h2 id="regles" class="font-display text-3xl font-semibold">Nos règles</h2>
 
 		<ol class="mt-8 flex flex-col gap-5">
 			{#each RULES as rule, index (rule.title)}
@@ -84,17 +84,17 @@
 	<section class="mt-16 max-w-3xl" aria-labelledby="collecte">
 		<h2 id="collecte" class="font-display text-3xl font-semibold">La collecte</h2>
 		<p class="text-ink-soft mt-4">
-			Les entretiens se font en face-a-face, sur la voie publique et dans les commerces, le long
-			d'un parcours a velo de 5 000 kilometres traversant les regions metropolitaines. Il n'y a ni
-			panel, ni recrutement par courriel, ni remuneration des repondants.
+			Les entretiens se font en face-à-face, sur la voie publique et dans les commerces, le long
+			d'un parcours à vélo de 5 000 kilomètres traversant les régions métropolitaines. Il n'y a ni
+			panel, ni recrutement par courriel, ni rémunération des répondants.
 		</p>
 		<p class="text-ink-soft mt-4">
-			Cette methode a ses limites, et nous les enoncons : rencontrer les gens dehors surrepresente
-			celles et ceux qui sortent, et un parcours a velo suit des routes, pas une carte de la
-			population. Chaque enquete publie sa propre note de methodologie avec ses limites connues.
+			Cette méthode a ses limites, et nous les énonçons : rencontrer les gens dehors surreprésente
+			celles et ceux qui sortent, et un parcours à vélo suit des routes, pas une carte de la
+			population. Chaque enquête publie sa propre note de méthodologie avec ses limites connues.
 		</p>
 		<p class="text-ink-soft mt-4">
-			L'association applique le {POLLING.code}. Les sondages electoraux relevent du controle de la
+			L'association applique le {POLLING.code}. Les sondages électoraux relèvent du contrôle de la
 			<a
 				class="underline"
 				href={POLLING.commissionUrl}
@@ -107,11 +107,11 @@
 	<!-- Anonymat -->
 	<section class="bg-ink text-paper rounded-card mt-16 p-8 sm:p-10" aria-labelledby="anonymat">
 		<h2 id="anonymat" class="font-display text-3xl font-semibold">
-			Pourquoi certaines cases sont masquees
+			Pourquoi certaines cases sont masquées
 		</h2>
 		<p class="mt-4 max-w-3xl text-white/80">
-			Une opinion politique est une donnee sensible au sens du RGPD. Croiser une region, une
-			tranche d'age, une profession et une intention de vote peut suffire a reconnaitre quelqu'un
+			Une opinion politique est une donnée sensible au sens du RGPD. Croiser une région, une
+			tranche d'âge, une profession et une intention de vote peut suffire à reconnaître quelqu'un
 			dans une petite commune. Nous appliquons donc deux protections.
 		</p>
 
@@ -119,23 +119,23 @@
 			<div class="rounded-card border border-white/15 p-6">
 				<h3 class="font-display text-lg font-semibold">Le seuil d'effectif</h3>
 				<p class="mt-2 text-sm leading-relaxed text-white/75">
-					Toute case portant sur moins de {data.threshold} repondants n'est pas publiee. Elle
+					Toute case portant sur moins de {data.threshold} répondants n'est pas publiée. Elle
 					s'affiche comme « effectif insuffisant » au lieu du chiffre.
 				</p>
 			</div>
 			<div class="rounded-card border border-white/15 p-6">
 				<h3 class="font-display text-lg font-semibold">La protection contre la soustraction</h3>
 				<p class="mt-2 text-sm leading-relaxed text-white/75">
-					Masquer une seule case ne sert a rien : elle se retrouve en soustrayant les autres du
-					total. Quand c'est le cas, une seconde case est masquee. Sans cette deuxieme passe, le
+					Masquer une seule case ne sert à rien : elle se retrouve en soustrayant les autres du
+					total. Quand c'est le cas, une seconde case est masquée. Sans cette deuxième passe, le
 					masquage donne l'illusion de la protection.
 				</p>
 			</div>
 		</div>
 
 		<p class="mt-6 max-w-3xl text-sm text-white/70">
-			Les exports bruts suivent la meme logique : ils contiennent les tranches et non les valeurs
-			exactes, et les reponses en texte libre en sont exclues, parce qu'un verbatim identifie son
+			Les exports bruts suivent la même logique : ils contiennent les tranches et non les valeurs
+			exactes, et les réponses en texte libre en sont exclues, parce qu'un verbatim identifie son
 			auteur par son contenu.
 		</p>
 	</section>
@@ -146,11 +146,11 @@
 			<h2 id="donnees" class="font-display text-3xl font-semibold">Conservation</h2>
 			<dl class="mt-6 flex flex-col gap-3 text-sm">
 				<div class="border-ink flex justify-between gap-4 border-b-2 pb-3">
-					<dt class="text-ink-soft">Reponses brutes d'enquete</dt>
+					<dt class="text-ink-soft">Réponses brutes d'enquête</dt>
 					<dd class="tabular font-semibold">{RETENTION.rawSurveyMonths} mois</dd>
 				</div>
 				<div class="border-ink flex justify-between gap-4 border-b-2 pb-3">
-					<dt class="text-ink-soft">Notes de methodologie</dt>
+					<dt class="text-ink-soft">Notes de méthodologie</dt>
 					<dd class="tabular font-semibold">{RETENTION.methodologyYears} ans</dd>
 				</div>
 				<div class="border-ink flex justify-between gap-4 border-b-2 pb-3">
@@ -165,22 +165,22 @@
 		</div>
 
 		<div>
-			<h2 class="font-display text-3xl font-semibold">Reutilisation</h2>
+			<h2 class="font-display text-3xl font-semibold">Réutilisation</h2>
 			<p class="text-ink-soft mt-6">
-				Les donnees publiees sont sous
+				Les données publiées sont sous
 				<a class="underline" href={LICENSES.data.url} target="_blank" rel="noopener noreferrer">
 					{LICENSES.data.name}
-				</a> : reutilisation libre, attribution obligatoire, partage a l'identique.
+				</a> : réutilisation libre, attribution obligatoire, partage à l'identique.
 			</p>
 			<p class="text-ink-soft mt-4">
-				La plateforme elle-meme est sous
+				La plateforme elle-même est sous
 				<a class="underline" href={LICENSES.code.url} target="_blank" rel="noopener noreferrer">
 					{LICENSES.code.name}
-				</a>. Quiconque en heberge une version modifiee doit en publier le code : un outil qui
-				denonce l'opacite ne peut pas etre refermable.
+				</a>. Quiconque en héberge une version modifiée doit en publier le code : un outil qui
+				dénonce l'opacité ne peut pas être refermable.
 			</p>
 			<div class="mt-7 flex flex-wrap gap-3">
-				<Button href="/donnees">Voir les donnees</Button>
+				<Button href="/donnees">Voir les données</Button>
 				<Button href={LINKS.repository.href} external variant="outline">Auditer le code</Button>
 			</div>
 		</div>

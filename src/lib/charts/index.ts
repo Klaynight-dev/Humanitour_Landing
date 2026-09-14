@@ -36,27 +36,27 @@ const REGISTERED: readonly ChartDef[] = [
 	{
 		key: 'bars',
 		label: 'Barres',
-		description: "Repartition d'une question, une barre par modalite.",
+		description: "Répartition d'une question, une barre par modalité.",
 		shape: 'distribution',
 		component: BarChart
 	},
 	{
 		key: 'donut',
 		label: 'Anneau',
-		description: "Repartition d'une question en parts d'un tout.",
+		description: "Répartition d'une question en parts d'un tout.",
 		shape: 'distribution',
 		component: DonutChart
 	},
 	{
 		key: 'stacked',
-		label: 'Barres empilees',
+		label: 'Barres empilées',
 		description: 'Croisement de deux questions, chaque barre valant 100 % de sa ligne.',
 		shape: 'crosstab',
 		component: StackedBarChart
 	},
 	{
 		key: 'crosstab',
-		label: 'Tableau croise',
+		label: 'Tableau croisé',
 		description: 'Croisement de deux questions, effectifs et parts en cellules.',
 		shape: 'crosstab',
 		component: CrosstabTable

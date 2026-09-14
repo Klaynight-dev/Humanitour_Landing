@@ -22,7 +22,7 @@ export function getMediaType(key: string): MediaType | null {
 
 export function requireMediaType(key: string): MediaType {
 	const type = BY_KEY.get(key as MediaKind);
-	if (!type) throw new Error(`Nature de media inconnue : « ${key} ».`);
+	if (!type) throw new Error(`Nature de média inconnue : « ${key} ».`);
 	return type;
 }
 

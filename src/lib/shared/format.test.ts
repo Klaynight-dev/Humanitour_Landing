@@ -51,15 +51,15 @@ describe('formatShare', () => {
 
 describe('formatBase', () => {
 	it('annonce la base au pluriel', () => {
-		expect(plain(formatBase(1200))).toBe('base : 1 200 repondants');
+		expect(plain(formatBase(1200))).toBe('base : 1 200 répondants');
 	});
 
 	it('accorde au singulier', () => {
-		expect(formatBase(1)).toBe('base : 1 repondant');
+		expect(formatBase(1)).toBe('base : 1 répondant');
 	});
 
 	it('le dit quand il n y a personne', () => {
-		expect(formatBase(0)).toBe('aucun repondant');
+		expect(formatBase(0)).toBe('aucun répondant');
 	});
 });
 
@@ -92,8 +92,8 @@ describe('formatFieldwork', () => {
 		expect(formatFieldwork(start, null)).toMatch(/^Terrain depuis le /);
 	});
 
-	it('gere une periode dont seul la fin est connue', () => {
-		expect(formatFieldwork(null, end)).toMatch(/^Terrain jusqu au /);
+	it('gere une periode dont seule la fin est connue', () => {
+		expect(formatFieldwork(null, end)).toMatch(/^Terrain jusqu'au /);
 	});
 
 	it('rend une chaine vide quand rien n est renseigne', () => {

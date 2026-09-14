@@ -9,33 +9,33 @@
 </script>
 
 <svelte:head>
-	<title>Medias — Humanitour</title>
+	<title>Médias — Humanitour</title>
 	<meta
 		name="description"
-		content="Articles, reportages video, podcasts et revue de presse d'Humanitour. Les voix derriere les chiffres."
+		content="Articles, reportages vidéo, podcasts et revue de presse d'Humanitour. Les voix derrière les chiffres."
 	/>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl px-4 py-14 sm:px-6">
 	<header class="max-w-3xl">
-		<p class="text-coral-600 text-sm font-semibold tracking-[0.2em] uppercase">Medias</p>
+		<p class="text-coral-600 text-sm font-semibold tracking-[0.2em] uppercase">Médias</p>
 		<h1 class="font-display mt-3 text-4xl font-semibold sm:text-5xl">
-			Les voix derriere les chiffres
+			Les voix derrière les chiffres
 		</h1>
 		<p class="text-ink-soft mt-5 text-lg">
-			Un pourcentage ne dit pas pourquoi quelqu'un vote comme il vote. Les echanges recueillis sur
+			Un pourcentage ne dit pas pourquoi quelqu'un vote comme il vote. Les échanges recueillis sur
 			le terrain, eux, le racontent.
 		</p>
 	</header>
 
 	<!-- Filtres par nature, en une rangee, avant la grille. -->
-	<nav class="mt-10 flex flex-wrap gap-2" aria-label="Filtrer par nature de media">
+	<nav class="mt-10 flex flex-wrap gap-2" aria-label="Filtrer par nature de média">
 		<a
 			href="/medias"
 			aria-current={data.activeKind === null ? 'page' : undefined}
-			class="border-ink bg-paper rounded-pill border-2 px-4 py-2 text-sm font-medium transition-colors"
-			class:bg-ink={data.activeKind === null}
-			class:text-paper={data.activeKind === null}
+			class="border-ink rounded-pill border-2 px-4 py-2 text-sm font-bold {data.activeKind === null
+				? 'bg-ink text-white'
+				: 'bg-paper text-ink'}"
 		>
 			Tout ({data.total})
 		</a>
@@ -44,9 +44,10 @@
 				<a
 					href="/medias?type={type.key}"
 					aria-current={data.activeKind === type.key ? 'page' : undefined}
-					class="border-ink bg-paper rounded-pill border-2 px-4 py-2 text-sm font-medium transition-colors"
-					class:bg-ink={data.activeKind === type.key}
-					class:text-paper={data.activeKind === type.key}
+					class="border-ink rounded-pill border-2 px-4 py-2 text-sm font-bold {data.activeKind ===
+					type.key
+						? 'bg-ink text-white'
+						: 'bg-paper text-ink'}"
 				>
 					{type.plural} ({countFor(type.key)})
 				</a>
@@ -57,9 +58,9 @@
 	{#if data.items.length === 0}
 		<p class="brut bg-surface rounded-card mt-10 p-8 text-center">
 			{#if data.activeKind}
-				Aucun media de cette nature pour l'instant.
+				Aucun média de cette nature pour l'instant.
 			{:else}
-				La mediatheque se remplira au fil du tour. Les echanges sont enregistres, le montage suit.
+				La médiathèque se remplira au fil du tour. Les échanges sont enregistrés, le montage suit.
 			{/if}
 		</p>
 	{:else}

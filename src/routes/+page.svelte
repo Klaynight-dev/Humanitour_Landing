@@ -7,62 +7,62 @@
 	/** Les trois biais identifies par Bourdieu en 1972. */
 	const BIASES = [
 		{
-			title: "L'imposition de problematiques",
-			body: 'Les sondages posent des questions artificielles, que les gens ne se posent pas forcement.'
+			title: "L'imposition de problématiques",
+			body: 'Les sondages posent des questions artificielles, que les gens ne se posent pas forcément.'
 		},
 		{
-			title: "L'illusion de la reponse universelle",
-			body: "Les individus sont incites a repondre meme s'ils ne comprennent pas la question."
+			title: "L'illusion de la réponse universelle",
+			body: "Les individus sont incités à répondre même s'ils ne comprennent pas la question."
 		},
 		{
-			title: 'La fabrication d un consensus',
-			body: "Les « non-reponses » sont ignorees et creent l'illusion d'une opinion publique unanime."
+			title: "La fabrication d'un consensus",
+			body: "Les « non-réponses » sont ignorées et créent l'illusion d'une opinion publique unanime."
 		}
 	];
 
 	/** La comparaison, telle qu elle figure dans les documents de l association. */
 	const COMPARISON = [
 		{
-			them: 'Controles par les milliardaires',
-			themDetail: 'Proprietaires des instituts et des medias.',
+			them: 'Contrôlés par les milliardaires',
+			themDetail: 'Propriétaires des instituts et des médias.',
 			us: 'Association loi 1901',
-			usDetail: 'Aucun commanditaire prive, aucune question achetee.'
+			usDetail: 'Aucun commanditaire privé, aucune question achetée.'
 		},
 		{
-			them: 'Echantillons biaises',
-			themDetail: 'Par courriel, aupres de personnes deja inscrites et remunerees.',
+			them: 'Échantillons biaisés',
+			themDetail: 'Par courriel, auprès de personnes déjà inscrites et rémunérées.',
 			us: 'Rencontres sur le terrain',
-			usDetail: 'En face-a-face, a velo, dans toutes les regions metropolitaines.'
+			usDetail: 'En face-à-face, à vélo, dans toutes les régions métropolitaines.'
 		},
 		{
-			them: 'Chiffres manipules',
-			themDetail: 'Donnees brutes non publiees, resultats redresses.',
-			us: 'Donnees brutes publiees',
-			usDetail: 'Export libre, aucun redressement, non-reponses comptees.'
+			them: 'Chiffres manipulés',
+			themDetail: 'Données brutes non publiées, résultats redressés.',
+			us: 'Données brutes publiées',
+			usDetail: 'Export libre, aucun redressement, non-réponses comptées.'
 		}
 	];
 
 	const GUARANTEES = [
 		{
-			title: 'Les non-reponses sont comptees',
-			body: "« Sans opinion », refus et abstention sont des modalites de plein droit. Les effacer reviendrait a falsifier l'etat reel de la societe."
+			title: 'Les non-réponses sont comptées',
+			body: "« Sans opinion », refus et abstention sont des modalités de plein droit. Les effacer reviendrait à falsifier l'état réel de la société."
 		},
 		{
 			title: 'Aucun redressement',
-			body: 'Un chiffre affiche est un comptage reel. Aucune ponderation, aucune correction silencieuse de l echantillon.'
+			body: "Un chiffre affiché est un comptage réel. Aucune pondération, aucune correction silencieuse de l'échantillon."
 		},
 		{
 			title: 'Les effectifs accompagnent les parts',
-			body: "Chaque pourcentage voyage avec son effectif brut. Un « 62 % » sur douze personnes n'est pas un resultat."
+			body: "Chaque pourcentage voyage avec son effectif brut. Un « 62 % » sur douze personnes n'est pas un résultat."
 		},
 		{
-			title: 'La formulation exacte est affichee',
-			body: 'Le libelle pose sur le terrain apparait avec chaque graphique, parce que la formulation fait partie du resultat.'
+			title: 'La formulation exacte est affichée',
+			body: 'Le libellé posé sur le terrain apparaît avec chaque graphique, parce que la formulation fait partie du résultat.'
 		}
 	];
 
 	const QUESTIONS = [
-		'Quelle est votre priorite pour la France ?',
+		'Quelle est votre priorité pour la France ?',
 		'Au premier tour, pour qui allez-vous voter ?',
 		'Au second tour, pour qui ne voterez-vous jamais ?'
 	];
@@ -79,7 +79,7 @@
 <!-- Hero -->
 <section class="border-ink surface-mesh relative overflow-hidden border-b-2">
 	<div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:py-32">
-		<div class="brut mb-8 inline-flex items-center gap-3 rounded-pill bg-white px-4 py-2">
+		<div class="brut rounded-pill mb-8 inline-flex items-center gap-3 bg-white px-4 py-2">
 			<Logo size={28} />
 			<span class="font-display text-xs font-bold tracking-[0.18em] uppercase">
 				{SITE.tagline}
@@ -89,17 +89,17 @@
 		<h1
 			class="font-display max-w-4xl text-5xl leading-[0.92] font-black tracking-tighter uppercase sm:text-7xl lg:text-8xl"
 		>
-			Les sondages<br />disent-ils<br />la verite&nbsp;?
+			Les sondages<br />disent-ils<br />la vérité&nbsp;?
 		</h1>
 
 		<p class="mt-8 max-w-2xl text-lg font-medium sm:text-xl">
-			On va aller verifier. Sur le terrain, a velo, a travers les campagnes. Au coeur de la vie des
-			habitantes et des habitants, avec des echanges documentes.
+			On va aller vérifier. Sur le terrain, à vélo, à travers les campagnes. Au cœur de la vie des
+			habitantes et des habitants, avec des échanges documentés.
 		</p>
 
 		<div class="mt-9 flex flex-wrap gap-3">
-			<Button href="/donnees" size="lg">Explorer les donnees</Button>
-			<Button href="/methodologie" size="lg" variant="outline">Notre methodologie</Button>
+			<Button href="/donnees" size="lg">Explorer les données</Button>
+			<Button href="/methodologie" size="lg" variant="outline">Notre méthodologie</Button>
 		</div>
 
 		<p class="font-hand mt-10 text-3xl">et oui, aucun milliardaire ne nous dit quoi faire&nbsp;!</p>
@@ -109,10 +109,10 @@
 <!-- Chiffres du tour -->
 <section class="border-ink bg-ink border-b-2 text-white" aria-label="Le tour en chiffres">
 	<div class="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-4 py-12 sm:px-6 lg:grid-cols-4">
-		<Stat value="5 000 km" label="A velo" hint="A travers les regions metropolitaines" />
+		<Stat value="5 000 km" label="À vélo" hint="À travers les régions métropolitaines" />
 		<Stat value="2 mois" label="Sur le terrain" hint="En continu, au contact des habitants" />
-		<Stat value="3" label="Questions" hint="Simples, posees a l'identique partout" />
-		<Stat value="100 %" label="Donnees ouvertes" hint="Export brut, sans compte" />
+		<Stat value="3" label="Questions" hint="Simples, posées à l'identique partout" />
+		<Stat value="100 %" label="Données ouvertes" hint="Export brut, sans compte" />
 	</div>
 </section>
 
@@ -131,7 +131,7 @@
 		<p class="text-ink-soft mt-6 text-lg">
 			En 1972, le sociologue Pierre Bourdieu mettait en garde contre les sondages traditionnels, qui
 			selon lui fabriquent l'opinion au lieu de la mesurer. Il identifiait trois biais majeurs.
-			Cinquante ans plus tard, la situation s'est aggravee.
+			Cinquante ans plus tard, la situation s'est aggravée.
 		</p>
 	</div>
 
@@ -148,7 +148,7 @@
 	<figure class="brut rounded-card mt-12 bg-white p-8">
 		<blockquote class="font-display text-xl leading-snug font-bold sm:text-2xl">
 			« L'effet fondamental du sondage d'opinion est de constituer l'illusion qu'il existe une
-			opinion publique unanime, pour legitimer une politique. »
+			opinion publique unanime, pour légitimer une politique. »
 		</blockquote>
 		<figcaption class="text-muted mt-4 text-sm font-semibold">Pierre Bourdieu, 1980</figcaption>
 	</figure>
@@ -161,7 +161,7 @@
 			id="difference"
 			class="font-display max-w-3xl text-4xl font-black tracking-tighter uppercase sm:text-5xl"
 		>
-			Leurs petits secrets,<br />et ce qu'on fait a la place
+			Leurs petits secrets,<br />et ce qu'on fait à la place
 		</h2>
 
 		<div class="mt-12 grid gap-4">
@@ -169,7 +169,7 @@
 				<div class="grid gap-4 md:grid-cols-2">
 					<div class="border-ink rounded-card border-2 border-dashed bg-transparent p-6 opacity-70">
 						<p class="font-display text-muted text-[11px] font-bold tracking-[0.15em] uppercase">
-							Les instituts prives
+							Les instituts privés
 						</p>
 						<h3 class="font-display mt-2 font-bold line-through decoration-2">{row.them}</h3>
 						<p class="text-ink-soft mt-2 text-sm">{row.themDetail}</p>
@@ -194,22 +194,22 @@
 				id="le-tour"
 				class="font-display mt-3 text-4xl font-black tracking-tighter uppercase sm:text-5xl"
 			>
-				5 000 kilometres,<br />deux mois,<br />toutes les regions
+				5 000 kilomètres,<br />deux mois,<br />toutes les régions
 			</h2>
 			<p class="text-ink-soft mt-6 text-lg">
-				Un echantillon ne se recrute pas par courriel aupres de volontaires remuneres. Il se
-				rencontre. Le parcours traverse les regions metropolitaines pour aller chercher celles et
+				Un échantillon ne se recrute pas par courriel auprès de volontaires rémunérés. Il se
+				rencontre. Le parcours traverse les régions métropolitaines pour aller chercher celles et
 				ceux que les panels en ligne n'atteignent jamais.
 			</p>
 			<div class="mt-8 flex flex-wrap gap-3">
-				<Button href="/donnees">Voir les resultats</Button>
-				<Button href={LINKS.forms.href} external variant="outline">Repondre au sondage</Button>
+				<Button href="/donnees">Voir les résultats</Button>
+				<Button href={LINKS.forms.href} external variant="outline">Répondre au sondage</Button>
 			</div>
 		</div>
 
 		<div class="brut rounded-card bg-paper p-8">
 			<p class="font-display text-muted text-[11px] font-bold tracking-[0.15em] uppercase">
-				Les trois questions posees
+				Les trois questions posées
 			</p>
 			<ol class="mt-6 flex flex-col gap-5">
 				{#each QUESTIONS as question, index (question)}
@@ -234,11 +234,11 @@
 				id="garanties"
 				class="font-display mt-3 text-4xl font-black tracking-tighter uppercase sm:text-5xl"
 			>
-				Nos garanties sont<br />ecrites dans le code
+				Nos garanties sont<br />écrites dans le code
 			</h2>
 			<p class="mt-6 text-lg text-white/80">
-				Ce ne sont pas des intentions : ce sont des contraintes techniques, verifiables dans un
-				depot public. La plateforme est libre, son code est auditable.
+				Ce ne sont pas des intentions : ce sont des contraintes techniques, vérifiables dans un
+				dépôt public. La plateforme est libre, son code est auditable.
 			</p>
 		</div>
 
@@ -256,7 +256,7 @@
 				href="/methodologie"
 				class="font-display rounded-pill inline-flex items-center border-2 border-white bg-white px-6 py-3 text-sm font-bold text-black"
 			>
-				Lire la methodologie complete
+				Lire la méthodologie complète
 			</a>
 			<a
 				href={LINKS.repository.href}
@@ -274,26 +274,28 @@
 <section class="mx-auto max-w-6xl px-4 py-20 sm:px-6" aria-labelledby="soutien">
 	<div class="brut surface-mesh rounded-card px-6 py-14 sm:px-12">
 		<div class="max-w-2xl">
-			<h2
-				id="soutien"
-				class="font-display text-4xl font-black tracking-tighter uppercase sm:text-5xl"
-			>
-				Soutiens un media citoyen,<br />qui t'appartient
+			<h2 id="soutien" class="font-display text-4xl font-black tracking-tighter uppercase sm:text-5xl">
+				Soutiens un média citoyen,<br />qui t'appartient
 			</h2>
 			<p class="mt-6 text-lg font-medium">
-				Le projet est associatif et ouvert. Pas de publicite, pas de revente de donnees, pas
-				d'actionnaire a satisfaire. Juste des gens qui veulent savoir ce que pensent les autres.
+				Le projet est associatif et ouvert. Pas de publicité, pas de revente de données, pas
+				d'actionnaire à satisfaire. Juste des gens qui veulent savoir ce que pensent les autres.
 			</p>
 
 			<ul class="mt-8 flex flex-col gap-3 font-medium">
-				<li class="flex gap-3"><span aria-hidden="true">◆</span>
+				<li class="flex gap-3">
+					<span aria-hidden="true">◆</span>
 					<span>Des statistiques chaque jour, pour suivre le tour depuis chez toi.</span>
 				</li>
-				<li class="flex gap-3"><span aria-hidden="true">◆</span>
-					<span>Des donnees ouvertes, pour democratiser les sondages.</span>
+				<li class="flex gap-3">
+					<span aria-hidden="true">◆</span>
+					<span>Des données ouvertes, pour démocratiser les sondages.</span>
 				</li>
-				<li class="flex gap-3"><span aria-hidden="true">◆</span>
-					<span>Des echanges enregistres et diffuses, pour entendre les voix derriere les chiffres.</span>
+				<li class="flex gap-3">
+					<span aria-hidden="true">◆</span>
+					<span>
+						Des échanges enregistrés et diffusés, pour entendre les voix derrière les chiffres.
+					</span>
 				</li>
 			</ul>
 
@@ -304,7 +306,7 @@
 				</Button>
 			</div>
 
-			<p class="font-hand mt-10 text-3xl">Et toi, t'aurais repondu quoi&nbsp;?</p>
+			<p class="font-hand mt-10 text-3xl">Et toi, t'aurais répondu quoi&nbsp;?</p>
 		</div>
 	</div>
 </section>
