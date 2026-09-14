@@ -25,9 +25,12 @@ const configSchema = z
 		bucketStart: z.number().optional()
 	})
 	.loose()
-	.refine((config) => config.min === undefined || config.max === undefined || config.max > config.min, {
-		message: 'La borne haute doit etre superieure a la borne basse.'
-	});
+	.refine(
+		(config) => config.min === undefined || config.max === undefined || config.max > config.min,
+		{
+			message: 'La borne haute doit etre superieure a la borne basse.'
+		}
+	);
 
 interface Bucketing {
 	readonly size: number;
@@ -38,8 +41,7 @@ function bucketing(context: QuestionContext): Bucketing | null {
 	const { bucketSize, bucketStart, min } = context.config;
 	if (typeof bucketSize !== 'number' || bucketSize <= 0) return null;
 
-	const start =
-		typeof bucketStart === 'number' ? bucketStart : typeof min === 'number' ? min : 0;
+	const start = typeof bucketStart === 'number' ? bucketStart : typeof min === 'number' ? min : 0;
 
 	return { size: bucketSize, start };
 }

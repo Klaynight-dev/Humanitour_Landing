@@ -4,6 +4,7 @@ import { verifyPassword } from '$lib/server/auth/password';
 import { createSession, setSessionCookie } from '$lib/server/auth/session';
 import { check, clear, loginThrottle, recordFailure } from '$lib/server/auth/throttle';
 import { prisma } from '$lib/server/db';
+import { readText } from '$lib/server/forms';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -29,7 +30,7 @@ export const load: PageServerLoad = ({ locals, url }) => {
 export const actions: Actions = {
 	default: async ({ request, cookies, getClientAddress, url }) => {
 		const form = await request.formData();
-		const email = String(form.get('email') ?? '').trim().toLowerCase();
+		const email = readText(form, 'email').toLowerCase();
 		const password = String(form.get('password') ?? '');
 		const ip = getClientAddress();
 

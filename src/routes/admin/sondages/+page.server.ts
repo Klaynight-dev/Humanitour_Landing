@@ -1,0 +1,134 @@
+import { fail, redirect } from '@sveltejs/kit';
+import { recordAudit } from '$lib/server/audit';
+import { prisma } from '$lib/server/db';
+import { readText } from '$lib/server/forms';
+import { requirePermission } from '$lib/server/rbac/guard';
+import { toSlug, uniqueSlug } from '$lib/shared/slug';
+import type { Actions, PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ locals }) => {
+	requirePermission(locals.user, 'survey.read');
+
+	const surveys = await prisma.survey.findMany({
+		orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
+		select: {
+			id: true,
+			slug: true,
+			title: true,
+			status: true,
+			methodology: true,
+			publishedAt: true,
+			updatedAt: true,
+			_count: { select: { responses: true, questions: true } }
+		}
+	});
+
+	return {
+		surveys: surveys.map((survey) => ({
+			id: survey.id,
+			slug: survey.slug,
+			title: survey.title,
+			status: survey.status,
+			publishedAt: survey.publishedAt,
+			updatedAt: survey.updatedAt,
+			responseCount: survey._count.responses,
+			questionCount: survey._count.questions,
+			// Calcule ici plutot que dans la page : la condition de publication est
+			// une regle metier, pas une question d'affichage.
+			canPublish: Boolean(survey.methodology?.trim()) && survey._count.questions > 0
+		}))
+	};
+};
+
+export const actions: Actions = {
+	create: async ({ request, locals }) => {
+		const user = requirePermission(locals.user, 'survey.write');
+
+		const form = await request.formData();
+		const title = readText(form, 'title');
+
+		if (title.length < 3) {
+			return fail(400, { message: 'Le titre doit faire au moins trois caracteres.' });
+		}
+
+		const taken = await prisma.survey.findMany({ select: { slug: true } });
+		const slug = uniqueSlug(toSlug(title), taken.map((row) => row.slug));
+
+		const survey = await prisma.survey.create({ data: { title, slug } });
+		await recordAudit({
+			actorId: user.id,
+			action: 'survey.create',
+			entity: 'Survey',
+			entityId: survey.id,
+			metadata: { slug }
+		});
+
+		redirect(303, `/admin/sondages/${survey.id}`);
+	},
+
+	publish: async ({ request, locals }) => {
+		const user = requirePermission(locals.user, 'survey.publish');
+
+		const form = await request.formData();
+		const id = readText(form, 'id');
+
+		const survey = await prisma.survey.findUnique({
+			where: { id },
+			include: { _count: { select: { questions: true } } }
+		});
+
+		if (!survey) return fail(404, { message: 'Sondage introuvable.' });
+
+		// La methodologie conditionne la publication. C'est la promesse centrale du
+		// projet : publier un chiffre sans dire comment il a ete obtenu, c'est
+		// exactement ce qu'on reproche aux instituts prives.
+		if (!survey.methodology?.trim()) {
+			return fail(400, {
+				message: "Renseignez la methodologie avant de publier : c'est ce qui distingue cette enquete d'un sondage opaque."
+			});
+		}
+
+		if (survey._count.questions === 0) {
+			return fail(400, { message: 'Ajoutez au moins une question avant de publier.' });
+		}
+
+		await prisma.survey.update({
+			where: { id },
+			data: { status: 'PUBLISHED', publishedAt: survey.publishedAt ?? new Date() }
+		});
+
+		await recordAudit({
+			actorId: user.id,
+			action: 'survey.publish',
+			entity: 'Survey',
+			entityId: id,
+			metadata: { slug: survey.slug }
+		});
+
+		return { message: `« ${survey.title} » est publie.` };
+	},
+
+	unpublish: async ({ request, locals }) => {
+		const user = requirePermission(locals.user, 'survey.publish');
+
+		const form = await request.formData();
+		const id = readText(form, 'id');
+
+		const survey = await prisma.survey.findUnique({ where: { id } });
+		if (!survey) return fail(404, { message: 'Sondage introuvable.' });
+
+		// `publishedAt` est conserve : depublier puis republier ne doit pas
+		// reecrire la date de premiere parution.
+		await prisma.survey.update({ where: { id }, data: { status: 'DRAFT' } });
+
+		await recordAudit({
+			actorId: user.id,
+			action: 'survey.unpublish',
+			entity: 'Survey',
+			entityId: id,
+			metadata: { slug: survey.slug }
+		});
+
+		return { message: `« ${survey.title} » est repasse en brouillon.` };
+	}
+};

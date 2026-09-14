@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import {
 	declaredModalities,
+	findOption,
 	isBlank,
 	nonResponseModality,
 	nonResponseValue,
 	type ModalityDescriptor,
 	type NormalizedValue,
 	type NormalizeResult,
-	type QuestionContext,
 	type QuestionType
 } from './types';
 
@@ -26,13 +26,6 @@ function splitRaw(raw: unknown, separator: string): string[] {
 		.split(separator)
 		.map((part) => part.trim())
 		.filter((part) => part !== '');
-}
-
-function matchOption(value: string, context: QuestionContext) {
-	const needle = value.trim().toLowerCase();
-	return context.options.find(
-		(option) => option.code.toLowerCase() === needle || option.label.trim().toLowerCase() === needle
-	);
 }
 
 export const multipleChoice: QuestionType = {
@@ -60,7 +53,7 @@ export const multipleChoice: QuestionType = {
 		const seen = new Set<string>();
 
 		for (const part of parts) {
-			const option = matchOption(part, context);
+			const option = findOption(context.options, part);
 			if (!option) return { ok: false, reason: `Modalite inconnue : « ${part} ».` };
 			// Une modalite citee deux fois dans la meme cellule ne compte qu une fois,
 			// sans quoi ce repondant pesera double dans sa propre part.

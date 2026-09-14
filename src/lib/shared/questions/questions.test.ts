@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	crossableQuestionTypes,
+	findOption,
 	getQuestionType,
 	NON_RESPONSE_KEY,
 	QUESTION_TYPES,
@@ -303,5 +304,51 @@ describe('free_text', () => {
 		const result = type.normalize('x'.repeat(50), context([], { maxLength: 10 }));
 
 		expect(result.ok).toBe(false);
+	});
+});
+
+describe('findOption', () => {
+	const OPTIONS: QuestionOptionLike[] = [
+		option('ecologie', "L'ecologie", 0),
+		option('sante', 'La sante', 1),
+		option('nsp', 'Ne se prononce pas', 2, true)
+	];
+
+	it('reconnait le code exact', () => {
+		expect(findOption(OPTIONS, 'sante')?.code).toBe('sante');
+	});
+
+	it('reconnait le libelle exact, casse et espaces ignores', () => {
+		expect(findOption(OPTIONS, '  LA SANTE  ')?.code).toBe('sante');
+	});
+
+	it('tolere une apostrophe manquante', () => {
+		// Un fichier reel ecrit « L ecologie » la ou la modalite s appelle
+		// « L'ecologie » : perdre un entretien de terrain pour une apostrophe
+		// serait absurde.
+		expect(findOption(OPTIONS, 'L ecologie')?.code).toBe('ecologie');
+	});
+
+	it('tolere les accents manquants', () => {
+		expect(findOption([option('sante', 'La santé', 0)], 'La sante')?.code).toBe('sante');
+	});
+
+	it('refuse de choisir quand deux modalites se ressemblent une fois normalisees', () => {
+		// Deviner l intention de l operateur serait pire que signaler l ambiguite.
+		const ambiguous = [option('a', "L'ecologie", 0), option('b', 'L ecologie', 1)];
+
+		expect(findOption(ambiguous, 'l-ecologie')).toBeNull();
+	});
+
+	it('privilegie une correspondance exacte sur une correspondance souple', () => {
+		const mixed = [option('l_ecologie', 'Autre chose', 0), option('ecologie', "L'ecologie", 1)];
+
+		expect(findOption(mixed, "L'ecologie")?.code).toBe('ecologie');
+	});
+
+	it('rend null pour une valeur inconnue ou vide', () => {
+		expect(findOption(OPTIONS, 'la conquete spatiale')).toBeNull();
+		expect(findOption(OPTIONS, '   ')).toBeNull();
+		expect(findOption(OPTIONS, '!!!')).toBeNull();
 	});
 });

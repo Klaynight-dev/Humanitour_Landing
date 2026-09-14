@@ -43,7 +43,10 @@ export const freeText: QuestionType = {
 			typeof context.config.maxLength === 'number' ? context.config.maxLength : 2000;
 
 		if (text.length > maxLength) {
-			return { ok: false, reason: `Verbatim trop long : ${text.length} caracteres (max ${maxLength}).` };
+			return {
+				ok: false,
+				reason: `Verbatim trop long : ${text.length} caracteres (max ${maxLength}).`
+			};
 		}
 
 		return {

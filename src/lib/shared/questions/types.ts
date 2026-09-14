@@ -1,3 +1,5 @@
+import { toColumnKey } from '../slug';
+
 /**
  * Contrat du registre des types de question.
  *
@@ -122,6 +124,44 @@ export function nonResponseModality(options: readonly QuestionOptionLike[]): Mod
 		isNonResponse: true,
 		color: declared?.color ?? null
 	};
+}
+
+/**
+ * Retrouve l option correspondant a une valeur brute.
+ *
+ * Trois passes, de la plus stricte a la plus tolerante :
+ *
+ *   1. le code exact (`sante`) ;
+ *   2. le libelle exact, casse et espaces de bord ignores (`La sante`) ;
+ *   3. la forme normalisee, sans accents ni ponctuation — et SEULEMENT si elle
+ *      ne designe qu une seule option.
+ *
+ * La troisieme passe existe parce qu un fichier reel ecrit « L ecologie » la ou
+ * la modalite s appelle « L'ecologie » : rejeter la ligne pour une apostrophe
+ * ferait perdre un entretien mene sur le terrain. Mais elle refuse de choisir
+ * quand deux modalites se ressemblent une fois normalisees — deviner
+ * l intention de l operateur serait pire que lui signaler l ambiguite.
+ */
+export function findOption(
+	options: readonly QuestionOptionLike[],
+	raw: string
+): QuestionOptionLike | null {
+	const trimmed = raw.trim();
+	const lower = trimmed.toLowerCase();
+
+	const exact = options.find(
+		(option) => option.code.toLowerCase() === lower || option.label.trim().toLowerCase() === lower
+	);
+	if (exact) return exact;
+
+	const needle = toColumnKey(trimmed);
+	if (needle === '') return null;
+
+	const loose = options.filter(
+		(option) => toColumnKey(option.code) === needle || toColumnKey(option.label) === needle
+	);
+
+	return loose.length === 1 ? loose[0]! : null;
 }
 
 /** Modalites issues des options declarees, hors non-reponse, triees par position. */
