@@ -31,6 +31,7 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "bun run prisma/seed.ts",
+    "db:permissions": "bun run prisma/sync-permissions.ts",
     "db:studio": "prisma studio",
     "services:up": "docker compose up -d --wait",
     "services:down": "docker compose down",
@@ -66,8 +67,8 @@
   "dependencies": {
     "@fontsource-variable/caveat": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
-    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
-    "@fontsource-variable/syne": "^5.3.0",
+    "@fontsource-variable/jost": "^5.3.0",
+    "@fontsource/bowlby-one": "^5.3.0",
     "@node-rs/argon2": "^2.2.1",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",

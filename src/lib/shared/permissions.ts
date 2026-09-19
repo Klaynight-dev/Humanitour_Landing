@@ -83,6 +83,23 @@ export const PERMISSIONS = {
 		sensitive: true
 	},
 
+	'content.read': {
+		group: 'Contenu du site',
+		label: 'Consulter le contenu des pages',
+		description: 'Voir les pages editables du site public, brouillons inclus.'
+	},
+	'content.write': {
+		group: 'Contenu du site',
+		label: 'Modifier le contenu des pages',
+		description: 'Ajouter, editer et reordonner les blocs, sans les mettre en ligne.'
+	},
+	'content.publish': {
+		group: 'Contenu du site',
+		label: 'Publier une page',
+		description: 'Remplacer le contenu affiche sur le site public par la version editee.',
+		sensitive: true
+	},
+
 	'user.read': {
 		group: 'Equipe',
 		label: 'Consulter les comptes',

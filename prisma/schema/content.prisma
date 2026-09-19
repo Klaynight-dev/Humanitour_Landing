@@ -1,0 +1,59 @@
+// Domaine contenu editorial.
+//
+// Les pages du site vitrine etaient ecrites en dur dans les composants et dans
+// `src/lib/shared/site.ts`. Elles deviennent editables ici, sans deploiement.
+//
+// Une page publiee prend le pas sur les constantes ; tant qu'aucune version
+// n'est publiee, le site affiche ce qu'il affichait avant. Retirer la
+// publication suffit donc a revenir en arriere.
+
+enum ContentPageKey {
+  HOME
+  ABOUT
+  TOUR
+}
+
+enum ContentPageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model ContentPage {
+  id String @id @default(cuid())
+
+  /// Enum et non cle de registre : la liste des pages editables est un choix
+  /// produit ferme, pas une famille de variantes amenee a s'etendre souvent.
+  key ContentPageKey @unique
+
+  status      ContentPageStatus @default(DRAFT)
+  publishedAt DateTime?
+
+  updatedById String?
+  updatedBy   User?   @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  blocks ContentBlock[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContentBlock {
+  id String @id @default(cuid())
+
+  pageId String
+  page   ContentPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  /// Cle du registre `src/lib/shared/content/`. Contrat : jamais renommee.
+  type String
+
+  position Int
+
+  /// Champs propres au type de bloc, valides par le registre. Aucune colonne ne
+  /// s'ajoute en base quand un type de bloc apparait (AGENTS.md section 2).
+  data Json @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pageId])
+}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Flash from '$components/admin/Flash.svelte';
 	import PageHeader from '$components/admin/PageHeader.svelte';
 	import Panel from '$components/admin/Panel.svelte';
 	import StatusBadge from '$components/admin/StatusBadge.svelte';
@@ -19,23 +20,19 @@
 	}
 </script>
 
-<svelte:head><title>{data.item.title} — Back-office</title></svelte:head>
+<svelte:head><title>{data.item.title}, back-office</title></svelte:head>
 
 <PageHeader
 	title={data.item.title}
-	breadcrumb={[{ label: 'Mediatheque', href: '/admin/medias' }]}
-	description="{data.type.label} — /medias/{data.item.slug}"
+	breadcrumb={[{ label: 'Médiathèque', href: '/admin/medias' }]}
+	description="{data.type.label}, publié sur /medias/{data.item.slug}"
 >
 	{#snippet actions()}
 		<StatusBadge status={data.item.status} />
 	{/snippet}
 </PageHeader>
 
-{#if form?.message}
-	<p role="status" class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm">
-		{form.message}
-	</p>
-{/if}
+<Flash message={form?.message} />
 
 <form method="POST" action="?/save" use:enhance class="grid gap-6 lg:grid-cols-[1fr_20rem]">
 	<div class="flex flex-col gap-6">
@@ -48,7 +45,7 @@
 						required
 						value={data.item.title}
 						disabled={!editable}
-						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 					/>
 				</label>
 
@@ -61,7 +58,7 @@
 						name="excerpt"
 						rows="2"
 						disabled={!editable}
-						class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{data.item.excerpt ?? ''}</textarea
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">{data.item.excerpt ?? ''}</textarea
 					>
 				</label>
 
@@ -75,7 +72,7 @@
 							name="body"
 							rows="16"
 							disabled={!editable}
-							class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{data.item.body ?? ''}</textarea
+							class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">{data.item.body ?? ''}</textarea
 						>
 					</label>
 				{/if}
@@ -83,7 +80,7 @@
 		</Panel>
 
 		{#if data.type.fields.length > 0}
-			<Panel title="Champs propres a {data.type.label.toLowerCase()}">
+			<Panel title="Champs propres à {data.type.label.toLowerCase()}">
 				<div class="flex flex-col gap-4">
 					{#each data.type.fields as field (field.name)}
 						<label class="flex flex-col gap-1.5">
@@ -98,7 +95,7 @@
 									name="data.{field.name}"
 									rows="6"
 									disabled={!editable}
-									class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{field.value}</textarea
+									class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">{field.value}</textarea
 								>
 							{:else}
 								<input
@@ -106,7 +103,7 @@
 									name="data.{field.name}"
 									value={field.value}
 									disabled={!editable}
-									class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+									class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 								/>
 							{/if}
 						</label>
@@ -116,7 +113,7 @@
 						<p class="text-muted text-xs">
 							Hebergeurs acceptes : {data.providers.join(', ')}. L'adresse d'integration est
 							reconstruite par nos soins : aucun parametre de suivi de l'adresse d'origine n'est
-							conserve.
+							conservé.
 						</p>
 					{/if}
 				</div>
@@ -137,14 +134,14 @@
 						name="publishedAt"
 						value={dateTimeValue(data.item.publishedAt)}
 						disabled={!editable}
-						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 					/>
 				</label>
 
 				{#if editable}
 					<button
 						type="submit"
-						class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
+						class="bg-ink text-paper press rounded-pill px-5 py-2.5 text-sm font-semibold min-h-11 inline-flex items-center justify-center"
 					>
 						Enregistrer
 					</button>
@@ -158,7 +155,7 @@
 							<button
 								type="submit"
 								formaction="?/unpublish"
-								class="border-ink brut-sm brut-press bg-paper rounded-pill border-2 px-4 py-2 text-xs font-medium"
+								class="border-ink/25 press bg-paper rounded-pill border px-4 py-2 text-xs font-medium min-h-11 inline-flex items-center justify-center"
 							>
 								Repasser en brouillon
 							</button>
@@ -166,7 +163,7 @@
 							<button
 								type="submit"
 								formaction="?/publish"
-								class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-xs font-bold"
+								class="bg-ink text-paper press rounded-pill px-4 py-2 text-xs font-semibold min-h-11 inline-flex items-center justify-center"
 							>
 								Publier
 							</button>
@@ -185,7 +182,7 @@
 						name="coverUrl"
 						value={data.item.coverUrl ?? ''}
 						disabled={!editable}
-						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 					/>
 				</label>
 
@@ -198,7 +195,7 @@
 						name="coverAlt"
 						value={data.item.coverAlt ?? ''}
 						disabled={!editable}
-						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 					/>
 				</label>
 
@@ -206,13 +203,13 @@
 					<img
 						src={data.item.coverUrl}
 						alt={data.item.coverAlt ?? ''}
-						class="rounded-card w-full object-cover"
+						class="rounded-panel w-full object-cover"
 					/>
 				{/if}
 			</div>
 		</Panel>
 
-		<Panel title="Mots-cles">
+		<Panel title="Mots-clés">
 			<label class="flex flex-col gap-1.5">
 				<span class="sr-only">Mots-cles</span>
 				<span class="text-muted text-xs">Separes par des virgules.</span>
@@ -220,7 +217,7 @@
 					name="tags"
 					value={data.item.tags}
 					disabled={!editable}
-					class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+					class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 				/>
 			</label>
 		</Panel>

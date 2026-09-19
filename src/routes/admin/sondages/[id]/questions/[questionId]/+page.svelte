@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Flash from '$components/admin/Flash.svelte';
 	import PageHeader from '$components/admin/PageHeader.svelte';
 	import Panel from '$components/admin/Panel.svelte';
 	import { formatCount } from '$lib/shared/format';
@@ -14,16 +15,12 @@
 	title={data.question.label}
 	breadcrumb={[
 		{ label: 'Sondages', href: '/admin/sondages' },
-		{ label: 'Enquete', href: `/admin/sondages/${data.surveyId}` }
+		{ label: 'Enquête', href: `/admin/sondages/${data.surveyId}` }
 	]}
-	description="{data.type.label} — {data.type.description}"
+	description="{data.type.label}. {data.type.description}"
 />
 
-{#if form?.message}
-	<p role="status" class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm">
-		{form.message}
-	</p>
-{/if}
+<Flash message={form?.message} />
 
 <div class="grid gap-6 lg:grid-cols-[1fr_20rem]">
 	<div class="flex flex-col gap-6">
@@ -39,13 +36,13 @@
 						name="label"
 						rows="2"
 						required
-						class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{data.question.label}</textarea
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">{data.question.label}</textarea
 					>
 				</label>
 
 				<label class="flex flex-col gap-1.5">
 					<span class="text-sm font-semibold">Aide a la passation</span>
-					<textarea name="help" rows="2" class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+					<textarea name="help" rows="2" class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 						>{data.question.help ?? ''}</textarea
 					>
 				</label>
@@ -60,7 +57,7 @@
 						name="config"
 						rows="6"
 						spellcheck="false"
-						class="border-ink bg-paper rounded-lg border-2 px-3 py-2 font-mono text-xs"
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 font-mono text-xs min-h-11"
 						>{data.question.config}</textarea
 					>
 				</label>
@@ -71,7 +68,7 @@
 						name="isCrossable"
 						checked={data.question.isCrossable}
 						disabled={!data.type.crossable}
-						class="accent-coral-500 mt-1 h-4 w-4"
+						class="accent-coral mt-1 h-4 w-4"
 					/>
 					<span class="text-sm">
 						<span class="font-semibold">Proposer au croisement</span>
@@ -89,7 +86,7 @@
 				<div>
 					<button
 						type="submit"
-						class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
+						class="bg-ink text-paper press rounded-pill px-5 py-2.5 text-sm font-semibold min-h-11 inline-flex items-center justify-center"
 					>
 						Enregistrer
 					</button>
@@ -99,8 +96,8 @@
 
 		{#if data.type.usesOptions}
 			<Panel
-				title="Modalites"
-				description="Les modalites marquees « sans reponse » sont comptees comme les autres, mais affichees en retrait et en gris."
+				title="Modalités"
+				description="Les modalités marquées « sans réponse » sont comptées comme les autres, mais affichées en retrait et en gris."
 			>
 				{#if data.options.length === 0}
 					<p class="text-muted text-sm">
@@ -109,7 +106,7 @@
 				{:else}
 					<ul class="flex flex-col gap-2">
 						{#each data.options as option (option.id)}
-							<li class="border-ink rounded-lg border-2 p-3">
+							<li class="border-ink/20 rounded-field border p-3">
 								<form
 									method="POST"
 									action="?/updateOption"
@@ -123,7 +120,7 @@
 										<input
 											name="label"
 											value={option.label}
-											class="border-ink bg-paper rounded-lg border-2 px-2.5 py-1.5 text-sm"
+											class="border-ink/20 bg-paper rounded-field border px-2.5 py-1.5 text-sm min-h-11"
 										/>
 									</label>
 
@@ -133,7 +130,7 @@
 											type="color"
 											name="color"
 											value={option.color ?? '#FF5757'}
-											class="border-ink h-9 w-14 rounded-lg border-2 px-1"
+											class="border-ink/20 h-9 w-14 rounded-field border px-1 min-h-11"
 										/>
 									</label>
 
@@ -142,28 +139,28 @@
 											type="checkbox"
 											name="isNonResponse"
 											checked={option.isNonResponse}
-											class="accent-coral-500 h-4 w-4"
+											class="accent-coral h-4 w-4"
 										/>
 										Sans reponse
 									</label>
 
 									<button
 										type="submit"
-										class="border-ink brut-sm brut-press bg-paper rounded-pill border-2 px-3 py-1.5 text-xs font-medium"
+										class="border-ink/25 press bg-paper rounded-pill border px-3 py-1.5 text-xs font-medium min-h-11 inline-flex items-center justify-center"
 									>
 										Enregistrer
 									</button>
 								</form>
 
 								<div class="mt-2 flex items-center justify-between gap-3">
-									<code class="text-muted bg-surface rounded px-1.5 py-0.5 text-xs">
+									<code class="text-muted bg-cream rounded px-1.5 py-0.5 text-xs">
 										{option.code}
 									</code>
 									<form method="POST" action="?/deleteOption" use:enhance>
 										<input type="hidden" name="optionId" value={option.id} />
 										<button
 											type="submit"
-											class="border-ink text-danger bg-paper rounded-pill border-2 px-2.5 py-1 text-xs"
+											class="border-ink/25 text-danger bg-paper rounded-pill border px-2.5 py-1 text-xs min-h-11 inline-flex items-center justify-center"
 										>
 											Supprimer
 										</button>
@@ -182,16 +179,16 @@
 								name="label"
 								required
 								placeholder="Le pouvoir d'achat"
-								class="border-ink bg-paper rounded-lg border-2 px-3 py-2 text-sm"
+								class="border-ink/20 bg-paper rounded-field border px-3 py-2 text-sm min-h-11"
 							/>
 						</label>
 						<label class="flex items-center gap-2 pb-2 text-xs">
-							<input type="checkbox" name="isNonResponse" class="accent-coral-500 h-4 w-4" />
+							<input type="checkbox" name="isNonResponse" class="accent-coral h-4 w-4" />
 							Sans reponse
 						</label>
 						<button
 							type="submit"
-							class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-sm font-bold"
+							class="bg-ink text-paper press rounded-pill px-4 py-2 text-sm font-semibold min-h-11 inline-flex items-center justify-center"
 						>
 							Ajouter
 						</button>
@@ -202,18 +199,18 @@
 	</div>
 
 	<aside>
-		<Panel title="Reperes">
+		<Panel title="Repères">
 			<dl class="flex flex-col gap-3 text-sm">
 				<div class="flex justify-between gap-3">
 					<dt class="text-muted">Code</dt>
-					<dd><code class="bg-surface rounded px-1.5 py-0.5 text-xs">{data.question.code}</code></dd>
+					<dd><code class="bg-cream rounded px-1.5 py-0.5 text-xs">{data.question.code}</code></dd>
 				</div>
 				<div class="flex justify-between gap-3">
 					<dt class="text-muted">Type</dt>
 					<dd class="font-semibold">{data.type.label}</dd>
 				</div>
 				<div class="flex justify-between gap-3">
-					<dt class="text-muted">Reponses</dt>
+					<dt class="text-muted">Réponses</dt>
 					<dd class="tabular font-semibold">{formatCount(data.question.answerCount)}</dd>
 				</div>
 			</dl>

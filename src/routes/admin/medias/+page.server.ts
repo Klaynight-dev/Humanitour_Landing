@@ -7,10 +7,35 @@ import { getMediaType, MEDIA_TYPES } from '$lib/shared/media';
 import { toSlug, uniqueSlug } from '$lib/shared/slug';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+const STATUSES = ['DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'] as const;
+
+type MediaStatus = (typeof STATUSES)[number];
+
+function readStatus(raw: string | null): MediaStatus | null {
+	return STATUSES.find((status) => status === raw) ?? null;
+}
+
+export const load: PageServerLoad = async ({ locals, url }) => {
 	requirePermission(locals.user, 'media.read');
 
+	const search = url.searchParams.get('q')?.trim() ?? '';
+	const status = readStatus(url.searchParams.get('statut'));
+	// La nature passe par le registre : ajouter un type de media suffit a le
+	// rendre filtrable, sans toucher a ce fichier.
+	const kind = getMediaType(url.searchParams.get('nature') ?? '')?.key ?? null;
+
 	const items = await prisma.mediaItem.findMany({
+		where: {
+			status: status ?? undefined,
+			kind: kind ?? undefined,
+			OR: search
+				? [
+						{ title: { contains: search, mode: 'insensitive' } },
+						{ slug: { contains: search, mode: 'insensitive' } },
+						{ excerpt: { contains: search, mode: 'insensitive' } }
+					]
+				: undefined
+		},
 		orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
 		select: {
 			id: true,
@@ -40,7 +65,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			key: type.key,
 			label: type.label,
 			description: type.description
-		}))
+		})),
+		filters: { search, status, kind }
 	};
 };
 

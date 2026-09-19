@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import EmptyState from '$components/admin/EmptyState.svelte';
+	import FilterBar from '$components/admin/FilterBar.svelte';
+	import Flash from '$components/admin/Flash.svelte';
 	import PageHeader from '$components/admin/PageHeader.svelte';
 	import Panel from '$components/admin/Panel.svelte';
 	import StatusBadge from '$components/admin/StatusBadge.svelte';
+	import Table from '$components/admin/Table.svelte';
 	import { formatCount, formatDate } from '$lib/shared/format';
 	import { can } from '$lib/shared/permissions';
 	import type { ActionData, PageData } from './$types';
@@ -13,88 +15,106 @@
 	let creating = $state(false);
 </script>
 
-<svelte:head><title>Sondages — Back-office</title></svelte:head>
+<svelte:head><title>Sondages, back-office</title></svelte:head>
 
 <PageHeader
 	title="Sondages"
-	description="Chaque enquete porte son questionnaire, ses reponses et sa methodologie."
+	description="Chaque enquête porte son questionnaire, ses réponses et sa méthodologie."
 >
 	{#snippet actions()}
 		{#if can(data.user, 'survey.write')}
 			<button
 				type="button"
 				onclick={() => (creating = !creating)}
-				class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-sm font-bold"
+				class="bg-ink text-paper press rounded-pill px-4 py-2 text-sm font-semibold min-h-11 inline-flex items-center justify-center"
 			>
-				{creating ? 'Annuler' : 'Nouvelle enquete'}
+				{creating ? 'Annuler' : 'Nouvelle enquête'}
 			</button>
 		{/if}
 	{/snippet}
 </PageHeader>
 
-{#if form?.message}
-	<p
-		role="status"
-		class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm"
-	>
-		{form.message}
-	</p>
-{/if}
+<Flash message={form?.message} />
 
 {#if creating && can(data.user, 'survey.write')}
 	<div class="mb-6">
 		<Panel
-			title="Nouvelle enquete"
-			description="L'adresse publique est deduite du titre. Elle ne changera plus une fois l'enquete publiee."
+			title="Nouvelle enquête"
+			description="L'adresse publique est déduite du titre. Elle ne changera plus une fois l'enquête publiée."
 		>
 			<form method="POST" action="?/create" use:enhance class="flex flex-wrap items-end gap-3">
 				<label class="flex min-w-64 flex-1 flex-col gap-1.5">
-					<span class="text-sm font-semibold">Titre de l'enquete</span>
+					<span class="text-sm font-semibold">Titre de l'enquête</span>
 					<input
 						name="title"
 						required
 						minlength="3"
-						placeholder="Presidentielle 2027 — le tour de France"
-						class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+						placeholder="Présidentielle 2027, le tour de France"
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 					/>
 				</label>
 				<button
 					type="submit"
-					class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
+					class="bg-ink text-paper press rounded-pill px-5 py-2.5 text-sm font-semibold min-h-11 inline-flex items-center justify-center"
 				>
-					Creer
+					Créer
 				</button>
 			</form>
 		</Panel>
 	</div>
 {/if}
 
-{#if data.surveys.length === 0}
-	<EmptyState
-		title="Aucune enquete"
-		description="Creez une enquete, ajoutez-lui des questions, puis importez les reponses recueillies sur le terrain."
-	/>
-{:else}
-	<div class="border-ink bg-paper rounded-card overflow-x-auto border">
-		<table class="w-full min-w-[44rem] border-collapse text-sm">
-			<thead>
-				<tr class="border-ink bg-surface border-b text-left">
-					<th scope="col" class="px-5 py-3 font-semibold">Enquete</th>
-					<th scope="col" class="px-3 py-3 font-semibold">Statut</th>
-					<th scope="col" class="px-3 py-3 text-right font-semibold">Questions</th>
-					<th scope="col" class="px-3 py-3 text-right font-semibold">Reponses</th>
-					<th scope="col" class="px-5 py-3 text-right font-semibold">Actions</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each data.surveys as survey (survey.id)}
-					<tr class="border-ink border-b last:border-0">
+<FilterBar active={data.filters.search !== '' || data.filters.status !== null}>
+	<label class="flex min-w-56 flex-1 flex-col gap-1.5">
+		<span class="text-sm font-semibold">Rechercher</span>
+		<input
+			type="search"
+			name="q"
+			value={data.filters.search}
+			placeholder="Titre ou adresse publique"
+			class="border-ink/20 bg-paper rounded-field min-h-11 border px-3 py-2"
+		/>
+	</label>
+	<label class="flex flex-col gap-1.5">
+		<span class="text-sm font-semibold">Statut</span>
+		<select
+			name="statut"
+			class="border-ink/20 bg-paper rounded-field min-h-11 border px-3 py-2"
+		>
+			<option value="">Tous</option>
+			<option value="DRAFT" selected={data.filters.status === 'DRAFT'}>Brouillon</option>
+			<option value="PUBLISHED" selected={data.filters.status === 'PUBLISHED'}>Publié</option>
+			<option value="ARCHIVED" selected={data.filters.status === 'ARCHIVED'}>Archivé</option>
+		</select>
+	</label>
+</FilterBar>
+
+<Table
+	empty={data.surveys.length === 0}
+	emptyTitle={data.filters.search !== '' || data.filters.status !== null
+		? 'Aucune enquête ne correspond'
+		: 'Aucune enquête'}
+	emptyDescription={data.filters.search !== '' || data.filters.status !== null
+		? 'Élargissez la recherche ou changez le statut demandé.'
+		: 'Créez une enquête, ajoutez-lui des questions, puis importez les réponses recueillies sur le terrain.'}
+	minWidth="44rem"
+>
+	{#snippet head()}
+		<th scope="col" class="px-5 py-3 font-semibold">Enquête</th>
+		<th scope="col" class="px-3 py-3 font-semibold">Statut</th>
+		<th scope="col" class="px-3 py-3 text-right font-semibold">Questions</th>
+		<th scope="col" class="px-3 py-3 text-right font-semibold">Réponses</th>
+		<th scope="col" class="px-5 py-3 text-right font-semibold">Actions</th>
+	{/snippet}
+	{#snippet body()}
+		{#each data.surveys as survey (survey.id)}
+			<tr class="border-ink/12 border-b last:border-0">
 						<td class="px-5 py-3">
 							<a href="/admin/sondages/{survey.id}" class="font-semibold hover:underline">
 								{survey.title}
 							</a>
 							<p class="text-muted mt-0.5 text-xs">
-								/donnees/{survey.slug} · modifie le {formatDate(survey.updatedAt)}
+								/donnees/{survey.slug}, modifié le {formatDate(survey.updatedAt)}
 							</p>
 						</td>
 						<td class="px-3 py-3"><StatusBadge status={survey.status} /></td>
@@ -105,7 +125,7 @@
 								{#if can(data.user, 'survey.import')}
 									<a
 										href="/admin/sondages/{survey.id}/import"
-										class="border-ink brut-sm brut-press bg-paper rounded-pill border-2 px-3 py-1.5 text-xs font-medium"
+										class="border-ink/25 press bg-paper rounded-pill border px-3 py-1.5 text-xs font-medium min-h-11 inline-flex items-center justify-center"
 									>
 										Importer
 									</a>
@@ -117,9 +137,9 @@
 											<input type="hidden" name="id" value={survey.id} />
 											<button
 												type="submit"
-												class="border-ink brut-sm brut-press bg-paper rounded-pill border-2 px-3 py-1.5 text-xs font-medium"
+												class="border-ink/25 press bg-paper rounded-pill border px-3 py-1.5 text-xs font-medium min-h-11 inline-flex items-center justify-center"
 											>
-												Depublier
+												Dépublier
 											</button>
 										</form>
 									{:else}
@@ -130,8 +150,8 @@
 												disabled={!survey.canPublish}
 												title={survey.canPublish
 													? undefined
-													: 'Renseignez la methodologie et au moins une question avant de publier.'}
-												class="bg-ink text-white brut-sm brut-press rounded-pill px-3 py-1.5 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40"
+													: 'Renseignez la méthodologie et au moins une question avant de publier.'}
+												class="bg-ink text-paper press rounded-pill px-3 py-1.5 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40 min-h-11 inline-flex items-center justify-center"
 											>
 												Publier
 											</button>
@@ -141,8 +161,6 @@
 							</div>
 						</td>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
-{/if}
+			{/each}
+	{/snippet}
+</Table>

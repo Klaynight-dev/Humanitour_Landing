@@ -1,5 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { recordAudit } from '$lib/server/audit';
+import { notify } from '$lib/server/notifications/emit';
 import { prisma } from '$lib/server/db';
 import {
 	detectImportFormat,
@@ -349,6 +350,23 @@ export const actions: Actions = {
 				surveyId: params.id,
 				accepted: report.accepted.length,
 				rejected: report.rejected.length
+			}
+		});
+
+		const survey = await prisma.survey.findUnique({
+			where: { id: params.id },
+			select: { title: true }
+		});
+
+		await notify({
+			type: 'import.committed',
+			entity: 'ImportBatch',
+			entityId: batchId,
+			actorId: user.id,
+			data: {
+				title: survey?.title ?? '',
+				surveyId: params.id,
+				accepted: String(report.accepted.length)
 			}
 		});
 

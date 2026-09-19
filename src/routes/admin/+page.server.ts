@@ -1,37 +1,66 @@
-import { can } from '$lib/shared/permissions';
+import {
+	importActivity,
+	mediaByStatus,
+	responseTrend,
+	surveysByStatus,
+	teamActivity
+} from '$lib/server/dashboard/queries';
 import { prisma } from '$lib/server/db';
+import { can } from '$lib/shared/permissions';
 import type { PageServerLoad } from './$types';
 
 /**
  * Tableau de bord.
  *
- * Chaque bloc est conditionne a la permission correspondante : un compte de la
- * redaction n'a pas a savoir combien de reponses ont ete importees.
+ * Chaque bloc reste conditionne a la permission correspondante : un compte de la
+ * redaction n'a pas a savoir combien de reponses ont ete importees. Les chiffres
+ * viennent uniquement de la base — aucun traceur, aucun service tiers
+ * (AGENTS.md section 6).
+ *
+ * Les lectures s enchainent au lieu de partir ensemble : a une dizaine de
+ * requetes, un `Promise.all` epuise le pool de connexions de la base de
+ * developpement (PGlite, dix connexions) et l ecran tombe en 500. Les gagner en
+ * parallele ne ferait economiser que quelques millisecondes sur des comptages.
  */
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
+	const readsSurveys = can(user, 'survey.read');
+	const readsMedia = can(user, 'media.read');
+	const readsAudit = can(user, 'audit.read');
 
-	const [surveys, publishedSurveys, responses, media, publishedMedia, recentAudit] =
-		await Promise.all([
-			can(user, 'survey.read') ? prisma.survey.count() : 0,
-			can(user, 'survey.read') ? prisma.survey.count({ where: { status: 'PUBLISHED' } }) : 0,
-			can(user, 'survey.read') ? prisma.response.count() : 0,
-			can(user, 'media.read') ? prisma.mediaItem.count() : 0,
-			can(user, 'media.read') ? prisma.mediaItem.count({ where: { status: 'PUBLISHED' } }) : 0,
-			can(user, 'audit.read')
-				? prisma.auditEvent.findMany({
-						orderBy: { createdAt: 'desc' },
-						take: 8,
-						select: {
-							id: true,
-							action: true,
-							entity: true,
-							createdAt: true,
-							actor: { select: { displayName: true } }
-						}
-					})
-				: []
-		]);
+	const surveys = readsSurveys ? await prisma.survey.count() : 0;
+	const responses = readsSurveys ? await prisma.response.count() : 0;
+	const surveyStatuses = readsSurveys ? await surveysByStatus() : [];
+	const trend = readsSurveys ? await responseTrend() : null;
+	const imports = readsSurveys ? await importActivity() : [];
 
-	return { surveys, publishedSurveys, responses, media, publishedMedia, recentAudit };
+	const media = readsMedia ? await prisma.mediaItem.count() : 0;
+	const mediaStatuses = readsMedia ? await mediaByStatus() : [];
+
+	const team = readsAudit ? await teamActivity() : [];
+	const recentAudit = readsAudit
+		? await prisma.auditEvent.findMany({
+				orderBy: { createdAt: 'desc' },
+				take: 8,
+				select: {
+					id: true,
+					action: true,
+					entity: true,
+					createdAt: true,
+					actor: { select: { displayName: true } }
+				}
+			})
+		: [];
+
+	return {
+		surveys,
+		responses,
+		surveyStatuses,
+		trend,
+		imports,
+		media,
+		mediaStatuses,
+		team,
+		recentAudit
+	};
 };

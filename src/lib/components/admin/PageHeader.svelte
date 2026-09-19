@@ -17,14 +17,16 @@
 		<nav class="text-muted mb-2 text-sm" aria-label="Fil d'Ariane">
 			{#each breadcrumb as crumb, index (crumb.href)}
 				{#if index > 0}<span aria-hidden="true"> / </span>{/if}
-				<a href={crumb.href} class="hover:text-ink underline">{crumb.label}</a>
+				<a href={crumb.href} class="hover:text-ink underline decoration-2 underline-offset-2">{crumb.label}</a>
 			{/each}
 		</nav>
 	{/if}
 
 	<div class="flex flex-wrap items-start justify-between gap-4">
 		<div>
-			<h1 class="font-display text-2xl font-semibold sm:text-3xl">{title}</h1>
+			<!-- Le back-office reste en Jost : Bowlby One est une fonte d affiche, elle
+			     ecrase un ecran de travail consulte toute la journee. -->
+			<h1 class="font-sans text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
 			{#if description}
 				<p class="text-muted mt-1.5 max-w-2xl text-sm">{description}</p>
 			{/if}

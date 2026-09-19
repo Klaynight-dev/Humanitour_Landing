@@ -1,0 +1,35 @@
+// Domaine notifications.
+//
+// Journal unique en ajout seul, de la meme forme que `AuditEvent`, plutot
+// qu'une ligne par destinataire : a l'echelle d'une petite equipe, une table de
+// jointure (notification x compte) grossirait pour un benefice nul.
+//
+// Le « non lu » se calcule donc par comparaison de dates, avec un seul
+// marque-page par compte.
+
+model Notification {
+  id String @id @default(cuid())
+
+  /// Cle du registre `src/lib/shared/notifications/`. Contrat : jamais renommee.
+  type String
+
+  entity   String
+  entityId String?
+
+  data Json @default("{}")
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model NotificationRead {
+  /// Un marque-page par compte : tout ce qui est plus recent est non lu.
+  userId String @id
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  lastReadAt DateTime @default(now())
+}

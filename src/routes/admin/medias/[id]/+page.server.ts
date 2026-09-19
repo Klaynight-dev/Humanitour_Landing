@@ -1,5 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import { recordAudit } from '$lib/server/audit';
+import { notify } from '$lib/server/notifications/emit';
 import { prisma } from '$lib/server/db';
 import { readDate, readOptionalText, readText } from '$lib/server/forms';
 import { requirePermission } from '$lib/server/rbac/guard';
@@ -139,6 +140,18 @@ export const actions: Actions = {
 			entityId: params.id,
 			metadata: { slug: item.slug, status }
 		});
+
+		// Seule la mise en ligne effective se notifie : une programmation n'est pas
+		// encore un evenement, et la notifier deux fois serait du bruit.
+		if (status === 'PUBLISHED') {
+			await notify({
+				type: 'media.published',
+				entity: 'MediaItem',
+				entityId: params.id,
+				actorId: user.id,
+				data: { title: item.title, mediaId: params.id }
+			});
+		}
 
 		return {
 			message:

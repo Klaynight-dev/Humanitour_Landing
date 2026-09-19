@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Flash from '$components/admin/Flash.svelte';
 	import PageHeader from '$components/admin/PageHeader.svelte';
 	import Panel from '$components/admin/Panel.svelte';
 	import StatusBadge from '$components/admin/StatusBadge.svelte';
@@ -33,19 +34,15 @@
 		{#if can(data.user, 'survey.import')}
 			<a
 				href="/admin/sondages/{data.survey.id}/import"
-				class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-sm font-bold"
+				class="bg-ink text-paper press rounded-pill px-4 py-2 text-sm font-semibold min-h-11 inline-flex items-center justify-center"
 			>
-				Importer des reponses
+				Importer des réponses
 			</a>
 		{/if}
 	{/snippet}
 </PageHeader>
 
-{#if form?.message}
-	<p role="status" class="brut bg-paper rounded-card mb-5 px-4 py-3 text-sm">
-		{form.message}
-	</p>
-{/if}
+<Flash message={form?.message} />
 
 <div class="grid gap-6 lg:grid-cols-[1fr_20rem]">
 	<div class="flex flex-col gap-6">
@@ -61,18 +58,18 @@
 			{:else}
 				<ul class="flex flex-col gap-2">
 					{#each data.questions as question, index (question.id)}
-						<li class="border-ink rounded-lg border-2 p-3">
+						<li class="border-ink/20 rounded-field border p-3">
 							<div class="flex flex-wrap items-start justify-between gap-3">
 								<div class="min-w-0">
 									<p class="font-medium">{question.label}</p>
 									<p class="text-muted mt-0.5 text-xs">
-										<code class="bg-surface rounded px-1.5 py-0.5">{question.code}</code>
+										<code class="bg-cream rounded px-1.5 py-0.5">{question.code}</code>
 										<span class="ml-2">{typeLabel(question.type)}</span>
 										{#if question.optionCount > 0}
 											<span class="ml-2">{question.optionCount} modalites</span>
 										{/if}
 										{#if !question.isCrossable}
-											<span class="text-orange-600 ml-2">non croisable</span>
+											<span class="text-warning ml-2">non croisable</span>
 										{/if}
 									</p>
 								</div>
@@ -81,7 +78,7 @@
 									<div class="flex shrink-0 flex-wrap gap-1.5">
 										<a
 											href="/admin/sondages/{data.survey.id}/questions/{question.id}"
-											class="border-ink bg-paper rounded-pill border-2 px-2.5 py-1 text-xs"
+											class="border-ink/25 bg-paper rounded-pill border px-2.5 py-1 text-xs min-h-11 inline-flex items-center justify-center"
 										>
 											Modifier
 										</a>
@@ -91,7 +88,7 @@
 											<button
 												type="submit"
 												disabled={index === 0}
-												class="border-ink bg-paper rounded-pill border-2 px-2.5 py-1 text-xs disabled:opacity-30"
+												class="border-ink/25 bg-paper rounded-pill border px-2.5 py-1 text-xs disabled:opacity-30 min-h-11 inline-flex items-center justify-center"
 												aria-label="Monter « {question.label} »"
 											>
 												↑
@@ -103,7 +100,7 @@
 											<button
 												type="submit"
 												disabled={index === data.questions.length - 1}
-												class="border-ink bg-paper rounded-pill border-2 px-2.5 py-1 text-xs disabled:opacity-30"
+												class="border-ink/25 bg-paper rounded-pill border px-2.5 py-1 text-xs disabled:opacity-30 min-h-11 inline-flex items-center justify-center"
 												aria-label="Descendre « {question.label} »"
 											>
 												↓
@@ -113,7 +110,7 @@
 											<input type="hidden" name="questionId" value={question.id} />
 											<button
 												type="submit"
-												class="border-ink text-danger bg-paper rounded-pill border-2 px-2.5 py-1 text-xs"
+												class="border-ink/25 text-danger bg-paper rounded-pill border px-2.5 py-1 text-xs min-h-11 inline-flex items-center justify-center"
 											>
 												Supprimer
 											</button>
@@ -140,15 +137,15 @@
 								name="label"
 								required
 								minlength="3"
-								placeholder="Quelle est votre priorite pour la France ?"
-								class="border-ink bg-paper rounded-lg border-2 px-3 py-2 text-sm"
+								placeholder="Quelle est votre priorité pour la France ?"
+								class="border-ink/20 bg-paper rounded-field border px-3 py-2 text-sm min-h-11"
 							/>
 						</label>
 						<label class="flex flex-col gap-1">
 							<span class="text-xs font-semibold">Type</span>
 							<select
 								name="type"
-								class="border-ink bg-paper rounded-lg border-2 px-3 py-2 text-sm"
+								class="border-ink/20 bg-paper rounded-field border px-3 py-2 text-sm min-h-11"
 							>
 								{#each data.questionTypes as type (type.key)}
 									<option value={type.key}>{type.label}</option>
@@ -157,7 +154,7 @@
 						</label>
 						<button
 							type="submit"
-							class="bg-ink text-white brut-sm brut-press rounded-pill px-4 py-2 text-sm font-bold"
+							class="bg-ink text-paper press rounded-pill px-4 py-2 text-sm font-semibold min-h-11 inline-flex items-center justify-center"
 						>
 							Ajouter
 						</button>
@@ -167,8 +164,8 @@
 		</Panel>
 
 		<Panel
-			title="Methodologie"
-			description="Obligatoire avant publication. C'est ce qui distingue cette enquete d'un sondage opaque."
+			title="Méthodologie"
+			description="Obligatoire avant publication. C'est ce qui distingue cette enquête d'un sondage opaque."
 		>
 			<form method="POST" action="?/metadata" use:enhance class="flex flex-col gap-4">
 				<div class="grid gap-4 sm:grid-cols-2">
@@ -179,7 +176,7 @@
 							required
 							value={data.survey.title}
 							disabled={!editable}
-							class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+							class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 						/>
 					</label>
 
@@ -189,7 +186,7 @@
 							name="subtitle"
 							value={data.survey.subtitle ?? ''}
 							disabled={!editable}
-							class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+							class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 						/>
 					</label>
 
@@ -200,7 +197,7 @@
 							name="fieldworkStart"
 							value={dateValue(data.survey.fieldworkStart)}
 							disabled={!editable}
-							class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+							class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 						/>
 					</label>
 
@@ -211,7 +208,7 @@
 							name="fieldworkEnd"
 							value={dateValue(data.survey.fieldworkEnd)}
 							disabled={!editable}
-							class="border-ink bg-paper rounded-lg border-2 px-3 py-2"
+							class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
 						/>
 					</label>
 				</div>
@@ -222,13 +219,13 @@
 						name="description"
 						rows="3"
 						disabled={!editable}
-						class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{data.survey.description ?? ''}</textarea
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">{data.survey.description ?? ''}</textarea
 					>
 				</label>
 
 				<label class="flex flex-col gap-1.5">
 					<span class="text-sm font-semibold">
-						Methodologie <span class="text-danger">*</span>
+						Méthodologie <span class="text-danger">*</span>
 					</span>
 					<span class="text-muted text-xs">
 						Mode de collecte, construction de l'echantillon, limites connues. Publiee telle quelle.
@@ -237,12 +234,12 @@
 						name="methodology"
 						rows="8"
 						disabled={!editable}
-						class="border-ink bg-paper rounded-lg border-2 px-3 py-2">{data.survey.methodology ?? ''}</textarea
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">{data.survey.methodology ?? ''}</textarea
 					>
 				</label>
 
 				<label class="flex flex-col gap-1.5">
-					<span class="text-sm font-semibold">Seuil d'anonymat propre a cette enquete</span>
+					<span class="text-sm font-semibold">Seuil d'anonymat propre à cette enquete</span>
 					<span class="text-muted text-xs">
 						Laissez vide pour appliquer le reglage global. Ne le baissez que si vous savez ce que
 						vous faites.
@@ -253,7 +250,7 @@
 						min="1"
 						value={data.survey.kAnonymityThreshold ?? ''}
 						disabled={!editable}
-						class="border-ink bg-paper w-32 rounded-lg border-2 px-3 py-2"
+						class="border-ink/20 bg-paper w-32 rounded-field border px-3 py-2 min-h-11"
 					/>
 				</label>
 
@@ -261,7 +258,7 @@
 					<div>
 						<button
 							type="submit"
-							class="bg-ink text-white brut brut-press rounded-pill px-5 py-2.5 text-sm font-bold"
+							class="bg-ink text-paper press rounded-pill px-5 py-2.5 text-sm font-semibold min-h-11 inline-flex items-center justify-center"
 						>
 							Enregistrer
 						</button>
@@ -272,10 +269,10 @@
 	</div>
 
 	<aside class="flex flex-col gap-6">
-		<Panel title="Etat">
+		<Panel title="État">
 			<dl class="flex flex-col gap-3 text-sm">
 				<div class="flex justify-between gap-3">
-					<dt class="text-muted">Reponses</dt>
+					<dt class="text-muted">Réponses</dt>
 					<dd class="tabular font-semibold">{formatCount(data.survey.responseCount)}</dd>
 				</div>
 				<div class="flex justify-between gap-3">
@@ -283,7 +280,7 @@
 					<dd class="tabular font-semibold">{formatCount(data.questions.length)}</dd>
 				</div>
 				<div class="flex justify-between gap-3">
-					<dt class="text-muted">Methodologie</dt>
+					<dt class="text-muted">Méthodologie</dt>
 					<dd class="font-semibold">
 						{data.survey.methodology?.trim() ? 'Renseignee' : 'Manquante'}
 					</dd>
@@ -293,7 +290,7 @@
 			{#if data.survey.status === 'PUBLISHED'}
 				<a
 					href="/donnees/{data.survey.slug}"
-					class="text-coral-700 mt-4 inline-block text-sm underline"
+					class="text-coral-ink mt-4 inline-block text-sm underline"
 				>
 					Voir la page publique
 				</a>
