@@ -3,6 +3,7 @@ import {
 	readCheckbox,
 	readDate,
 	readHexColor,
+	readKeywords,
 	readOptionalInt,
 	readOptionalText,
 	readPrefixed,
@@ -101,5 +102,45 @@ describe('readPrefixed', () => {
 
 	it('rend un objet vide quand rien ne correspond', () => {
 		expect(readPrefixed(build({ a: 'x' }), 'map:')).toEqual({});
+	});
+});
+
+describe('readKeywords', () => {
+	function keywordForm(value: string): FormData {
+		const data = new FormData();
+		data.set('keywords', value);
+		return data;
+	}
+
+	it('decoupe sur les virgules et rogne les espaces', () => {
+		expect(readKeywords(keywordForm(' logement , pouvoir d achat '), 'keywords').slice()).toEqual([
+			'logement',
+			'pouvoir d achat'
+		]);
+	});
+
+	it('ecarte les doublons sans tenir compte de la casse', () => {
+		// Sans cela, « Logement » et « logement » deviendraient deux themes
+		// distincts dans le catalogue, et le filtre en raterait un sur deux.
+		expect(readKeywords(keywordForm('Logement, logement, LOGEMENT'), 'keywords').slice()).toEqual([
+			'Logement'
+		]);
+	});
+
+	it('conserve la casse de la premiere occurrence', () => {
+		expect(readKeywords(keywordForm('Écologie, écologie'), 'keywords').slice()).toEqual([
+			'Écologie'
+		]);
+	});
+
+	it('ignore les entrees vides', () => {
+		expect(readKeywords(keywordForm('logement,, ,santé'), 'keywords').slice()).toEqual([
+			'logement',
+			'santé'
+		]);
+	});
+
+	it('rend une liste vide sur un champ vide', () => {
+		expect(readKeywords(keywordForm('   '), 'keywords').slice()).toEqual([]);
 	});
 });

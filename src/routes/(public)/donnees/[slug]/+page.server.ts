@@ -21,6 +21,7 @@ import {
 	getPublishedSurvey,
 	prepareExplore
 } from '$lib/server/survey/queries';
+import type { CellBasis } from '$charts/crosstab-cell';
 import type { Axis } from '$lib/server/survey/explore';
 import type { PageServerLoad } from './$types';
 
@@ -50,6 +51,10 @@ export const load: PageServerLoad = async ({ params, url }) => {
 
 	// Le tri depend du TYPE de la question portee en abscisse : une echelle
 	// garde son ordre, une liste de choix se classe par effectif.
+	// La lecture en ligne est celle qu on attend d un tri croise : « parmi les
+	// Bretons, X % citent… ». Les trois autres sont a un clic.
+	const basis = requested.basis ?? 'ligne';
+
 	const sort = resolveSort(
 		requested.sort,
 		getQuestionType(prepared.xQuestion.type)?.ordered ?? false
@@ -72,7 +77,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	 * croiser trois variables divise l echantillon, et c est exactement la ou
 	 * une combinaison finit par ne designer qu une personne.
 	 */
-	const panels = paintPanels({ chart, inputs, prepared, sort });
+	const panels = paintPanels({ chart, inputs, prepared, sort, basis });
 
 	// Les memes questions servent les deux axes et le panneau de filtres : une
 	// variable socio-demographique n est pas une categorie a part, c est une
@@ -80,7 +85,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const filterable = filterableQuestions(survey);
 	const base = baseOf(outcome);
 
-	const built = paintChart(chart, outcome, prepared);
+	const built = paintChart(chart, outcome, prepared, basis);
 
 	const share = buildShare({ survey, requested, prepared, filterable, base, origin: url.origin });
 
@@ -93,7 +98,16 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			methodology: survey.methodology,
 			fieldworkStart: survey.fieldworkStart,
 			fieldworkEnd: survey.fieldworkEnd,
-			responseCount: survey.responseCount
+			responseCount: survey.responseCount,
+			keywords: survey.keywords,
+			geographicCoverage: survey.geographicCoverage,
+			collectionMode: survey.collectionMode,
+			updateFrequency: survey.updateFrequency,
+			// Le referencement se rabat sur ce qui est deja ecrit pour etre lu :
+			// une description de partage vide vaut mieux qu une description
+			// fabriquee, mais un sous-titre existant vaut mieux que rien.
+			metaTitle: survey.metaTitle ?? survey.title,
+			metaDescription: survey.metaDescription ?? survey.subtitle ?? survey.description
 		},
 		questions: filterable.map(({ code, label }) => ({ code, label })),
 		filterGroups: buildFilterGroups(filterable, requested.filters),
@@ -117,6 +131,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		// afficherait un par panneau, ce qui noierait ce qu ils servent a dire.
 		insights: panels ? [] : insightsOf(outcome),
 		appliedSort: sort,
+		appliedBasis: basis,
 		droppedMessage: describeDropped(prepared.dropped),
 		share
 	};
@@ -138,7 +153,8 @@ function describeSelection(
 		chart: chartKey,
 		includeNonResponses: requested.includeNonResponses,
 		filters: requested.filters,
-		sort: requested.sort
+		sort: requested.sort,
+		basis: requested.basis
 	};
 }
 
@@ -154,13 +170,14 @@ function paintPanels(input: {
 	inputs: Parameters<typeof buildPanels>[0];
 	prepared: { z: Parameters<typeof buildPanels>[1] | null } & Parameters<typeof paintChart>[2];
 	sort: Parameters<typeof sortOutcome>[1];
+	basis: CellBasis;
 }) {
 	const { chart, inputs, prepared, sort } = input;
 	if (!prepared.z) return null;
 
 	return buildPanels(inputs, prepared.z).map((panel) => {
 		const sorted = sortOutcome(panel.outcome, sort);
-		const built = paintChart(chart, sorted, prepared);
+		const built = paintChart(chart, sorted, prepared, input.basis);
 
 		return {
 			key: panel.key,
@@ -190,7 +207,8 @@ function paintChart(
 	prepared: {
 		x: { label: string; modalities: readonly { key: string }[] };
 		y: { label: string; modalities: readonly { key: string }[] } | null;
-	}
+	},
+	basis: CellBasis
 ) {
 	if (outcome.kind === 'too-small') return null;
 
@@ -199,7 +217,8 @@ function paintChart(
 	return buildChart(chart, outcome.kind === 'crosstab' ? outcome.crosstab : outcome.distribution, {
 		question: prepared.x.label,
 		crossedWith: prepared.y?.label,
-		colorSlots: colorSlots(painted.modalities)
+		colorSlots: colorSlots(painted.modalities),
+		basis
 	});
 }
 

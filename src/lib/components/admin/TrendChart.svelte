@@ -26,7 +26,10 @@
 		<ul class="flex h-40 items-end gap-1" role="list">
 			{#each points as point (point.key)}
 				{@const height = point.count === null ? 100 : (point.count / maxCount) * 100}
-				<li class="flex h-full flex-1 flex-col justify-end" title="{point.label} : {point.suppressed ? SUPPRESSED_LABEL : formatCount(point.count)}">
+				<li
+					class="flex h-full flex-1 flex-col justify-end"
+					title="{point.label} : {point.suppressed ? SUPPRESSED_LABEL : formatCount(point.count)}"
+				>
 					<div
 						class="rounded-t-sm {point.suppressed ? 'bg-muted/30' : 'bg-coral'}"
 						style:height="{Math.max(height, 2)}%"
@@ -38,20 +41,30 @@
 			{/each}
 		</ul>
 
-		<table class="sr-only">
-			<caption>{caption}</caption>
-			<thead>
-				<tr><th scope="col">Semaine du</th><th scope="col">Réponses</th></tr>
-			</thead>
-			<tbody>
-				{#each points as point (point.key)}
-					<tr>
-						<th scope="row">{point.label}</th>
-						<td>{point.suppressed ? SUPPRESSED_LABEL : formatCount(point.count)}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
+		<!--
+			Le tableau qui donne les memes chiffres a qui ne voit pas les barres.
+
+			Le masquage porte sur un CONTENEUR, pas sur la table elle-meme : sur une
+			table, `overflow: hidden` ne rogne pas le `<caption>`, dont la boite vit
+			dans la boite enveloppe et non dans la grille. Pose sur la table, le
+			`sr-only` laissait donc la legende s afficher par-dessus le titre.
+		-->
+		<div class="sr-only">
+			<table>
+				<caption>{caption}</caption>
+				<thead>
+					<tr><th scope="col">Semaine du</th><th scope="col">Réponses</th></tr>
+				</thead>
+				<tbody>
+					{#each points as point (point.key)}
+						<tr>
+							<th scope="row">{point.label}</th>
+							<td>{point.suppressed ? SUPPRESSED_LABEL : formatCount(point.count)}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 
 		<p class="text-muted flex justify-between text-xs">
 			<span>{points.at(0)?.label}</span>
@@ -60,8 +73,8 @@
 
 		{#if points.some((point) => point.suppressed)}
 			<p class="text-muted text-xs">
-				{SUPPRESSED_SYMBOL} Les semaines sous le seuil d'anonymat sont masquées, ici comme dans les
-				données publiées.
+				{SUPPRESSED_SYMBOL} Les semaines sous le seuil d'anonymat sont masquées, ici comme dans les données
+				publiées.
 			</p>
 		{/if}
 	{/if}

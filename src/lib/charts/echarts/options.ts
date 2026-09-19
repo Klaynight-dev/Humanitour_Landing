@@ -1,6 +1,7 @@
 import type { CrosstabResult, DistributionResult } from '$lib/server/survey/aggregate';
 import { formatCount, formatShare, SUPPRESSED_LABEL } from '$shared/format';
-import { colorFor, SUPPRESSED_COLOR } from '../palette';
+import { maxCellValue, readCell, type CellBasis } from '../crosstab-cell';
+import { colorFor, SEQUENTIAL, SUPPRESSED_COLOR } from '../palette';
 import { categoryAxis, chartBase, CHART_MUTED, endLabel, valueAxis } from './theme';
 
 /**
@@ -35,6 +36,8 @@ export interface ChartContext {
 	 * Sans lui, trier par effectif repeindrait le graphique (`palette.ts`).
 	 */
 	readonly colorSlots: Readonly<Record<string, number>>;
+	/** Lecture des cases d un croisement. */
+	readonly basis: CellBasis;
 }
 
 export interface BuiltChart {
@@ -230,17 +233,90 @@ export function stackedOption(table: CrosstabResult, context: ChartContext): Bui
  */
 export function groupedOption(table: CrosstabResult, context: ChartContext): BuiltChart {
 	const rows = table.xModalities.length;
-	const series = table.yModalities.length;
+	const series = Math.max(1, table.yModalities.length);
+
+	/*
+	 * Une modalite occupe UNE ligne, quel que soit le nombre de series.
+	 *
+	 * La version precedente laissait le groupe grandir avec les series : une
+	 * question a quatre modalites croisees prenait quatre hauteurs de barre, et
+	 * une seule modalite s etalait sur le quart de l ecran. On fixe donc la
+	 * hauteur de ligne et on amincit les barres pour qu elles y tiennent.
+	 */
+	const ROW_HEIGHT = 46;
+	const barWidth = Math.max(4, Math.floor(30 / series));
 
 	return {
-		height: Math.max(240, 80 + rows * Math.max(48, series * 18)),
+		height: Math.max(220, 80 + rows * ROW_HEIGHT),
 		option: {
 			...chartBase(),
 			legend: crossLegend(),
 			grid: { left: 8, right: 48, top: 8, bottom: 44, containLabel: true },
 			xAxis: valueAxis({ percent: true }),
 			yAxis: categoryAxis([...table.xModalities].reverse().map((modality) => modality.label)),
-			series: crossSeries(table, context, false)
+			series: crossSeries(table, context, false).map((serie) => ({
+				...serie,
+				barWidth,
+				barGap: '20%',
+				barCategoryGap: '35%'
+			}))
+		}
+	};
+}
+
+/**
+ * Carte de chaleur : le croisement en intensite.
+ *
+ * L intensite se lit comme une quantite, donc une SEULE teinte du clair au
+ * fonce (`palette.ts`), jamais un arc-en-ciel. La valeur est ecrite dans
+ * chaque case : la couleur situe, le chiffre dit.
+ */
+export function heatmapOption(table: CrosstabResult, context: ChartContext): BuiltChart {
+	const rows = [...table.xModalities].reverse();
+	const max = maxCellValue(table, context.basis);
+
+	const data = rows.flatMap((xModality, rowIndex) =>
+		table.yModalities.map((yModality, columnIndex) => {
+			const reading = readCell(table, xModality.key, yModality.key, context.basis);
+
+			return {
+				value: [columnIndex, rowIndex, reading.value ?? 0],
+				itemStyle: reading.suppressed ? { color: SUPPRESSED_COLOR } : undefined,
+				label: { formatter: reading.text },
+				tooltip: {
+					formatter: `${xModality.label}<br/>${yModality.label} : <b>${reading.text}</b>`
+				}
+			};
+		})
+	);
+
+	return {
+		height: Math.max(220, 90 + rows.length * 44),
+		option: {
+			...chartBase(),
+			grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },
+			xAxis: {
+				...categoryAxis(table.yModalities.map((modality) => modality.label)),
+				position: 'top'
+			},
+			yAxis: categoryAxis(rows.map((modality) => modality.label)),
+			// `max` a zero signifie que TOUT est masque : une echelle a zero
+			// laisserait ECharts peindre toutes les cases de la teinte la plus
+			// forte, ce qui suggererait une intensite qu on ne publie pas.
+			visualMap: {
+				show: false,
+				min: 0,
+				max: max > 0 ? max : 1,
+				inRange: { color: [...SEQUENTIAL] }
+			},
+			series: [
+				{
+					type: 'heatmap',
+					data,
+					label: { show: true, fontSize: 12, color: '#000000' },
+					itemStyle: { borderColor: '#ffffff', borderWidth: 2, borderRadius: 4 }
+				}
+			]
 		}
 	};
 }

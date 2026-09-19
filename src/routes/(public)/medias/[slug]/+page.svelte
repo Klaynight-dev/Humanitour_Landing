@@ -31,39 +31,54 @@
 	{#if media.coverUrl}<meta property="og:image" content={media.coverUrl} />{/if}
 </svelte:head>
 
-<article class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-	<nav class="text-muted mb-6 text-sm" aria-label="Fil d'Ariane">
-		<a href="/medias" class="hover:text-ink underline">Médias</a>
-		<span aria-hidden="true"> / </span>
-		<span>{type?.label ?? media.kind}</span>
-	</nav>
+<!--
+	Meme ouverture que la fiche d une enquete : bandeau au degrade de marque,
+	texte NOIR, et les reperes du contenu sur des cartouches blancs. Les deux
+	fiches du site s ouvrent donc de la meme facon, qu on arrive par les donnees
+	ou par la mediatheque.
+-->
+<header class="surface-mesh relative isolate overflow-hidden">
+	<div class="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+		<nav class="mb-6 text-sm" aria-label="Fil d'Ariane">
+			<a href="/medias" class="underline decoration-2 underline-offset-2">Médias</a>
+			<span aria-hidden="true"> / </span>
+			<span class="font-semibold">{type?.label ?? media.kind}</span>
+		</nav>
 
-	<header>
-		<div class="flex flex-wrap items-center gap-3 text-xs">
-			<span class="bg-coral-wash text-coral-ink rounded-pill px-3 py-1 font-semibold">
-				{type?.label ?? media.kind}
-			</span>
-			{#if media.publishedAt}
-				<time class="text-muted" datetime={media.publishedAt.toISOString()}>
-					{formatDate(media.publishedAt)}
-				</time>
-			{/if}
-			{#if media.authorName}
-				<span class="text-muted">Par {media.authorName}</span>
-			{/if}
-		</div>
-
-		<h1 class="mt-4 text-4xl sm:text-5xl">
-			{media.title}
-		</h1>
+		<h1 class="text-4xl sm:text-5xl">{media.title}</h1>
 
 		{#if text('standfirst')}
-			<p class="text-ink-soft mt-4 text-lg leading-relaxed">{text('standfirst')}</p>
+			<p class="measure mt-4 text-lg leading-relaxed">{text('standfirst')}</p>
 		{:else if media.excerpt}
-			<p class="text-ink-soft mt-4 text-lg leading-relaxed">{media.excerpt}</p>
+			<p class="measure mt-4 text-lg leading-relaxed">{media.excerpt}</p>
 		{/if}
-	</header>
 
+		<!-- Les reperes du contenu, sur fond blanc : du texte de corps pose sur le
+		     degrade ne tient pas le contraste d un bout a l autre. -->
+		<dl class="mt-8 flex flex-wrap gap-3">
+			<div class="bg-paper rounded-panel px-4 py-3">
+				<dt class="text-muted text-xs tracking-wide uppercase">Nature</dt>
+				<dd class="mt-1 font-semibold">{type?.label ?? media.kind}</dd>
+			</div>
+			{#if media.publishedAt}
+				<div class="bg-paper rounded-panel px-4 py-3">
+					<dt class="text-muted text-xs tracking-wide uppercase">Publié le</dt>
+					<dd class="mt-1 font-semibold">
+						<time datetime={media.publishedAt.toISOString()}>{formatDate(media.publishedAt)}</time>
+					</dd>
+				</div>
+			{/if}
+			{#if media.authorName}
+				<div class="bg-paper rounded-panel px-4 py-3">
+					<dt class="text-muted text-xs tracking-wide uppercase">Signature</dt>
+					<dd class="mt-1 font-semibold">{media.authorName}</dd>
+				</div>
+			{/if}
+		</dl>
+	</div>
+</header>
+
+<article class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
 	{#if media.coverUrl && media.kind !== 'VIDEO'}
 		<img
 			src={media.coverUrl}
@@ -123,7 +138,10 @@
 </article>
 
 {#if data.related.length > 0}
-	<section class="border-ink/12 mx-auto max-w-6xl border-t px-4 py-12 sm:px-6" aria-labelledby="suite">
+	<section
+		class="border-ink/12 mx-auto max-w-6xl border-t px-4 py-12 sm:px-6"
+		aria-labelledby="suite"
+	>
 		<h2 id="suite" class="text-2xl">À lire et à écouter ensuite</h2>
 		<ul class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{#each data.related as item (item.slug)}

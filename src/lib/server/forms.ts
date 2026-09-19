@@ -77,3 +77,27 @@ export function readPrefixed(form: FormData, prefix: string): Record<string, str
 
 	return collected;
 }
+
+/**
+ * Liste de mots-cles saisie en une ligne, separee par des virgules.
+ *
+ * Normalise a la lecture : espaces rognes, doublons ecartes, casse conservee.
+ * Sans cette normalisation, « Logement », « logement » et « logement  »
+ * deviendraient trois themes distincts dans le catalogue, et le filtre en
+ * raterait deux sur trois.
+ */
+export function readKeywords(form: FormData, name: string): string[] {
+	const seen = new Set<string>();
+	const keywords: string[] = [];
+
+	for (const raw of readText(form, name).split(',')) {
+		const keyword = raw.trim();
+		const key = keyword.toLocaleLowerCase('fr-FR');
+		if (keyword === '' || seen.has(key)) continue;
+
+		seen.add(key);
+		keywords.push(keyword);
+	}
+
+	return keywords;
+}

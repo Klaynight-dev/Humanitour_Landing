@@ -37,12 +37,13 @@ const REGION_ROWS: readonly AnswerRow[] = PRIORITE_ROWS.map((row, index) => ({
 const X: Axis = { code: 'priorite', label: 'Priorité', modalities: PRIORITE, rows: PRIORITE_ROWS };
 const Y: Axis = { code: 'region', label: 'Région', modalities: REGION, rows: REGION_ROWS };
 
-const CONTEXT = { question: 'Priorité', colorSlots: colorSlots(PRIORITE) };
+const CONTEXT = { question: 'Priorité', colorSlots: colorSlots(PRIORITE), basis: 'ligne' } as const;
 const CROSS_CONTEXT = {
 	question: 'Priorité',
 	crossedWith: 'Région',
-	colorSlots: colorSlots(REGION)
-};
+	colorSlots: colorSlots(REGION),
+	basis: 'ligne'
+} as const;
 
 function distribution(threshold = 1, sort: 'effectif' | 'questionnaire' = 'questionnaire') {
 	const outcome = sortOutcome(

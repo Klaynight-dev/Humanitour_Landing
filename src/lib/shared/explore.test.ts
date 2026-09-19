@@ -18,7 +18,8 @@ const BASE: ExploreParams = {
 	chart: 'bars',
 	includeNonResponses: true,
 	filters: [],
-	sort: null
+	sort: null,
+	basis: null
 };
 
 describe('parseExploreParams', () => {
@@ -115,6 +116,7 @@ describe('exploreSearch', () => {
 			chart: 'crosstab',
 			includeNonResponses: false,
 			sort: 'effectif',
+			basis: 'colonne',
 			filters: [
 				{ questionCode: 'region', modalityKeys: ['bre', 'nor'] },
 				{ questionCode: 'age', modalityKeys: ['18-24'] }
@@ -138,6 +140,20 @@ describe('decoupage en petits multiples', () => {
 
 	it('se relit tel quel', () => {
 		expect(parseExploreParams(new URLSearchParams('x=a&y=b&z=c')).z).toBe('c');
+	});
+});
+
+describe('lecture des cases', () => {
+	it('ne s ecrit pas tant que la lecture par defaut suffit', () => {
+		expect(exploreSearch(BASE)).not.toContain('base=');
+	});
+
+	it('s ecrit des que le visiteur change de lecture', () => {
+		expect(exploreSearch({ ...BASE, basis: 'colonne' })).toContain('base=colonne');
+	});
+
+	it('ignore une lecture inconnue plutot que de casser le lien', () => {
+		expect(parseExploreParams(new URLSearchParams('base=diagonale')).basis).toBeNull();
 	});
 });
 

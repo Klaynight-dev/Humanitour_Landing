@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { footerLines, posterLayout, POSTER_WIDTH, wrapLines, type PosterContent } from './poster';
+import {
+	columnWidths,
+	footerLines,
+	posterLayout,
+	POSTER_WIDTH,
+	tableHeight,
+	wrapLines,
+	type PosterContent
+} from './poster';
 
 /** Mesure simulee : dix pixels par signe, pour raisonner en nombre de signes. */
 const measure = (text: string) => text.length * 10;
@@ -12,7 +20,8 @@ const CONTENT: PosterContent = {
 	fieldwork: 'Terrain du 15 juin 2026 au 20 août 2026',
 	licence: 'ODbL 1.0',
 	url: 'https://humanitour.fr/donnees/presidentielle-2027?x=priorite',
-	chart: { dataUrl: 'data:image/png;base64,xxx', width: 760, height: 380 }
+	chart: { dataUrl: 'data:image/png;base64,xxx', width: 760, height: 380 },
+	table: null
 };
 
 describe('wrapLines', () => {
@@ -93,5 +102,41 @@ describe('footerLines', () => {
 		const lines = footerLines({ ...CONTENT, fieldwork: '', base: '' });
 
 		expect(lines.every((line) => line.trim() !== '')).toBe(true);
+	});
+});
+
+describe('mise en page du tableau', () => {
+	it('grandit d une hauteur de ligne par modalite', () => {
+		const deux = tableHeight(2);
+		const trois = tableHeight(3);
+
+		expect(trois - deux).toBe(tableHeight(1) - tableHeight(0));
+		expect(tableHeight(0)).toBeGreaterThan(0);
+	});
+
+	it('n etire pas le tableau a la hauteur d un graphique', () => {
+		// `keepRatio: false` : un tableau porte deja sa hauteur exacte, l etirer
+		// decollerait les lignes de leurs libelles.
+		const layout = posterLayout(1, 3, { width: 1088, height: 328, keepRatio: false });
+
+		expect(layout.chart.height).toBe(328);
+	});
+
+	it('donne le double de largeur a la colonne des libelles', () => {
+		const widths = columnWidths(900, 3);
+
+		expect(widths).toHaveLength(3);
+		expect(widths[0]).toBeCloseTo((widths[1] ?? 0) * 2, 5);
+	});
+
+	it('remplit toute la largeur disponible', () => {
+		const total = columnWidths(900, 4).reduce((sum, width) => sum + width, 0);
+
+		expect(total).toBeCloseTo(900, 5);
+	});
+
+	it('rend une seule colonne pleine largeur', () => {
+		expect(columnWidths(900, 1)).toEqual([900]);
+		expect(columnWidths(900, 0)).toEqual([]);
 	});
 });

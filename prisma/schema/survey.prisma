@@ -54,6 +54,34 @@ model Survey {
   /// (AppSetting `anonymity.k`, defaut 5).
   kAnonymityThreshold Int?
 
+  // --- Fiche du jeu de donnees -------------------------------------------
+  //
+  // Ce qu'un reutilisateur doit savoir AVANT de telecharger : sur qui porte
+  // l'enquete, comment elle a ete collectee, si elle sera mise a jour. Un jeu
+  // de donnees sans ces informations se telecharge, mais ne se cite pas.
+
+  /// Themes et mots-cles. Filtrables dans le catalogue public.
+  keywords String[] @default([])
+
+  /// Perimetre couvert : « France metropolitaine, treize regions ».
+  geographicCoverage String?
+
+  /// Mode de collecte declare : « face-a-face sur le terrain ».
+  /// Distinct de `Response.source`, qui dit par quel TUYAU la reponse est
+  /// entree en base ; celui-ci dit comment elle a ete recueillie.
+  collectionMode String?
+
+  /// Frequence de mise a jour annoncee, ou son absence assumee.
+  updateFrequency String?
+
+  // --- Referencement et partage ------------------------------------------
+
+  /// Titre de referencement, s'il doit differer du titre affiche.
+  metaTitle String?
+
+  /// Description de referencement et de partage. A defaut, le sous-titre sert.
+  metaDescription String?
+
   questions     Question[]
   responses     Response[]
   importBatches ImportBatch[]

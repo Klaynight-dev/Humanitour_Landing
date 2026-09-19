@@ -17,8 +17,8 @@
 		return value ? new Date(value).toISOString().slice(0, 10) : '';
 	}
 
-	const typeLabel = $derived((key: string) =>
-		data.questionTypes.find((type) => type.key === key)?.label ?? key
+	const typeLabel = $derived(
+		(key: string) => data.questionTypes.find((type) => type.key === key)?.label ?? key
 	);
 </script>
 
@@ -219,7 +219,8 @@
 						name="description"
 						rows="3"
 						disabled={!editable}
-						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">{data.survey.description ?? ''}</textarea
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
+						>{data.survey.description ?? ''}</textarea
 					>
 				</label>
 
@@ -234,7 +235,8 @@
 						name="methodology"
 						rows="8"
 						disabled={!editable}
-						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">{data.survey.methodology ?? ''}</textarea
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
+						>{data.survey.methodology ?? ''}</textarea
 					>
 				</label>
 
@@ -253,6 +255,109 @@
 						class="border-ink/20 bg-paper w-32 rounded-field border px-3 py-2 min-h-11"
 					/>
 				</label>
+
+				<!--
+					La fiche du jeu de donnees.
+
+					Ce qu'un reutilisateur doit savoir AVANT de telecharger : sur qui
+					porte l'enquete, comment elle a ete collectee, si elle sera mise a
+					jour. Tout y est facultatif, et ce qui reste vide ne s'affiche pas
+					sur la fiche publique plutot que d'y laisser une ligne vide.
+				-->
+				<fieldset class="border-ink/12 flex flex-col gap-4 border-t pt-5">
+					<legend class="sr-only">Fiche du jeu de données</legend>
+					<h3 class="text-base font-semibold">Fiche du jeu de données</h3>
+
+					<label class="flex flex-col gap-1.5">
+						<span class="text-sm font-semibold">Thèmes et mots-clés</span>
+						<span class="text-muted text-xs">
+							Séparés par des virgules. Ils deviennent filtrables dans le catalogue public.
+						</span>
+						<input
+							name="keywords"
+							value={data.survey.keywords.join(', ')}
+							placeholder="pouvoir d'achat, logement, abstention"
+							disabled={!editable}
+							class="border-ink/20 bg-paper rounded-field min-h-11 border px-3 py-2"
+						/>
+					</label>
+
+					<div class="grid gap-4 sm:grid-cols-2">
+						<label class="flex flex-col gap-1.5">
+							<span class="text-sm font-semibold">Couverture géographique</span>
+							<input
+								name="geographicCoverage"
+								value={data.survey.geographicCoverage ?? ''}
+								placeholder="France métropolitaine, treize régions"
+								disabled={!editable}
+								class="border-ink/20 bg-paper rounded-field min-h-11 border px-3 py-2"
+							/>
+						</label>
+
+						<label class="flex flex-col gap-1.5">
+							<span class="text-sm font-semibold">Mode de collecte</span>
+							<input
+								name="collectionMode"
+								value={data.survey.collectionMode ?? ''}
+								placeholder="Face-à-face sur le terrain"
+								disabled={!editable}
+								class="border-ink/20 bg-paper rounded-field min-h-11 border px-3 py-2"
+							/>
+						</label>
+					</div>
+
+					<label class="flex flex-col gap-1.5">
+						<span class="text-sm font-semibold">Fréquence de mise à jour</span>
+						<span class="text-muted text-xs">
+							Dire « enquête ponctuelle, pas de mise à jour prévue » vaut mieux que ne rien dire :
+							le silence laisse croire que le jeu est abandonné.
+						</span>
+						<input
+							name="updateFrequency"
+							value={data.survey.updateFrequency ?? ''}
+							placeholder="Enquête ponctuelle, pas de mise à jour prévue"
+							disabled={!editable}
+							class="border-ink/20 bg-paper rounded-field min-h-11 border px-3 py-2"
+						/>
+					</label>
+				</fieldset>
+
+				<!--
+					Referencement et partage. Facultatif : a defaut, la page se rabat
+					sur le titre et le sous-titre, qui sont deja ecrits pour etre lus.
+				-->
+				<fieldset class="border-ink/12 flex flex-col gap-4 border-t pt-5">
+					<legend class="sr-only">Référencement et partage</legend>
+					<h3 class="text-base font-semibold">Référencement et partage</h3>
+
+					<label class="flex flex-col gap-1.5">
+						<span class="text-sm font-semibold">Titre de référencement</span>
+						<span class="text-muted text-xs">
+							Laissez vide pour reprendre le titre de l'enquête.
+						</span>
+						<input
+							name="metaTitle"
+							value={data.survey.metaTitle ?? ''}
+							disabled={!editable}
+							class="border-ink/20 bg-paper rounded-field min-h-11 border px-3 py-2"
+						/>
+					</label>
+
+					<label class="flex flex-col gap-1.5">
+						<span class="text-sm font-semibold">Description de partage</span>
+						<span class="text-muted text-xs">
+							Ce qui s'affiche sous le lien sur les réseaux et dans les moteurs. À défaut, le
+							sous-titre sert.
+						</span>
+						<textarea
+							name="metaDescription"
+							rows="3"
+							disabled={!editable}
+							class="border-ink/20 bg-paper rounded-field min-h-11 border px-3 py-2"
+							>{data.survey.metaDescription ?? ''}</textarea
+						>
+					</label>
+				</fieldset>
 
 				{#if editable}
 					<div>

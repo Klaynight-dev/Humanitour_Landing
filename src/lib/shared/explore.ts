@@ -1,3 +1,4 @@
+import { parseCellBasis, type CellBasis } from '$charts/crosstab-cell';
 /**
  * Parametres de l explorateur de croisements.
  *
@@ -24,6 +25,9 @@ export const PARAM_Y = 'y';
  * croisement, cote a cote, une fois par modalite de cette question.
  */
 export const PARAM_Z = 'z';
+// La lecture des cases est definie avec les graphiques, pas ici : c est une
+// facon de LIRE un tableau, et le contrat de permalien ne fait que la
+// transporter.
 /** Cle du registre `src/lib/charts/`. */
 export const PARAM_CHART = 'chart';
 /** `0` retire la non-reponse de l AFFICHAGE, jamais du calcul. */
@@ -32,6 +36,11 @@ export const PARAM_NON_RESPONSES = 'nr';
 export const PARAM_FILTER = 'filtre';
 /** Ordre d affichage des modalites. Absent = l ordre que le type de question merite. */
 export const PARAM_SORT = 'tri';
+/**
+ * Lecture des cases d un croisement : en ligne, en colonne, sur le total, ou
+ * en effectifs. Voir `charts/crosstab-cell.ts`, ou les quatre sont definies.
+ */
+export const PARAM_BASIS = 'base';
 
 /**
  * Ordre d affichage des modalites.
@@ -75,6 +84,8 @@ export interface ExploreParams {
 	readonly filters: readonly FilterClause[];
 	/** `null` laisse l explorateur choisir selon le type de question. */
 	readonly sort: SortMode | null;
+	/** Lecture des cases d un croisement. `null` = la lecture en ligne. */
+	readonly basis: CellBasis | null;
 }
 
 /**
@@ -131,7 +142,8 @@ export function parseExploreParams(params: URLSearchParams): ExploreParams {
 		// AFFICHE la non-reponse : l oubli doit pencher du cote de la montrer.
 		includeNonResponses: params.get(PARAM_NON_RESPONSES) !== '0',
 		filters: parseFilterValues(params.getAll(PARAM_FILTER)),
-		sort: parseSort(params.get(PARAM_SORT))
+		sort: parseSort(params.get(PARAM_SORT)),
+		basis: parseCellBasis(params.get(PARAM_BASIS))
 	};
 }
 
@@ -152,6 +164,7 @@ export function exploreSearch(params: ExploreParams): string {
 	if (!params.includeNonResponses) search.set(PARAM_NON_RESPONSES, '0');
 
 	if (params.sort) search.set(PARAM_SORT, params.sort);
+	if (params.basis) search.set(PARAM_BASIS, params.basis);
 
 	for (const clause of params.filters) {
 		for (const key of clause.modalityKeys) {

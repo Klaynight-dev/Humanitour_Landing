@@ -3,6 +3,7 @@ import { recordAudit } from '$lib/server/audit';
 import { prisma } from '$lib/server/db';
 import {
 	readDate,
+	readKeywords,
 	readOptionalInt,
 	readOptionalText,
 	readText
@@ -18,7 +19,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const survey = await prisma.survey.findUnique({
 		where: { id: params.id },
 		include: {
-			questions: { orderBy: { position: 'asc' }, include: { _count: { select: { options: true } } } },
+			questions: {
+				orderBy: { position: 'asc' },
+				include: { _count: { select: { options: true } } }
+			},
 			_count: { select: { responses: true } }
 		}
 	});
@@ -37,7 +41,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			fieldworkStart: survey.fieldworkStart,
 			fieldworkEnd: survey.fieldworkEnd,
 			kAnonymityThreshold: survey.kAnonymityThreshold,
-			responseCount: survey._count.responses
+			responseCount: survey._count.responses,
+			keywords: survey.keywords,
+			geographicCoverage: survey.geographicCoverage,
+			collectionMode: survey.collectionMode,
+			updateFrequency: survey.updateFrequency,
+			metaTitle: survey.metaTitle,
+			metaDescription: survey.metaDescription
 		},
 		questions: survey.questions.map((question) => ({
 			id: question.id,
@@ -80,7 +90,17 @@ export const actions: Actions = {
 				methodology: readOptionalText(form, 'methodology'),
 				fieldworkStart: readDate(form, 'fieldworkStart'),
 				fieldworkEnd: readDate(form, 'fieldworkEnd'),
-				kAnonymityThreshold: threshold.value
+				kAnonymityThreshold: threshold.value,
+
+				// Fiche du jeu de donnees : ce qu'un reutilisateur doit savoir avant
+				// de telecharger. Tout y est facultatif, et ce qui n'est pas
+				// renseigne ne s'affiche pas plutot que d'afficher un vide.
+				keywords: readKeywords(form, 'keywords'),
+				geographicCoverage: readOptionalText(form, 'geographicCoverage'),
+				collectionMode: readOptionalText(form, 'collectionMode'),
+				updateFrequency: readOptionalText(form, 'updateFrequency'),
+				metaTitle: readOptionalText(form, 'metaTitle'),
+				metaDescription: readOptionalText(form, 'metaDescription')
 			}
 		});
 
@@ -101,7 +121,8 @@ export const actions: Actions = {
 		const label = readText(form, 'label');
 		const type = readText(form, 'type');
 
-		if (label.length < 3) return fail(400, { message: 'Le libelle de la question est obligatoire.' });
+		if (label.length < 3)
+			return fail(400, { message: 'Le libelle de la question est obligatoire.' });
 
 		const definition = QUESTION_TYPES.find((candidate) => candidate.key === type);
 		if (!definition) return fail(400, { message: 'Type de question inconnu.' });

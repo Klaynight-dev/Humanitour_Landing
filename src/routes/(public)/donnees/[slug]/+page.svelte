@@ -8,7 +8,7 @@
 	import ResultTable from '$components/explorer/ResultTable.svelte';
 	import ShareBar from '$components/explorer/ShareBar.svelte';
 	import { formatBase, formatCount, formatFieldwork } from '$shared/format';
-	import { composePoster, type PosterChart } from '$lib/poster';
+	import { composePoster, type PosterChart, type PosterTable } from '$lib/poster';
 	import {
 		exploreSearch,
 		filterValue,
@@ -18,6 +18,7 @@
 		type ExploreParams,
 		type SortMode
 	} from '$shared/explore';
+	import { CELL_BASES, parseCellBasis, readCell } from '$charts/crosstab-cell';
 	import { LICENSES } from '$shared/site';
 	import type { PageData } from './$types';
 
@@ -39,7 +40,8 @@
 		chart: data.selection.chart,
 		includeNonResponses: data.selection.includeNonResponses,
 		filters: data.selection.filters,
-		sort: data.selection.sort
+		sort: data.selection.sort,
+		basis: data.selection.basis
 	});
 
 	/** Adresse de l explorateur ou un seul aspect change. Les autres survivent. */
@@ -90,7 +92,8 @@
 			// ainsi que le serveur distingue « decochee » de « absente ».
 			includeNonResponses: fields.getAll('nr').includes('1'),
 			filters: parseFilterValues(fields.getAll(PARAM_FILTER).map(String)),
-			sort: parseSort(textOf(fields.get('tri')))
+			sort: parseSort(textOf(fields.get('tri'))),
+			basis: parseCellBasis(textOf(fields.get('base')))
 		};
 	}
 
@@ -177,9 +180,41 @@
 	 */
 	let chartView: { toPng: () => Promise<PosterChart | null> } | null = $state(null);
 
+	/**
+	 * Le tableau croise, tel qu il sera trace sur l affiche.
+	 *
+	 * Meme contenu que le tableau affiche : la part en ligne, son effectif, et
+	 * le tiret des cases masquees. Une image qui montrerait un zero la ou la
+	 * page montre un tiret publierait ce que le seuil d anonymat protege.
+	 */
+	const posterTable = $derived.by<PosterTable | null>(() => {
+		if (data.panels || data.outcome.kind !== 'crosstab' || !data.chartIsTabular) return null;
+
+		const table = data.outcome.crosstab;
+
+		return {
+			columns: [
+				data.selection.xLabel,
+				...table.yModalities.map((modality) => modality.label),
+				'Total'
+			],
+			rows: table.xModalities.map((xModality) => ({
+				header: xModality.label,
+				cells: [
+					...table.yModalities.map((yModality) => {
+						return readCell(table, xModality.key, yModality.key, data.appliedBasis).text;
+					}),
+					formatCount(table.rowTotals.get(xModality.key) ?? null)
+				]
+			}))
+		};
+	});
+
 	async function downloadPoster(): Promise<void> {
-		const rendered = await chartView?.toPng();
-		if (!rendered) return;
+		// Un graphique s exporte depuis son rendu, un tableau se trace : l un ou
+		// l autre, jamais les deux.
+		const rendered = posterTable ? null : ((await chartView?.toPng()) ?? null);
+		if (!rendered && !posterTable) return;
 
 		const blob = await composePoster(
 			{
@@ -190,7 +225,8 @@
 				fieldwork: formatFieldwork(data.survey.fieldworkStart, data.survey.fieldworkEnd),
 				licence: LICENSES.data.name,
 				url: data.share.pageUrl,
-				chart: rendered
+				chart: rendered,
+				table: posterTable
 			},
 			'/logo-lockup-ink.png'
 		);
@@ -205,6 +241,15 @@
 		URL.revokeObjectURL(href);
 	}
 
+	/**
+	 * Description de partage.
+	 *
+	 * Celle de la fiche si elle est renseignee, sinon ce qui est deja ecrit pour
+	 * etre lu. On ne fabrique rien : une description inventee a partir des
+	 * chiffres serait un commentaire que personne n a ecrit.
+	 */
+	const shareDescription = $derived(data.survey.metaDescription ?? data.survey.title);
+
 	/** Titre du document : il porte le croisement, donc le permalien s annonce. */
 	const documentTitle = $derived(
 		data.selection.yLabel
@@ -215,7 +260,18 @@
 
 <svelte:head>
 	<title>{documentTitle} | Humanitour</title>
-	<meta name="description" content={data.survey.subtitle ?? data.survey.title} />
+	<meta name="description" content={shareDescription} />
+	<!--
+		Balises de partage. La page de donnees n en portait aucune : un lien
+		colle dans une conversation n affichait que son adresse. Le titre et la
+		description viennent de la fiche du jeu de donnees, avec repli sur ce qui
+		est deja ecrit.
+	-->
+	<meta property="og:type" content="dataset" />
+	<meta property="og:title" content={data.survey.metaTitle} />
+	<meta property="og:description" content={shareDescription} />
+	<meta property="og:url" content={data.share.pageUrl} />
+	<meta name="twitter:card" content="summary" />
 </svelte:head>
 
 <!--
@@ -338,6 +394,7 @@
 						     champs, un envoi ramenerait l affichage par defaut. -->
 						<input type="hidden" name="chart" value={data.selection.chart} />
 						<input type="hidden" name="tri" value={data.selection.sort ?? ''} />
+						<input type="hidden" name="base" value={data.selection.basis ?? ''} />
 
 						<label class="flex min-h-11 items-center gap-3">
 							<input
@@ -558,6 +615,30 @@
 
 									<span class="border-ink/12 mx-1 hidden h-6 border-l sm:inline-block"></span>
 
+									{#if data.selection.y}
+										<span class="border-ink/12 mx-1 hidden h-6 border-l sm:inline-block"></span>
+										{#each CELL_BASES as option (option.key)}
+											{@const active = data.appliedBasis === option.key}
+											<!--
+											Les quatre lectures d une meme case. Elles ne disent pas la
+											meme chose, et confondre la part en ligne avec la part en
+											colonne est l erreur classique du tri croise : la lecture
+											retenue est donc ecrite, et elle voyage dans le permalien.
+										-->
+											<a
+												href={exploreUrl({ basis: option.key })}
+												data-sveltekit-noscroll
+												data-sveltekit-keepfocus
+												aria-current={active ? 'true' : undefined}
+												class="rounded-pill inline-flex min-h-11 items-center px-4 py-2.5 text-sm {active
+													? 'border-ink border-2 font-semibold'
+													: 'text-muted hover:text-ink border-ink/20 border'}"
+											>
+												{option.label}
+											</a>
+										{/each}
+									{/if}
+
 									{#each SORTS as option (option.mode)}
 										{@const active = data.appliedSort === option.mode}
 										<a
@@ -627,6 +708,7 @@
 																data={panel.outcome.crosstab}
 																xLabel={data.selection.xLabel}
 																yLabel={data.selection.yLabel}
+																basis={data.appliedBasis}
 															/>
 														{/if}
 													</div>
@@ -647,6 +729,7 @@
 											data={data.outcome.crosstab}
 											xLabel={data.selection.xLabel}
 											yLabel={data.selection.yLabel}
+											basis={data.appliedBasis}
 										/>
 									{/if}
 								</div>
@@ -694,7 +777,9 @@
 								{/if}
 
 								<ShareBar
-									downloadImage={data.chart && !data.panels ? downloadPoster : null}
+									downloadImage={(data.chart || posterTable) && !data.panels
+										? downloadPoster
+										: null}
 									shortCitation={data.share.shortCitation}
 									longCitation={data.share.longCitation}
 									codeExamples={data.share.codeExamples}
@@ -707,6 +792,74 @@
 					</figure>
 				</div>
 			</div>
+		</section>
+
+		<!--
+			La fiche du jeu de donnees, facon catalogue ouvert : ce qui se lit avant
+			de telecharger. Chaque ligne n apparait que si elle est renseignee, une
+			ligne vide ne disant rien de plus que son absence.
+		-->
+		<section class="mt-16" aria-labelledby="fiche">
+			<h2 id="fiche">La fiche de ce jeu de données</h2>
+			<dl class="border-ink/12 mt-6 grid gap-x-8 gap-y-4 border-t pt-6 sm:grid-cols-2">
+				{#if data.survey.geographicCoverage}
+					<div>
+						<dt class="text-muted text-xs tracking-wide uppercase">Couverture géographique</dt>
+						<dd class="mt-1">{data.survey.geographicCoverage}</dd>
+					</div>
+				{/if}
+				{#if data.survey.collectionMode}
+					<div>
+						<dt class="text-muted text-xs tracking-wide uppercase">Mode de collecte</dt>
+						<dd class="mt-1">{data.survey.collectionMode}</dd>
+					</div>
+				{/if}
+				{#if data.survey.updateFrequency}
+					<div>
+						<dt class="text-muted text-xs tracking-wide uppercase">Mise à jour</dt>
+						<dd class="mt-1">{data.survey.updateFrequency}</dd>
+					</div>
+				{/if}
+				<div>
+					<dt class="text-muted text-xs tracking-wide uppercase">Période de terrain</dt>
+					<dd class="mt-1">
+						{formatFieldwork(data.survey.fieldworkStart, data.survey.fieldworkEnd) ||
+							'Non renseignée'}
+					</dd>
+				</div>
+				<div>
+					<dt class="text-muted text-xs tracking-wide uppercase">Seuil d'anonymat</dt>
+					<dd class="tabular mt-1">k = {data.threshold}</dd>
+				</div>
+				<div>
+					<dt class="text-muted text-xs tracking-wide uppercase">Licence</dt>
+					<dd class="mt-1">
+						<a
+							class="underline decoration-2 underline-offset-2"
+							href={LICENSES.data.url}
+							target="_blank"
+							rel="noopener noreferrer">{LICENSES.data.name}</a
+						>
+					</dd>
+				</div>
+				{#if data.survey.keywords.length > 0}
+					<div class="sm:col-span-2">
+						<dt class="text-muted text-xs tracking-wide uppercase">Thèmes</dt>
+						<dd class="mt-2 flex flex-wrap gap-2">
+							{#each data.survey.keywords as keyword (keyword)}
+								<!-- Le theme mene au catalogue filtre : une fiche doit pouvoir
+								     renvoyer vers ce qui lui ressemble. -->
+								<a
+									href="/donnees?theme={encodeURIComponent(keyword)}"
+									class="bg-coral-wash text-coral-ink rounded-pill press px-3 py-1.5 text-sm font-semibold"
+								>
+									{keyword}
+								</a>
+							{/each}
+						</dd>
+					</div>
+				{/if}
+			</dl>
 		</section>
 
 		{#if data.survey.methodology}

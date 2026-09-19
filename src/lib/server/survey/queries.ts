@@ -46,11 +46,46 @@ export interface PublicSurvey {
 	readonly kAnonymityThreshold: number | null;
 	readonly questions: readonly PublicQuestion[];
 	readonly responseCount: number;
+
+	/** Fiche du jeu de donnees : ce qui se lit avant de telecharger. */
+	readonly keywords: readonly string[];
+	readonly geographicCoverage: string | null;
+	readonly collectionMode: string | null;
+	readonly updateFrequency: string | null;
+	readonly metaTitle: string | null;
+	readonly metaDescription: string | null;
 }
 
-export async function listPublishedSurveys() {
+/**
+ * Les enquetes publiees, filtrees par une recherche.
+ *
+ * La recherche porte aussi sur le LIBELLE DES QUESTIONS, et c est le point
+ * important : on cherche « logement » sans savoir dans quelle enquete la
+ * question a ete posee. Chercher uniquement dans les titres obligerait a
+ * connaitre le catalogue avant de pouvoir l interroger.
+ *
+ * Les questions qui ont repondu sont renvoyees avec l enquete : un resultat
+ * dont le titre ne contient pas le mot cherche doit pouvoir expliquer sa
+ * presence.
+ */
+export async function listPublishedSurveys(search = '', theme = '') {
+	const term = search.trim();
+	const like = { contains: term, mode: 'insensitive' as const };
+
 	const surveys = await prisma.survey.findMany({
-		where: { status: 'PUBLISHED' },
+		where: {
+			status: 'PUBLISHED',
+			// Le theme restreint, la recherche cherche : les deux se cumulent.
+			keywords: theme.trim() ? { has: theme.trim() } : undefined,
+			OR: term
+				? [
+						{ title: like },
+						{ subtitle: like },
+						{ description: like },
+						{ questions: { some: { label: like } } }
+					]
+				: undefined
+		},
 		orderBy: { publishedAt: 'desc' },
 		select: {
 			slug: true,
@@ -59,6 +94,8 @@ export async function listPublishedSurveys() {
 			publishedAt: true,
 			fieldworkStart: true,
 			fieldworkEnd: true,
+			keywords: true,
+			questions: term ? { where: { label: like }, select: { label: true }, take: 3 } : false,
 			_count: { select: { responses: true, questions: true } }
 		}
 	});
@@ -71,7 +108,9 @@ export async function listPublishedSurveys() {
 		fieldworkStart: survey.fieldworkStart,
 		fieldworkEnd: survey.fieldworkEnd,
 		responseCount: survey._count.responses,
-		questionCount: survey._count.questions
+		questionCount: survey._count.questions,
+		keywords: survey.keywords,
+		matches: (survey.questions || []).map((question) => question.label)
 	}));
 }
 
@@ -98,6 +137,12 @@ export async function getPublishedSurvey(slug: string): Promise<PublicSurvey | n
 		publishedAt: survey.publishedAt,
 		kAnonymityThreshold: survey.kAnonymityThreshold,
 		responseCount: survey._count.responses,
+		keywords: survey.keywords,
+		geographicCoverage: survey.geographicCoverage,
+		collectionMode: survey.collectionMode,
+		updateFrequency: survey.updateFrequency,
+		metaTitle: survey.metaTitle,
+		metaDescription: survey.metaDescription,
 		questions: survey.questions.map((question) => ({
 			id: question.id,
 			code: question.code,
@@ -284,4 +329,28 @@ export function filterableQuestions(survey: PublicSurvey) {
 		label: question.label,
 		modalities: questionModalities(question)
 	}));
+}
+
+/**
+ * Les themes du catalogue, avec le nombre d enquetes qui les portent.
+ *
+ * Seules les enquetes PUBLIEES comptent : un theme qui n existe que sur un
+ * brouillon afficherait un filtre menant a une page vide.
+ */
+export async function listPublishedThemes(): Promise<{ theme: string; count: number }[]> {
+	const surveys = await prisma.survey.findMany({
+		where: { status: 'PUBLISHED' },
+		select: { keywords: true }
+	});
+
+	const counts = new Map<string, number>();
+	for (const survey of surveys) {
+		for (const keyword of survey.keywords) {
+			counts.set(keyword, (counts.get(keyword) ?? 0) + 1);
+		}
+	}
+
+	return [...counts]
+		.map(([theme, count]) => ({ theme, count }))
+		.sort((a, b) => b.count - a.count || a.theme.localeCompare(b.theme, 'fr'));
 }

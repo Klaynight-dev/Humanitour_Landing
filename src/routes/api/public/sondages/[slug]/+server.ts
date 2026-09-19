@@ -29,6 +29,10 @@ export const GET: RequestHandler = async ({ params }) => {
 		terrainFin: survey.fieldworkEnd,
 		publieLe: survey.publishedAt,
 		reponses: survey.responseCount,
+		themes: survey.keywords,
+		couvertureGeographique: survey.geographicCoverage,
+		modeCollecte: survey.collectionMode,
+		frequenceMiseAJour: survey.updateFrequency,
 		// Le seuil est publie : une case masquee doit pouvoir s expliquer sans
 		// avoir a nous ecrire.
 		seuilAnonymat: await resolveThreshold(survey),

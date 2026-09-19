@@ -29,6 +29,20 @@ export interface PosterChart {
 	readonly height: number;
 }
 
+/**
+ * Un tableau croise, a dessiner sur l affiche.
+ *
+ * Le tableau n est pas un graphique ECharts : il n a pas d image a exporter, il
+ * faut le tracer. Les valeurs arrivent DEJA composees (« 30,4 % (123) », ou le
+ * tiret des cases masquees) : la mise en forme des chiffres reste celle de
+ * `shared/format.ts`, y compris dans une image.
+ */
+export interface PosterTable {
+	/** En-tetes de colonnes, la premiere cellule etant le coin du tableau. */
+	readonly columns: readonly string[];
+	readonly rows: readonly { readonly header: string; readonly cells: readonly string[] }[];
+}
+
 export interface PosterContent {
 	readonly surveyTitle: string;
 	/** Libelle exact de la question. */
@@ -38,8 +52,9 @@ export interface PosterContent {
 	readonly fieldwork: string;
 	readonly licence: string;
 	readonly url: string;
-	/** Le graphique, deja rendu par ECharts. */
-	readonly chart: PosterChart;
+	/** Le graphique rendu par ECharts, ou le tableau a tracer. Jamais les deux. */
+	readonly chart: PosterChart | null;
+	readonly table: PosterTable | null;
 }
 
 /** Mesure d une chaine, injectee pour que la mise en page se teste sans canvas. */
@@ -73,6 +88,36 @@ export function wrapLines(text: string, maxWidth: number, measure: Measure): rea
 	return lines;
 }
 
+const TABLE_ROW = 40;
+const TABLE_HEADER = 48;
+const TABLE_FONT = 17;
+
+/**
+ * Hauteur occupee par un tableau.
+ *
+ * Elle suit le nombre de lignes : un tableau a douze modalites ne tient pas
+ * dans la place d un tableau binaire, et le comprimer rendrait les chiffres
+ * illisibles a l impression.
+ */
+export function tableHeight(rowCount: number): number {
+	return TABLE_HEADER + rowCount * TABLE_ROW;
+}
+
+/**
+ * Largeurs de colonnes.
+ *
+ * La premiere porte des libelles de modalites, les autres des chiffres : elle
+ * recoit donc le double. Sans cela, « Les retraites et les pensions » se
+ * retrouve a l etroit pendant que « 4,6 % » nage dans sa colonne.
+ */
+export function columnWidths(totalWidth: number, columnCount: number): readonly number[] {
+	if (columnCount <= 0) return [];
+	if (columnCount === 1) return [totalWidth];
+
+	const unit = totalWidth / (columnCount + 1);
+	return [unit * 2, ...Array.from({ length: columnCount - 1 }, () => unit)];
+}
+
 export interface PosterLayout {
 	readonly width: number;
 	readonly height: number;
@@ -96,12 +141,17 @@ export interface PosterLayout {
 export function posterLayout(
 	titleLines: number,
 	footerLines: number,
-	chart: { width: number; height: number }
+	body: { width: number; height: number; keepRatio?: boolean }
 ): PosterLayout {
 	const headerHeight = HEADER_PADDING * 2 + SURVEY_SIZE + 16 + titleLines * TITLE_LINE;
 
 	const chartWidth = POSTER_WIDTH - PADDING * 2;
-	const chartHeight = Math.round((chart.height / chart.width) * chartWidth);
+	// Un graphique garde ses proportions ; un tableau, lui, porte deja sa
+	// hauteur exacte et l etirer decollerait les lignes de leurs libelles.
+	const chartHeight =
+		body.keepRatio === false
+			? Math.round(body.height)
+			: Math.round((body.height / body.width) * chartWidth);
 	const footerHeight = PADDING + footerLines * FOOTER_LINE + PADDING;
 
 	return {
@@ -122,6 +172,74 @@ export function footerLines(content: PosterContent): readonly string[] {
 		`Effectifs bruts, sans pondération ni redressement · ${content.licence}`,
 		content.url
 	].filter((line) => line.trim() !== '');
+}
+
+/**
+ * Trace le tableau croise.
+ *
+ * Meme contenu que le tableau de la page : la part en ligne, son effectif, et
+ * le tiret des cases que le seuil d anonymat masque. Un tableau exporte qui
+ * afficherait un zero la ou la page affiche un tiret publierait un chiffre que
+ * la page refuse de publier.
+ */
+function drawTable(
+	ctx: CanvasRenderingContext2D,
+	table: PosterTable,
+	area: { x: number; y: number; width: number }
+): void {
+	const widths = columnWidths(area.width, table.columns.length);
+	const offsets = widths.reduce<number[]>(
+		(positions, width, index) => [...positions, (positions[index] ?? area.x) + width],
+		[area.x]
+	);
+
+	ctx.textBaseline = 'middle';
+
+	// En-tete : sur l aplat creme de la charte, texte noir.
+	ctx.fillStyle = '#fff1eb';
+	ctx.fillRect(area.x, area.y, area.width, TABLE_HEADER);
+	ctx.fillStyle = '#000000';
+	ctx.font = `600 ${TABLE_FONT}px ${SANS}`;
+
+	table.columns.forEach((column, index) => {
+		const left = offsets[index] ?? area.x;
+		const width = widths[index] ?? 0;
+		const middle = area.y + TABLE_HEADER / 2;
+		// La premiere colonne porte des libelles, les autres des chiffres :
+		// alignes a droite, ils se comparent d une ligne a l autre.
+		if (index === 0) ctx.textAlign = 'left';
+		else ctx.textAlign = 'right';
+		ctx.fillText(column, index === 0 ? left + 12 : left + width - 12, middle, width - 24);
+	});
+
+	table.rows.forEach((row, rowIndex) => {
+		const top = area.y + TABLE_HEADER + rowIndex * TABLE_ROW;
+		const middle = top + TABLE_ROW / 2;
+
+		ctx.strokeStyle = '#dcd8d6';
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		ctx.moveTo(area.x, top);
+		ctx.lineTo(area.x + area.width, top);
+		ctx.stroke();
+
+		ctx.fillStyle = '#000000';
+		ctx.textAlign = 'left';
+		ctx.font = `500 ${TABLE_FONT}px ${SANS}`;
+		ctx.fillText(row.header, area.x + 12, middle, (widths[0] ?? 0) - 24);
+
+		ctx.textAlign = 'right';
+		ctx.font = `400 ${TABLE_FONT}px ${SANS}`;
+		row.cells.forEach((cell, index) => {
+			const column = index + 1;
+			const left = offsets[column] ?? area.x;
+			const width = widths[column] ?? 0;
+			ctx.fillText(cell, left + width - 12, middle, width - 24);
+		});
+	});
+
+	ctx.textAlign = 'left';
+	ctx.textBaseline = 'top';
 }
 
 function loadImage(source: string): Promise<HTMLImageElement> {
@@ -162,7 +280,15 @@ export async function composePoster(content: PosterContent, logoUrl?: string): P
 	const titleLines = wrapLines(content.question, textWidth, (text) => ctx.measureText(text).width);
 	const footer = footerLines(content);
 
-	const layout = posterLayout(titleLines.length, footer.length, content.chart);
+	const body = content.chart
+		? { width: content.chart.width, height: content.chart.height }
+		: {
+				width: POSTER_WIDTH - PADDING * 2,
+				height: tableHeight(content.table?.rows.length ?? 0),
+				keepRatio: false
+			};
+
+	const layout = posterLayout(titleLines.length, footer.length, body);
 	canvas.width = layout.width;
 	canvas.height = layout.height;
 
@@ -186,14 +312,18 @@ export async function composePoster(content: PosterContent, logoUrl?: string): P
 		ctx.fillText(line, HEADER_PADDING, HEADER_PADDING + SURVEY_SIZE + 16 + index * TITLE_LINE);
 	});
 
-	const chartImage = await loadImage(content.chart.dataUrl);
-	ctx.drawImage(
-		chartImage,
-		layout.chart.x,
-		layout.chart.y,
-		layout.chart.width,
-		layout.chart.height
-	);
+	if (content.chart) {
+		const chartImage = await loadImage(content.chart.dataUrl);
+		ctx.drawImage(
+			chartImage,
+			layout.chart.x,
+			layout.chart.y,
+			layout.chart.width,
+			layout.chart.height
+		);
+	} else if (content.table) {
+		drawTable(ctx, content.table, layout.chart);
+	}
 
 	ctx.fillStyle = '#6b6360';
 	ctx.font = `400 ${FOOTER_SIZE}px ${SANS}`;

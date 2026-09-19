@@ -15,7 +15,8 @@ export const GET: RequestHandler = async () => {
 			terrainDebut: survey.fieldworkStart,
 			terrainFin: survey.fieldworkEnd,
 			reponses: survey.responseCount,
-			questions: survey.questionCount
+			questions: survey.questionCount,
+			themes: survey.keywords
 		}))
 	});
 };

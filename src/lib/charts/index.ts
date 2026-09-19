@@ -5,6 +5,7 @@ import {
 	barsOption,
 	donutOption,
 	groupedOption,
+	heatmapOption,
 	stackedOption,
 	type BuiltChart,
 	type ChartContext
@@ -95,6 +96,14 @@ const REGISTERED: readonly ChartDef[] = [
 		shape: 'crosstab',
 		tabular: false,
 		render: { kind: 'echarts', build: groupedOption }
+	},
+	{
+		key: 'heatmap',
+		label: 'Carte de chaleur',
+		description: "Croisement de deux questions, l'intensité de chaque case valant sa valeur.",
+		shape: 'crosstab',
+		tabular: false,
+		render: { kind: 'echarts', build: heatmapOption }
 	},
 	{
 		key: 'crosstab',
