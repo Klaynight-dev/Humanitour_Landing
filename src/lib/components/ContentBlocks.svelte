@@ -1,22 +1,14 @@
 <script lang="ts">
 	import Button from '$components/Button.svelte';
+	import RichText from '$components/RichText.svelte';
 	import { readString, type ContentBlockRecord } from '$lib/shared/content';
+	import { parseRichText } from '$lib/shared/content/richtext';
 
 	interface Props {
 		blocks: readonly ContentBlockRecord[];
 	}
 
 	let { blocks }: Props = $props();
-
-	/** Les paragraphes se separent par une ligne vide, comme on les a saisis. */
-	function paragraphs(raw: unknown, key: string): string[] {
-		const text = readString(raw, key);
-		if (!text) return [];
-		return text
-			.split(/\n\s*\n/)
-			.map((part) => part.trim())
-			.filter((part) => part !== '');
-	}
 
 	/** Les quatre emplacements de chiffres, sans ceux qui sont vides. */
 	function figures(raw: unknown): { value: string; label: string }[] {
@@ -78,11 +70,7 @@
 			{#if readString(block.data, 'title')}
 				<h2 class="font-display text-2xl sm:text-3xl">{readString(block.data, 'title')}</h2>
 			{/if}
-			<div class="measure mt-4 flex flex-col gap-4">
-				{#each paragraphs(block.data, 'body') as paragraph, index (index)}
-					<p class="text-ink-soft">{paragraph}</p>
-				{/each}
-			</div>
+			<RichText doc={parseRichText(block.data.body)} />
 		</section>
 	{:else if block.type === 'figures'}
 		<section class="mx-auto max-w-6xl px-4 py-12 sm:px-6">

@@ -4,8 +4,10 @@
 	import Flash from '$components/admin/Flash.svelte';
 	import PageHeader from '$components/admin/PageHeader.svelte';
 	import Panel from '$components/admin/Panel.svelte';
+	import RichTextEditor from '$components/admin/RichTextEditor.svelte';
 	import StatusBadge from '$components/admin/StatusBadge.svelte';
 	import { formatDate } from '$lib/shared/format';
+	import { parseRichText } from '$lib/shared/content/richtext';
 	import { can } from '$lib/shared/permissions';
 	import type { ActionData, PageData } from './$types';
 
@@ -74,6 +76,15 @@
 					{/if}
 
 					{#each block.fields as field (field.name)}
+						{#if field.type === 'richtext'}
+							<RichTextEditor
+								name="data.{field.name}"
+								label={field.required ? `${field.label} *` : field.label}
+								help={field.help}
+								doc={parseRichText(block.data[field.name])}
+								disabled={!editable}
+							/>
+						{:else}
 						<label class="flex flex-col gap-1.5">
 							<span class="text-sm font-semibold">
 								{field.label}
@@ -100,6 +111,7 @@
 								/>
 							{/if}
 						</label>
+						{/if}
 					{/each}
 
 					{#if editable}

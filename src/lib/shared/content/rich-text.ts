@@ -5,8 +5,8 @@ const FIELDS: readonly ContentField[] = [
 	{
 		name: 'body',
 		label: 'Texte',
-		help: 'Un paragraphe par ligne vide. Aucune balise : le texte est affiché tel quel.',
-		type: 'textarea',
+		help: 'Gras, italique, listes, sous-titres et liens. Sans JavaScript, la saisie reste du texte simple, un paragraphe par ligne vide.',
+		type: 'richtext',
 		required: true
 	}
 ];

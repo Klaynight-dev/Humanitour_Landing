@@ -1,3 +1,5 @@
+import { isEmptyDoc, parseRichText } from './richtext';
+
 /**
  * Contrat du registre des blocs de contenu.
  *
@@ -21,7 +23,11 @@ export interface ContentField {
 	readonly name: string;
 	readonly label: string;
 	readonly help?: string;
-	readonly type: 'text' | 'url' | 'number' | 'textarea';
+	/**
+	 * `richtext` ouvre l'editeur de mise en forme et stocke un document
+	 * structure, jamais du HTML (voir `richtext.ts`).
+	 */
+	readonly type: 'text' | 'url' | 'number' | 'textarea' | 'richtext';
 	readonly required: boolean;
 }
 
@@ -72,6 +78,17 @@ export function parseDeclaredFields(
 
 		if (value === null) {
 			if (field.required) return { ok: false, reason: `Le champ « ${field.label} » est obligatoire.` };
+			continue;
+		}
+
+		if (field.type === 'richtext') {
+			const doc = parseRichText(value);
+			// Une mise en forme sans texte reste un champ vide : un document dont
+			// tous les fragments ont ete ecartes ne remplit pas un champ obligatoire.
+			if (isEmptyDoc(doc) && field.required) {
+				return { ok: false, reason: `Le champ « ${field.label} » est obligatoire.` };
+			}
+			if (!isEmptyDoc(doc)) data[field.name] = doc;
 			continue;
 		}
 
