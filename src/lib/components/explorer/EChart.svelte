@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import type * as EChartsApi from 'echarts';
 	import type { ECharts } from 'echarts';
 	import type { ChartOption } from '$charts';
 
@@ -38,7 +39,7 @@
 	 * L export d image en a besoin, et le recharger ouvrirait la porte a deux
 	 * versions d ECharts dans la meme page.
 	 */
-	let engine: typeof import('echarts') | null = null;
+	let engine: typeof EChartsApi | null = null;
 
 	/**
 	 * Largeur de rendu de l affiche exportee.

@@ -5,6 +5,7 @@ import {
 	baseOf,
 	buildFilterGroups,
 	buildOutcome,
+	buildPanels,
 	describeDropped,
 	outcomeToJson,
 	resolveSort,
@@ -305,7 +306,8 @@ describe('selectAxes', () => {
 	it('retient les deux questions demandees', () => {
 		expect(selectAxes(crossable, { x: 'region', y: 'age' })).toEqual({
 			x: { code: 'region' },
-			y: { code: 'age' }
+			y: { code: 'age' },
+			z: null
 		});
 	});
 
@@ -330,8 +332,12 @@ describe('selectAxes', () => {
 		expect(selectAxes(crossable, { x: 'commentaire', y: null }).x).toEqual({ code: 'priorite' });
 	});
 
-	it('rend deux axes vides sur une enquete sans question croisable', () => {
-		expect(selectAxes([], { x: 'priorite', y: 'region' })).toEqual({ x: null, y: null });
+	it('rend des axes vides sur une enquete sans question croisable', () => {
+		expect(selectAxes([], { x: 'priorite', y: 'region' })).toEqual({
+			x: null,
+			y: null,
+			z: null
+		});
 	});
 });
 
@@ -418,5 +424,97 @@ describe('sortOutcome', () => {
 		const outcome = distributionOf({ threshold: 50 });
 
 		expect(sortOutcome(outcome, 'effectif').kind).toBe('too-small');
+	});
+});
+
+describe('selectAxes, troisieme question', () => {
+	const crossable = [{ code: 'priorite' }, { code: 'region' }, { code: 'age' }];
+
+	it('retient les trois questions demandees', () => {
+		expect(selectAxes(crossable, { x: 'priorite', y: 'region', z: 'age' })).toEqual({
+			x: { code: 'priorite' },
+			y: { code: 'region' },
+			z: { code: 'age' }
+		});
+	});
+
+	it('refuse de decouper par une question deja portee en axe', () => {
+		// Se decouper par sa propre abscisse ne produit que des panneaux a une
+		// seule barre.
+		expect(selectAxes(crossable, { x: 'priorite', y: 'region', z: 'priorite' }).z).toBeNull();
+		expect(selectAxes(crossable, { x: 'priorite', y: 'region', z: 'region' }).z).toBeNull();
+	});
+
+	it('ignore un decoupage dont la question a disparu', () => {
+		expect(selectAxes(crossable, { x: 'priorite', y: null, z: 'disparue' }).z).toBeNull();
+	});
+
+	it('n exige pas de croisement pour decouper', () => {
+		const { y, z } = selectAxes(crossable, { x: 'priorite', y: null, z: 'age' });
+
+		expect(y).toBeNull();
+		expect(z).toEqual({ code: 'age' });
+	});
+});
+
+describe('buildPanels', () => {
+	const inputs = {
+		x: X,
+		y: null,
+		population: everyone(6),
+		threshold: 1,
+		includeNonResponses: true
+	};
+
+	it('rend un panneau par modalite de decoupage', () => {
+		const panels = buildPanels(inputs, Y);
+
+		expect(panels.map((panel) => panel.key)).toEqual(['bre', 'nor']);
+	});
+
+	it('ne compte dans chaque panneau que sa sous-population', () => {
+		const [bretagne] = buildPanels(inputs, Y);
+
+		expect(bretagne?.size).toBe(3);
+		if (bretagne?.outcome.kind !== 'distribution') throw new Error('distribution attendue');
+		expect(bretagne.outcome.distribution.respondents).toBe(3);
+	});
+
+	it('protege chaque panneau separement', () => {
+		// Trois repondants par region : sous un seuil de 5, aucun panneau ne
+		// publie quoi que ce soit, pas meme son effectif.
+		const panels = buildPanels({ ...inputs, threshold: 5 }, Y);
+
+		expect(panels.every((panel) => panel.outcome.kind === 'too-small')).toBe(true);
+		expect(panels.every((panel) => panel.size === null)).toBe(true);
+	});
+
+	it('respecte les filtres deja appliques', () => {
+		const panels = buildPanels({ ...inputs, population: BRETONS }, Y);
+		const normandie = panels.find((panel) => panel.key === 'nor');
+
+		// La population est deja restreinte a la Bretagne : le panneau normand
+		// est vide, et non rempli des Normands que le filtre avait ecartes.
+		expect(normandie?.size).toBe(null);
+	});
+
+	it('retire la non-reponse des panneaux quand elle est masquee a l affichage', () => {
+		const withNonResponse: Axis = {
+			...Y,
+			modalities: [...Y.modalities, { key: '__nr__', label: 'Sans réponse', isNonResponse: true }]
+		};
+
+		const shown = buildPanels(inputs, withNonResponse);
+		const hidden = buildPanels({ ...inputs, includeNonResponses: false }, withNonResponse);
+
+		expect(shown).toHaveLength(3);
+		expect(hidden).toHaveLength(2);
+	});
+
+	it('garde le croisement a l interieur de chaque panneau', () => {
+		const panels = buildPanels({ ...inputs, y: Y }, X);
+
+		expect(panels.length).toBeGreaterThan(0);
+		expect(panels.some((panel) => panel.outcome.kind === 'crosstab')).toBe(true);
 	});
 });

@@ -228,6 +228,8 @@ export interface PreparedExplore {
 	readonly yQuestion: PublicQuestion | null;
 	readonly x: Axis;
 	readonly y: Axis | null;
+	/** Question de decoupage en petits multiples. */
+	readonly z: Axis | null;
 	readonly population: Population;
 	readonly dropped: readonly DroppedClause[];
 	readonly threshold: number;
@@ -248,14 +250,19 @@ export async function prepareExplore(
 	survey: PublicSurvey,
 	params: ExploreParams
 ): Promise<PreparedExplore | null> {
-	const { x: xQuestion, y: yQuestion } = selectAxes(crossableQuestions(survey), params);
+	const {
+		x: xQuestion,
+		y: yQuestion,
+		z: zQuestion
+	} = selectAxes(crossableQuestions(survey), params);
 	if (!xQuestion) return null;
 
-	const [threshold, populated, x, y] = await Promise.all([
+	const [threshold, populated, x, y, z] = await Promise.all([
 		resolveThreshold(survey),
 		resolvePopulation(survey, params.filters),
 		loadAxis(xQuestion),
-		yQuestion ? loadAxis(yQuestion) : null
+		yQuestion ? loadAxis(yQuestion) : null,
+		zQuestion ? loadAxis(zQuestion) : null
 	]);
 
 	return {
@@ -263,6 +270,7 @@ export async function prepareExplore(
 		yQuestion,
 		x,
 		y,
+		z,
 		population: populated.population,
 		dropped: populated.dropped,
 		threshold

@@ -69,15 +69,22 @@ export type ExploreOutcome =
  */
 export function selectAxes<Q extends { readonly code: string }>(
 	crossable: readonly Q[],
-	requested: { readonly x: string | null; readonly y: string | null }
-): { readonly x: Q | null; readonly y: Q | null } {
-	const find = (code: string | null) =>
+	requested: { readonly x: string | null; readonly y: string | null; readonly z?: string | null }
+): { readonly x: Q | null; readonly y: Q | null; readonly z: Q | null } {
+	const find = (code: string | null | undefined) =>
 		code ? (crossable.find((question) => question.code === code) ?? null) : null;
 
 	const x = find(requested.x) ?? crossable[0] ?? null;
-	const y = find(requested.y);
+	const requestedY = find(requested.y);
+	const y = requestedY && requestedY.code !== x?.code ? requestedY : null;
 
-	return { x, y: y && y.code !== x?.code ? y : null };
+	// La question de decoupage doit etre DIFFERENTE des deux autres : se
+	// decouper par sa propre abscisse ne produit qu une diagonale de panneaux a
+	// une seule barre.
+	const requestedZ = find(requested.z);
+	const distinct = requestedZ && requestedZ.code !== x?.code && requestedZ.code !== y?.code;
+
+	return { x, y, z: distinct ? requestedZ : null };
 }
 
 /** Forme de donnees demandee, independamment de ce qu on a pu publier. */
@@ -180,6 +187,78 @@ export function sortOutcome(outcome: ExploreOutcome, mode: SortMode): ExploreOut
 	);
 
 	return { kind: 'crosstab', crosstab: { ...table, xModalities } };
+}
+
+/**
+ * Un panneau de petits multiples : le meme croisement, sur une sous-population.
+ */
+export interface Panel {
+	readonly key: string;
+	readonly label: string;
+	readonly isNonResponse: boolean;
+	readonly outcome: ExploreOutcome;
+	/** Repondants du panneau. `null` quand le seuil interdit de le publier. */
+	readonly size: number | null;
+}
+
+/**
+ * Decoupe le resultat en petits multiples, un par modalite de la question de
+ * decoupage.
+ *
+ * Trois variables ne tiennent pas dans un seul graphique sans en ecraser une.
+ * Les petits multiples sont la reponse honnete : chaque panneau se lit comme un
+ * resultat complet, avec sa propre base, et la comparaison se fait d un panneau
+ * a l autre.
+ *
+ * Chaque panneau est protege SEPAREMENT par le seuil d anonymat. C est le point
+ * sensible du decoupage : croiser trois variables divise l echantillon, et une
+ * combinaison fine peut ne designer qu une personne. Un panneau sous le seuil
+ * ne publie donc rien, pas meme son effectif.
+ */
+export function buildPanels(inputs: ExploreInputs, z: Axis): readonly Panel[] {
+	const byModality = groupByModality(z.rows);
+
+	return z.modalities
+		.filter((modality) => inputs.includeNonResponses || !modality.isNonResponse)
+		.map((modality) => {
+			const population = narrow(inputs.population, byModality.get(modality.key) ?? new Set());
+			const outcome = buildOutcome({ ...inputs, population });
+
+			return {
+				key: modality.key,
+				label: modality.label,
+				isNonResponse: modality.isNonResponse,
+				outcome,
+				size: outcome.kind === 'too-small' ? null : population.size
+			};
+		});
+}
+
+function groupByModality(rows: readonly AnswerRow[]): Map<string, Set<string>> {
+	const grouped = new Map<string, Set<string>>();
+
+	for (const row of rows) {
+		const bucket = grouped.get(row.modalityKey);
+		if (bucket) {
+			bucket.add(row.responseId);
+			continue;
+		}
+		grouped.set(row.modalityKey, new Set([row.responseId]));
+	}
+
+	return grouped;
+}
+
+/** La population courante, restreinte a un panneau. */
+function narrow(population: Population, responseIds: ReadonlySet<string>): Population {
+	const retained = [...responseIds].filter((id) => population.includes(id));
+
+	return {
+		includes: (id) => retained.includes(id),
+		size: retained.length,
+		total: population.total,
+		restricted: true
+	};
 }
 
 /** Nombre de cases masquees par le seuil, quelle que soit la forme. */

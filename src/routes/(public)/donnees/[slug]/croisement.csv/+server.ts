@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import { parseExploreParams } from '$shared/explore';
-import { buildOutcome } from '$lib/server/survey/explore';
+import { buildOutcome, buildPanels } from '$lib/server/survey/explore';
 import { getPublishedSurvey, prepareExplore } from '$lib/server/survey/queries';
-import { resultToCsv } from '$lib/server/survey/result-csv';
+import { panelsToCsv, resultToCsv } from '$lib/server/survey/result-csv';
 import type { RequestHandler } from './$types';
 
 /**
@@ -22,20 +22,26 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	const prepared = await prepareExplore(survey, requested);
 	if (!prepared) error(500, { message: 'Cette enquete ne comporte aucune question exploitable.' });
 
-	const outcome = buildOutcome({
+	const inputs = {
 		x: prepared.x,
 		y: prepared.y,
 		population: prepared.population,
 		threshold: prepared.threshold,
 		includeNonResponses: requested.includeNonResponses
-	});
+	};
+
+	// Decoupe en panneaux, le fichier gagne une colonne plutot qu une structure
+	// imbriquee : il reste ouvrable dans un tableur.
+	const csv = prepared.z
+		? panelsToCsv(buildPanels(inputs, prepared.z))
+		: resultToCsv(buildOutcome(inputs));
 
 	// Le nom du fichier porte le croisement : trois exports dans un dossier de
 	// telechargements doivent rester distinguables sans etre ouverts.
-	const axes = [prepared.x.code, prepared.y?.code].filter(Boolean).join('-par-');
+	const axes = [prepared.x.code, prepared.y?.code, prepared.z?.code].filter(Boolean).join('-par-');
 	const filename = `humanitour-${survey.slug}-${axes}.csv`;
 
-	return new Response(resultToCsv(outcome), {
+	return new Response(csv, {
 		headers: {
 			'Content-Type': 'text/csv; charset=utf-8',
 			'Content-Disposition': `attachment; filename="${filename}"`,

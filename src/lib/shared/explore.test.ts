@@ -14,6 +14,7 @@ import {
 const BASE: ExploreParams = {
 	x: 'priorite',
 	y: null,
+	z: null,
 	chart: 'bars',
 	includeNonResponses: true,
 	filters: [],
@@ -110,6 +111,7 @@ describe('exploreSearch', () => {
 		const params: ExploreParams = {
 			x: 'priorite',
 			y: 'region',
+			z: 'age',
 			chart: 'crosstab',
 			includeNonResponses: false,
 			sort: 'effectif',
@@ -120,6 +122,22 @@ describe('exploreSearch', () => {
 		};
 
 		expect(parseExploreParams(new URLSearchParams(exploreSearch(params)))).toEqual(params);
+	});
+});
+
+describe('decoupage en petits multiples', () => {
+	it('ne s ecrit pas tant qu aucune troisieme question n est demandee', () => {
+		expect(exploreSearch(BASE)).not.toContain('z=');
+	});
+
+	it('se place juste apres le croisement, pour que le lien reste lisible', () => {
+		const search = exploreSearch({ ...BASE, y: 'region', z: 'age' });
+
+		expect(search.indexOf('y=')).toBeLessThan(search.indexOf('z='));
+	});
+
+	it('se relit tel quel', () => {
+		expect(parseExploreParams(new URLSearchParams('x=a&y=b&z=c')).z).toBe('c');
 	});
 });
 

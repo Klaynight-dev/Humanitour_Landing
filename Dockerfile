@@ -14,7 +14,11 @@ RUN bun install --frozen-lockfile --ignore-scripts
 FROM deps AS build
 WORKDIR /app
 COPY . .
-RUN bunx prisma generate && bun run build
+# svelte-kit sync cree .svelte-kit/tsconfig.json, que tsconfig.json etend :
+# sans lui, le chargeur TypeScript de `prisma generate` echoue avant meme de
+# lire prisma.config.ts. `--ignore-scripts` plus haut avait saute cette etape
+# (le `prepare` de npm), il faut donc la rejouer ici, une fois les sources la.
+RUN bunx svelte-kit sync && bunx prisma generate && bun run build
 
 # Dependances de production seules, pour l'image finale.
 #

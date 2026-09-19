@@ -8,6 +8,7 @@ import {
 	baseOf,
 	buildFilterGroups,
 	buildOutcome,
+	buildPanels,
 	describeDropped,
 	resolveSort,
 	shapeOf,
@@ -20,6 +21,7 @@ import {
 	getPublishedSurvey,
 	prepareExplore
 } from '$lib/server/survey/queries';
+import type { Axis } from '$lib/server/survey/explore';
 import type { PageServerLoad } from './$types';
 
 /**
@@ -53,16 +55,24 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		getQuestionType(prepared.xQuestion.type)?.ordered ?? false
 	);
 
-	const outcome = sortOutcome(
-		buildOutcome({
-			x: prepared.x,
-			y: prepared.y,
-			population: prepared.population,
-			threshold: prepared.threshold,
-			includeNonResponses: requested.includeNonResponses
-		}),
-		sort
-	);
+	const inputs = {
+		x: prepared.x,
+		y: prepared.y,
+		population: prepared.population,
+		threshold: prepared.threshold,
+		includeNonResponses: requested.includeNonResponses
+	};
+
+	const outcome = sortOutcome(buildOutcome(inputs), sort);
+
+	/*
+	 * Le decoupage en petits multiples.
+	 *
+	 * Chaque panneau est un resultat complet, protege separement par le seuil :
+	 * croiser trois variables divise l echantillon, et c est exactement la ou
+	 * une combinaison finit par ne designer qu une personne.
+	 */
+	const panels = paintPanels({ chart, inputs, prepared, sort });
 
 	// Les memes questions servent les deux axes et le panneau de filtres : une
 	// variable socio-demographique n est pas une categorie a part, c est une
@@ -87,16 +97,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		},
 		questions: filterable.map(({ code, label }) => ({ code, label })),
 		filterGroups: buildFilterGroups(filterable, requested.filters),
-		selection: {
-			x: prepared.x.code,
-			xLabel: prepared.x.label,
-			y: prepared.y?.code ?? null,
-			yLabel: prepared.y?.label ?? null,
-			chart: chart.key,
-			includeNonResponses: requested.includeNonResponses,
-			filters: requested.filters,
-			sort: requested.sort
-		},
+		selection: describeSelection(prepared, chart.key, requested),
 		charts: chartsFor(shape).map(({ key, label, description }) => ({ key, label, description })),
 		chart: built
 			? { key: chart.key, option: built.option, height: built.height, svg: renderChartSvg(built) }
@@ -111,12 +112,68 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			restricted: prepared.population.restricted
 		},
 		outcome,
-		insights: insightsOf(outcome),
+		panels,
+		// Un constat porte sur UN resultat. Decoupe en panneaux, la page en
+		// afficherait un par panneau, ce qui noierait ce qu ils servent a dire.
+		insights: panels ? [] : insightsOf(outcome),
 		appliedSort: sort,
 		droppedMessage: describeDropped(prepared.dropped),
 		share
 	};
 };
+
+/** Ce qui est affiche, sous la forme que la page relit pour ecrire ses liens. */
+function describeSelection(
+	prepared: { x: Axis; y: Axis | null; z: Axis | null },
+	chartKey: string,
+	requested: ReturnType<typeof parseExploreParams>
+) {
+	return {
+		x: prepared.x.code,
+		xLabel: prepared.x.label,
+		y: prepared.y?.code ?? null,
+		yLabel: prepared.y?.label ?? null,
+		z: prepared.z?.code ?? null,
+		zLabel: prepared.z?.label ?? null,
+		chart: chartKey,
+		includeNonResponses: requested.includeNonResponses,
+		filters: requested.filters,
+		sort: requested.sort
+	};
+}
+
+/**
+ * Les petits multiples, chacun avec son propre graphique rendu.
+ *
+ * Extrait du chargement, qui faisait deja trop de choses. Chaque panneau est un
+ * resultat complet : il est trie comme les autres, dessine comme les autres, et
+ * protege separement par le seuil d anonymat.
+ */
+function paintPanels(input: {
+	chart: ReturnType<typeof resolveChart>;
+	inputs: Parameters<typeof buildPanels>[0];
+	prepared: { z: Parameters<typeof buildPanels>[1] | null } & Parameters<typeof paintChart>[2];
+	sort: Parameters<typeof sortOutcome>[1];
+}) {
+	const { chart, inputs, prepared, sort } = input;
+	if (!prepared.z) return null;
+
+	return buildPanels(inputs, prepared.z).map((panel) => {
+		const sorted = sortOutcome(panel.outcome, sort);
+		const built = paintChart(chart, sorted, prepared);
+
+		return {
+			key: panel.key,
+			label: panel.label,
+			isNonResponse: panel.isNonResponse,
+			size: panel.size,
+			outcome: sorted,
+			chart: built
+				? { key: chart.key, option: built.option, height: built.height, svg: renderChartSvg(built) }
+				: null
+		};
+	});
+}
 
 /**
  * Construit le graphique, ou rien s il n y a rien a dessiner.

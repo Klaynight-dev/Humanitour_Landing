@@ -35,6 +35,7 @@
 	const current = $derived<ExploreParams>({
 		x: data.selection.x,
 		y: data.selection.y,
+		z: data.selection.z,
 		chart: data.selection.chart,
 		includeNonResponses: data.selection.includeNonResponses,
 		filters: data.selection.filters,
@@ -83,6 +84,7 @@
 		return {
 			x: textOf(fields.get('x')),
 			y: textOf(fields.get('y')),
+			z: textOf(fields.get('z')),
 			chart: textOf(fields.get('chart')) ?? '',
 			// La case cochee ajoute « 1 » devant le « 0 » du champ cache : c est
 			// ainsi que le serveur distingue « decochee » de « absente ».
@@ -314,6 +316,24 @@
 							</select>
 						</label>
 
+						<label class="flex min-w-0 flex-col gap-2">
+							<span class="font-semibold">Découper par</span>
+							<select
+								name="z"
+								class="border-ink/20 rounded-field bg-paper min-h-11 w-full min-w-0 border px-3 py-2.5"
+								value={data.selection.z ?? ''}
+							>
+								<option value="">Aucun découpage</option>
+								{#each data.questions.filter((q) => q.code !== data.selection.x && q.code !== data.selection.y) as question (question.code)}
+									<option value={question.code}>{question.label}</option>
+								{/each}
+							</select>
+							<span class="text-muted text-xs leading-relaxed">
+								Le résultat est répété une fois par modalité. Trois variables divisent l'échantillon
+								: les effectifs deviennent vite trop faibles pour être publiés.
+							</span>
+						</label>
+
 						<!-- Le graphique et le tri voyagent avec le formulaire : sans ces
 						     champs, un envoi ramenerait l affichage par defaut. -->
 						<input type="hidden" name="chart" value={data.selection.chart} />
@@ -505,6 +525,9 @@
 										{#if data.selection.yLabel}
 											Croisé avec « {data.selection.yLabel} ».
 										{/if}
+										{#if data.selection.zLabel}
+											Découpé par « {data.selection.zLabel} ».
+										{/if}
 										{formatFieldwork(data.survey.fieldworkStart, data.survey.fieldworkEnd)}.
 										Effectifs bruts, sans pondération ni redressement.
 									</p>
@@ -558,7 +581,59 @@
 										</p>
 									{/if}
 
-									{#if data.chart}
+									{#if data.panels}
+										<!--
+											Petits multiples : chaque panneau se lit comme un resultat
+											complet, avec sa propre base. La comparaison se fait d un
+											panneau a l autre, jamais en superposant trois variables
+											dans un seul dessin.
+										-->
+										<div class="flex flex-col gap-8">
+											{#each data.panels as panel (panel.key)}
+												<section class="border-ink/12 rounded-field border p-4">
+													<h4 class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+														<span
+															class="text-base font-semibold {panel.isNonResponse
+																? 'text-muted italic'
+																: ''}"
+														>
+															{data.selection.zLabel} : {panel.label}
+														</span>
+														<span class="text-muted text-sm font-normal">
+															{#if panel.size === null}
+																moins de {data.threshold} répondants
+															{:else}
+																{formatBase(panel.size)}
+															{/if}
+														</span>
+													</h4>
+
+													<div class="mt-3">
+														{#if panel.outcome.kind === 'too-small'}
+															<p class="text-muted measure text-sm leading-relaxed">
+																Trop peu de répondants pour publier ce panneau : le chiffre
+																permettrait d'identifier une personne.
+															</p>
+														{:else if panel.chart}
+															<EChart
+																svg={panel.chart.svg}
+																option={panel.chart.option}
+																height={panel.chart.height}
+																label="{chartLabel}, {panel.label}"
+															/>
+														{:else if chart?.render.kind === 'component' && panel.outcome.kind === 'crosstab'}
+															{@const Table = chart.render.component}
+															<Table
+																data={panel.outcome.crosstab}
+																xLabel={data.selection.xLabel}
+																yLabel={data.selection.yLabel}
+															/>
+														{/if}
+													</div>
+												</section>
+											{/each}
+										</div>
+									{:else if data.chart}
 										<EChart
 											bind:this={chartView}
 											svg={data.chart.svg}
@@ -576,7 +651,7 @@
 									{/if}
 								</div>
 
-								{#if data.outcome.kind === 'distribution' && !data.chartIsTabular}
+								{#if data.outcome.kind === 'distribution' && !data.chartIsTabular && !data.panels}
 									<!-- La couleur ne porte jamais seule l information : trois teintes
 									     de la palette passent sous 3:1 contre le papier, et le tableau
 									     est la compensation retenue (`charts/palette.ts`). -->
@@ -619,7 +694,7 @@
 								{/if}
 
 								<ShareBar
-									downloadImage={data.chart ? downloadPoster : null}
+									downloadImage={data.chart && !data.panels ? downloadPoster : null}
 									shortCitation={data.share.shortCitation}
 									longCitation={data.share.longCitation}
 									codeExamples={data.share.codeExamples}

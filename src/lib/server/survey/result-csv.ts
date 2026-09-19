@@ -1,5 +1,5 @@
 import { escapeCsv } from './export';
-import type { ExploreOutcome } from './explore';
+import type { ExploreOutcome, Panel } from './explore';
 
 /**
  * Export du resultat AFFICHE, filtres compris.
@@ -100,4 +100,27 @@ function crosstabRows(outcome: Extract<ExploreOutcome, { kind: 'crosstab' }>): r
 	}
 
 	return rows;
+}
+
+/**
+ * Le meme export, pour un resultat decoupe en petits multiples.
+ *
+ * Une colonne `panneau` en tete de chaque ligne : le fichier reste plat, donc
+ * relisible par un tableur comme par pandas, et la troisieme variable y est
+ * une colonne de plus plutot qu une structure imbriquee.
+ */
+export function panelsToCsv(panels: readonly Panel[]): string {
+	const blocks = panels.map((panel) => {
+		const [header, ...rows] = rowsFor(panel.outcome);
+
+		return {
+			header: `panneau,${header ?? ''}`,
+			rows: rows.map((row) => `${escapeCsv(panel.label)},${row}`)
+		};
+	});
+
+	const header = blocks[0]?.header ?? 'panneau';
+	const lines = [header, ...blocks.flatMap((block) => block.rows)];
+
+	return `${BOM}${lines.join(CRLF)}${CRLF}`;
 }

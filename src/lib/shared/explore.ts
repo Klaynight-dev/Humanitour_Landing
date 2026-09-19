@@ -16,6 +16,14 @@
 export const PARAM_X = 'x';
 /** Question croisee. Absent = distribution simple. */
 export const PARAM_Y = 'y';
+/**
+ * Troisieme question : le resultat est alors repete une fois par modalite.
+ *
+ * Trois variables ne tiennent pas dans un seul graphique sans mentir sur au
+ * moins l une des trois. On decoupe donc en petits multiples : le meme
+ * croisement, cote a cote, une fois par modalite de cette question.
+ */
+export const PARAM_Z = 'z';
 /** Cle du registre `src/lib/charts/`. */
 export const PARAM_CHART = 'chart';
 /** `0` retire la non-reponse de l AFFICHAGE, jamais du calcul. */
@@ -60,6 +68,8 @@ export interface FilterClause {
 export interface ExploreParams {
 	readonly x: string | null;
 	readonly y: string | null;
+	/** Question de decoupage. Absente = un seul resultat. */
+	readonly z: string | null;
 	readonly chart: string;
 	readonly includeNonResponses: boolean;
 	readonly filters: readonly FilterClause[];
@@ -115,6 +125,7 @@ export function parseExploreParams(params: URLSearchParams): ExploreParams {
 	return {
 		x: params.get(PARAM_X),
 		y: params.get(PARAM_Y),
+		z: params.get(PARAM_Z),
 		chart: params.get(PARAM_CHART) ?? '',
 		// Seule la valeur « 0 » exclut. Un parametre absent, vide ou inattendu
 		// AFFICHE la non-reponse : l oubli doit pencher du cote de la montrer.
@@ -136,6 +147,7 @@ export function exploreSearch(params: ExploreParams): string {
 
 	if (params.x) search.set(PARAM_X, params.x);
 	if (params.y) search.set(PARAM_Y, params.y);
+	if (params.z) search.set(PARAM_Z, params.z);
 	if (params.chart) search.set(PARAM_CHART, params.chart);
 	if (!params.includeNonResponses) search.set(PARAM_NON_RESPONSES, '0');
 
