@@ -11,7 +11,7 @@
 <!-- `sandbox` et `referrerpolicy` limitent ce que la page tierce peut faire et
      apprendre du visiteur. L'URL n'est jamais celle saisie : elle a ete
      reconstruite a partir du seul identifiant valide (shared/media/embed.ts). -->
-<div class="rounded-card bg-ink aspect-video w-full overflow-hidden">
+<div class="rounded-panel bg-ink aspect-video w-full overflow-hidden">
 	<iframe
 		src={embedUrl}
 		{title}

@@ -1,24 +1,47 @@
 import type { Component } from 'svelte';
-import BarChart from './BarChart.svelte';
+import type { CrosstabResult, DistributionResult } from '$lib/server/survey/aggregate';
 import CrosstabTable from './CrosstabTable.svelte';
-import DonutChart from './DonutChart.svelte';
-import StackedBarChart from './StackedBarChart.svelte';
+import {
+	barsOption,
+	donutOption,
+	groupedOption,
+	stackedOption,
+	type BuiltChart,
+	type ChartContext
+} from './echarts/options';
 
 /**
  * Registre des visualisations.
  *
- * Ajouter une visualisation = ajouter un composant et une entree dans
- * `REGISTERED`. Aucun `switch` ailleurs : la page de donnees choisit par cle.
+ * Ajouter une visualisation = ajouter un constructeur d options et une entree
+ * dans `REGISTERED`. Aucun `switch` ailleurs : la page choisit par cle.
+ *
+ * Le moteur est ECharts, le meme que `forms.humanitour.fr`. Un graphique n est
+ * donc plus un composant Svelte mais une FONCTION PURE qui rend un objet
+ * d options : elle se teste, ce qu un composant ne faisait pas, et elle se rend
+ * indifferemment sur le serveur (en SVG, pour que les chiffres soient du texte
+ * indexable) ou dans le navigateur (pour les infobulles).
+ *
+ * Le tableau croise reste un vrai tableau HTML : ce n est pas un graphique, et
+ * le faire dessiner par ECharts lui ferait perdre ses en-tetes de colonnes et
+ * sa navigation au clavier.
  */
 
-/**
- * Forme de donnees attendue.
- *
- * `distribution` n a qu un axe, `crosstab` en a deux. C est ce qui determine si
- * une visualisation peut repondre a la demande de l utilisateur, pas une liste
- * de cas particuliers dans la page.
- */
 export type ChartShape = 'distribution' | 'crosstab';
+
+export type ChartRender =
+	| {
+			readonly kind: 'echarts';
+			// La forme des donnees est garantie par `shape` ; le typage precis vit
+			// dans chaque constructeur.
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			readonly build: (data: any, context: ChartContext) => BuiltChart;
+	  }
+	| {
+			readonly kind: 'component';
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			readonly component: Component<any>;
+	  };
 
 export interface ChartDef {
 	/** Valeur stockee dans `SurveyCard.chart`. Contrat : jamais renommee. */
@@ -26,10 +49,18 @@ export interface ChartDef {
 	readonly label: string;
 	readonly description: string;
 	readonly shape: ChartShape;
-	// Le composant accepte la forme de donnees correspondante ; le typage precis
-	// vit dans chaque composant, le registre ne manipule que la cle et la forme.
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	readonly component: Component<any>;
+
+	/**
+	 * Cette visualisation EST deja un tableau de chiffres.
+	 *
+	 * Chaque graphique est accompagne d un tableau : la palette porte un
+	 * avertissement de contraste, et la compensation retenue est que la couleur
+	 * ne soit jamais seule a porter l information (`palette.ts`). Doubler le
+	 * tableau croise par un second tableau identique n aiderait personne.
+	 */
+	readonly tabular: boolean;
+
+	readonly render: ChartRender;
 }
 
 const REGISTERED: readonly ChartDef[] = [
@@ -38,28 +69,40 @@ const REGISTERED: readonly ChartDef[] = [
 		label: 'Barres',
 		description: "Répartition d'une question, une barre par modalité.",
 		shape: 'distribution',
-		component: BarChart
+		tabular: false,
+		render: { kind: 'echarts', build: barsOption }
 	},
 	{
 		key: 'donut',
 		label: 'Anneau',
 		description: "Répartition d'une question en parts d'un tout.",
 		shape: 'distribution',
-		component: DonutChart
+		tabular: false,
+		render: { kind: 'echarts', build: donutOption }
 	},
 	{
 		key: 'stacked',
 		label: 'Barres empilées',
 		description: 'Croisement de deux questions, chaque barre valant 100 % de sa ligne.',
 		shape: 'crosstab',
-		component: StackedBarChart
+		tabular: false,
+		render: { kind: 'echarts', build: stackedOption }
+	},
+	{
+		key: 'grouped',
+		label: 'Barres groupées',
+		description: 'Croisement de deux questions, les modalités côte à côte sur un axe commun.',
+		shape: 'crosstab',
+		tabular: false,
+		render: { kind: 'echarts', build: groupedOption }
 	},
 	{
 		key: 'crosstab',
 		label: 'Tableau croisé',
 		description: 'Croisement de deux questions, effectifs et parts en cellules.',
 		shape: 'crosstab',
-		component: CrosstabTable
+		tabular: true,
+		render: { kind: 'component', component: CrosstabTable }
 	}
 ];
 
@@ -90,4 +133,22 @@ export function resolveChart(key: string, shape: ChartShape): ChartDef {
 	return fallback;
 }
 
+/**
+ * Construit les options d un graphique, ou rien si la visualisation est un
+ * composant.
+ *
+ * Point de passage unique du rendu serveur et de la reprise cote client : les
+ * deux partent du MEME objet d options, donc le graphique ne peut pas changer
+ * d allure entre l affichage initial et l arrivee du JavaScript.
+ */
+export function buildChart(
+	chart: ChartDef,
+	data: DistributionResult | CrosstabResult,
+	context: ChartContext
+): BuiltChart | null {
+	if (chart.render.kind !== 'echarts') return null;
+	return chart.render.build(data, context);
+}
+
+export type { BuiltChart, ChartContext, ChartOption } from './echarts/options';
 export * from './palette';

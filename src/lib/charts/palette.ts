@@ -112,3 +112,22 @@ export function sequentialStep(ratio: number): string {
 	const index = Math.min(SEQUENTIAL.length - 1, Math.floor(ratio * SEQUENTIAL.length));
 	return SEQUENTIAL[index]!;
 }
+
+/**
+ * Emplacement de couleur de chaque modalite, fige sur l ordre DECLARE.
+ *
+ * Sans cela, la couleur suivrait la position a l ecran : trier par effectif ou
+ * masquer la non-reponse repeindrait tout le graphique, et deux captures de la
+ * meme enquete ne seraient plus comparables. C est exactement ce que
+ * l avertissement en tete de `CATEGORICAL` interdit.
+ */
+export function colorSlots(
+	modalities: readonly { readonly key: string }[]
+): Readonly<Record<string, number>> {
+	const slots: Record<string, number> = {};
+	modalities.forEach((modality, index) => {
+		slots[modality.key] = index;
+	});
+
+	return slots;
+}

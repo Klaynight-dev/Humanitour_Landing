@@ -30,4 +30,5 @@ export function detectImportFormat(filename: string, mimeType?: string): ImportF
 }
 
 export * from './mapper';
+export * from './storage-key';
 export * from './types';

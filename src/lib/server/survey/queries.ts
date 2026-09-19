@@ -3,9 +3,18 @@ import {
 	type ModalityDescriptor,
 	type QuestionOptionLike
 } from '$lib/shared/questions';
+import type { ExploreParams, FilterClause } from '$shared/explore';
 import { prisma } from '../db';
 import { pickThreshold } from './anonymity';
 import type { AnswerRow } from './aggregate';
+import { selectAxes, type Axis } from './explore';
+import {
+	everyone,
+	matchClauses,
+	restrictTo,
+	type DroppedClause,
+	type Population
+} from './population';
 
 /**
  * Acces en lecture aux sondages publies.
@@ -158,4 +167,113 @@ export async function resolveThreshold(survey: {
 }): Promise<number> {
 	const setting = await prisma.appSetting.findUnique({ where: { key: 'anonymity.k' } });
 	return pickThreshold(survey.kAnonymityThreshold, setting?.value);
+}
+
+/**
+ * Repondants ayant retenu au moins une des modalites demandees.
+ *
+ * C est le OU d une clause de filtre : cocher « Bretagne » et « Normandie »
+ * dans la meme liste elargit la population, cocher dans deux listes la
+ * restreint (l intersection est faite par `population.ts`).
+ */
+export async function getRespondents(
+	questionId: string,
+	modalityKeys: readonly string[]
+): Promise<Set<string>> {
+	const rows = await prisma.answer.findMany({
+		where: { questionId, modalityKey: { in: [...modalityKeys] } },
+		select: { responseId: true },
+		distinct: ['responseId']
+	});
+
+	return new Set(rows.map((row) => row.responseId));
+}
+
+/**
+ * Population etudiee pour un jeu de filtres d URL.
+ *
+ * Les clauses inapplicables ressortent telles quelles : elles sont affichees au
+ * visiteur, jamais avalees en silence (voir `population.ts`).
+ */
+export async function resolvePopulation(
+	survey: PublicSurvey,
+	filters: readonly FilterClause[]
+): Promise<{ population: Population; dropped: readonly DroppedClause[] }> {
+	const { applied, dropped } = matchClauses(crossableQuestions(survey), filters);
+
+	if (applied.length === 0) {
+		return { population: everyone(survey.responseCount), dropped };
+	}
+
+	const sets = await Promise.all(
+		applied.map((clause) => getRespondents(clause.questionId, clause.modalityKeys))
+	);
+
+	return { population: restrictTo(survey.responseCount, sets), dropped };
+}
+
+/** Un axe de l explorateur : ses modalites declarees et ses reponses. */
+export async function loadAxis(question: PublicQuestion): Promise<Axis> {
+	return {
+		code: question.code,
+		label: question.label,
+		modalities: questionModalities(question),
+		rows: await getAnswerRows(question.id)
+	};
+}
+
+/** Tout ce qu il faut pour calculer un resultat d explorateur, lu en une passe. */
+export interface PreparedExplore {
+	readonly xQuestion: PublicQuestion;
+	readonly yQuestion: PublicQuestion | null;
+	readonly x: Axis;
+	readonly y: Axis | null;
+	readonly population: Population;
+	readonly dropped: readonly DroppedClause[];
+	readonly threshold: number;
+}
+
+/**
+ * Prepare un resultat d explorateur.
+ *
+ * Point de passage UNIQUE de la page publique et de l API publique. Deux
+ * chargements separes finiraient par lire des seuils differents ou oublier un
+ * filtre d un cote : le meme croisement rendrait alors deux chiffres selon
+ * l adresse par laquelle on le demande.
+ *
+ * Rend `null` quand l enquete n a aucune question croisable, ce que l appelant
+ * traduit dans son propre vocabulaire (page d erreur ou reponse JSON).
+ */
+export async function prepareExplore(
+	survey: PublicSurvey,
+	params: ExploreParams
+): Promise<PreparedExplore | null> {
+	const { x: xQuestion, y: yQuestion } = selectAxes(crossableQuestions(survey), params);
+	if (!xQuestion) return null;
+
+	const [threshold, populated, x, y] = await Promise.all([
+		resolveThreshold(survey),
+		resolvePopulation(survey, params.filters),
+		loadAxis(xQuestion),
+		yQuestion ? loadAxis(yQuestion) : null
+	]);
+
+	return {
+		xQuestion,
+		yQuestion,
+		x,
+		y,
+		population: populated.population,
+		dropped: populated.dropped,
+		threshold
+	};
+}
+
+/** Questions proposables au panneau de filtres, avec leurs modalites. */
+export function filterableQuestions(survey: PublicSurvey) {
+	return crossableQuestions(survey).map((question) => ({
+		code: question.code,
+		label: question.label,
+		modalities: questionModalities(question)
+	}));
 }

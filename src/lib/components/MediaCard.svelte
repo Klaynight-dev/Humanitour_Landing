@@ -25,7 +25,7 @@
 	const isOutbound = $derived(media.kind === 'PRESS');
 </script>
 
-<article class="brut brut-press rounded-card bg-paper flex h-full flex-col overflow-hidden">
+<article class="block-card press flex h-full flex-col overflow-hidden">
 	{#if media.coverUrl}
 		<img
 			src={media.coverUrl}
@@ -37,7 +37,10 @@
 
 	<div class="flex flex-1 flex-col p-5">
 		<div class="flex flex-wrap items-center gap-2 text-xs">
-			<span class="bg-coral-50 text-coral-700 rounded-pill px-2.5 py-1 font-semibold">
+			<!-- La nature du media est une vraie etiquette de contenu, pas un badge
+			     decoratif : elle dit au lecteur si le lien mene a un article, une
+			     video ou une reprise de presse avant qu il clique. -->
+			<span class="bg-coral-wash text-coral-ink rounded-pill px-3 py-1 font-semibold">
 				{type?.label ?? media.kind}
 			</span>
 			{#if duration}

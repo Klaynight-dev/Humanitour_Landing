@@ -1,0 +1,422 @@
+import { describe, expect, it } from 'vitest';
+import { NON_RESPONSE_KEY, type ModalityDescriptor } from '$shared/questions';
+import type { AnswerRow } from './aggregate';
+import {
+	baseOf,
+	buildFilterGroups,
+	buildOutcome,
+	describeDropped,
+	outcomeToJson,
+	resolveSort,
+	selectAxes,
+	shapeOf,
+	sortOutcome,
+	suppressedCount,
+	type Axis
+} from './explore';
+import { everyone, restrictTo } from './population';
+
+const PRIORITE: readonly ModalityDescriptor[] = [
+	{ key: 'pouvoir-achat', label: "Le pouvoir d'achat", isNonResponse: false },
+	{ key: 'sante', label: 'La santé', isNonResponse: false },
+	{ key: NON_RESPONSE_KEY, label: 'Sans réponse', isNonResponse: true }
+];
+
+const REGION: readonly ModalityDescriptor[] = [
+	{ key: 'bre', label: 'Bretagne', isNonResponse: false },
+	{ key: 'nor', label: 'Normandie', isNonResponse: false }
+];
+
+/** Six repondants : trois bretons, trois normands, une non-reponse chez chacun. */
+const PRIORITE_ROWS: readonly AnswerRow[] = [
+	{ responseId: 'r1', modalityKey: 'pouvoir-achat' },
+	{ responseId: 'r2', modalityKey: 'pouvoir-achat' },
+	{ responseId: 'r3', modalityKey: NON_RESPONSE_KEY },
+	{ responseId: 'r4', modalityKey: 'sante' },
+	{ responseId: 'r5', modalityKey: 'sante' },
+	{ responseId: 'r6', modalityKey: NON_RESPONSE_KEY }
+];
+
+const REGION_ROWS: readonly AnswerRow[] = [
+	{ responseId: 'r1', modalityKey: 'bre' },
+	{ responseId: 'r2', modalityKey: 'bre' },
+	{ responseId: 'r3', modalityKey: 'bre' },
+	{ responseId: 'r4', modalityKey: 'nor' },
+	{ responseId: 'r5', modalityKey: 'nor' },
+	{ responseId: 'r6', modalityKey: 'nor' }
+];
+
+const X: Axis = {
+	code: 'priorite',
+	label: 'Quel sujet vous tient le plus à cœur ?',
+	modalities: PRIORITE,
+	rows: PRIORITE_ROWS
+};
+
+const Y: Axis = {
+	code: 'region',
+	label: 'Votre région',
+	modalities: REGION,
+	rows: REGION_ROWS
+};
+
+const BRETONS = restrictTo(6, [new Set(['r1', 'r2', 'r3'])]);
+
+function distributionOf(overrides: Partial<Parameters<typeof buildOutcome>[0]> = {}) {
+	return buildOutcome({
+		x: X,
+		y: null,
+		population: everyone(6),
+		threshold: 1,
+		includeNonResponses: true,
+		...overrides
+	});
+}
+
+describe('shapeOf', () => {
+	it('bascule en croisement des qu un second axe est demande', () => {
+		expect(shapeOf({ y: null })).toBe('distribution');
+		expect(shapeOf({ y: Y })).toBe('crosstab');
+	});
+});
+
+describe('buildOutcome, sans filtre', () => {
+	it('compte la distribution sur toute l enquete', () => {
+		const outcome = distributionOf();
+
+		expect(outcome.kind).toBe('distribution');
+		expect(baseOf(outcome)).toBe(6);
+	});
+
+	it('compte la non-reponse comme une modalite ordinaire', () => {
+		const outcome = distributionOf();
+		if (outcome.kind !== 'distribution') throw new Error('distribution attendue');
+
+		const nonResponse = outcome.distribution.bars.find((bar) => bar.isNonResponse);
+		expect(nonResponse?.count).toBe(2);
+	});
+
+	it('retire la non-reponse de l affichage sans changer la base', () => {
+		const outcome = distributionOf({ includeNonResponses: false });
+		if (outcome.kind !== 'distribution') throw new Error('distribution attendue');
+
+		expect(outcome.distribution.bars.some((bar) => bar.isNonResponse)).toBe(false);
+		// La base reste celle de tous les repondants : retirer la non-reponse de
+		// l ecran ne doit jamais gonfler les parts des autres modalites.
+		expect(outcome.distribution.respondents).toBe(6);
+	});
+
+	it('croise deux questions', () => {
+		const outcome = buildOutcome({
+			x: X,
+			y: Y,
+			population: everyone(6),
+			threshold: 1,
+			includeNonResponses: true
+		});
+
+		expect(outcome.kind).toBe('crosstab');
+		expect(baseOf(outcome)).toBe(6);
+	});
+});
+
+describe('buildOutcome, avec filtre', () => {
+	it('ne compte que la sous-population', () => {
+		const outcome = distributionOf({ population: BRETONS });
+		if (outcome.kind !== 'distribution') throw new Error('distribution attendue');
+
+		expect(outcome.distribution.respondents).toBe(3);
+		const pouvoirAchat = outcome.distribution.bars.find((bar) => bar.key === 'pouvoir-achat');
+		expect(pouvoirAchat?.count).toBe(2);
+	});
+
+	it('restreint aussi le second axe d un croisement', () => {
+		const outcome = buildOutcome({
+			x: X,
+			y: Y,
+			population: BRETONS,
+			threshold: 1,
+			includeNonResponses: true
+		});
+		if (outcome.kind !== 'crosstab') throw new Error('croisement attendu');
+
+		// Aucun Normand ne doit subsister dans les effectifs de la Bretagne.
+		expect(outcome.crosstab.columnTotals.get('nor') ?? 0).toBe(0);
+		expect(outcome.crosstab.respondents).toBe(3);
+	});
+});
+
+describe('garde-fou de population', () => {
+	it('ne publie rien quand la population passe sous le seuil', () => {
+		const outcome = distributionOf({ population: BRETONS, threshold: 5 });
+
+		expect(outcome.kind).toBe('too-small');
+	});
+
+	it('ne laisse fuir ni effectif ni modalite', () => {
+		const outcome = distributionOf({ population: BRETONS, threshold: 5 });
+
+		expect(baseOf(outcome)).toBeNull();
+		expect(suppressedCount(outcome)).toBe(0);
+		expect(outcomeToJson(outcome)).toEqual({ forme: 'effectif-insuffisant', cellules: [] });
+	});
+
+	it('s applique avant le croisement, pas apres', () => {
+		const outcome = buildOutcome({
+			x: X,
+			y: Y,
+			population: BRETONS,
+			threshold: 5,
+			includeNonResponses: true
+		});
+
+		expect(outcome.kind).toBe('too-small');
+	});
+
+	it('vaut pour l enquete entiere, pas seulement pour les filtres', () => {
+		expect(distributionOf({ population: everyone(3), threshold: 5 }).kind).toBe('too-small');
+	});
+
+	it('laisse passer une population exactement au seuil', () => {
+		expect(distributionOf({ population: everyone(6), threshold: 6 }).kind).toBe('distribution');
+	});
+});
+
+describe('suppressedCount', () => {
+	it('remonte les cases masquees d une distribution', () => {
+		const outcome = distributionOf({ threshold: 3 });
+
+		// Chaque modalite pese 2 repondants : toutes passent sous un seuil de 3.
+		expect(suppressedCount(outcome)).toBeGreaterThan(0);
+	});
+
+	it('remonte les cases masquees d un croisement', () => {
+		const outcome = buildOutcome({
+			x: X,
+			y: Y,
+			population: everyone(6),
+			threshold: 3,
+			includeNonResponses: true
+		});
+
+		expect(suppressedCount(outcome)).toBeGreaterThan(0);
+	});
+});
+
+describe('buildFilterGroups', () => {
+	const questions = [
+		{ code: 'priorite', label: 'Votre priorité', modalities: PRIORITE },
+		{ code: 'region', label: 'Votre région', modalities: REGION }
+	];
+
+	it('marque les modalites retenues', () => {
+		const groups = buildFilterGroups(questions, [
+			{ questionCode: 'region', modalityKeys: ['bre'] }
+		]);
+
+		const region = groups.find((group) => group.questionCode === 'region');
+		expect(region?.options.find((option) => option.key === 'bre')?.selected).toBe(true);
+		expect(region?.options.find((option) => option.key === 'nor')?.selected).toBe(false);
+		expect(region?.selectedCount).toBe(1);
+	});
+
+	it('laisse les autres questions intactes', () => {
+		const groups = buildFilterGroups(questions, [
+			{ questionCode: 'region', modalityKeys: ['bre'] }
+		]);
+
+		expect(groups.find((group) => group.questionCode === 'priorite')?.selectedCount).toBe(0);
+	});
+
+	it('propose la non-reponse au filtrage comme les autres modalites', () => {
+		const groups = buildFilterGroups(questions, []);
+		const priorite = groups.find((group) => group.questionCode === 'priorite');
+
+		expect(priorite?.options.some((option) => option.isNonResponse)).toBe(true);
+	});
+
+	it('ignore une clause visant une question absente du panneau', () => {
+		const groups = buildFilterGroups(questions, [{ questionCode: 'csp', modalityKeys: ['cadre'] }]);
+
+		expect(groups.every((group) => group.selectedCount === 0)).toBe(true);
+	});
+});
+
+describe('outcomeToJson', () => {
+	it('sort une distribution en tableau de cellules', () => {
+		const json = outcomeToJson(distributionOf());
+
+		expect(json.forme).toBe('distribution');
+		expect(json.repondants).toBe(6);
+		expect(Array.isArray(json.cellules)).toBe(true);
+	});
+
+	it('aplatit les Map du croisement, que JSON ne sait pas transporter', () => {
+		const outcome = buildOutcome({
+			x: X,
+			y: Y,
+			population: everyone(6),
+			threshold: 1,
+			includeNonResponses: true
+		});
+		const json = outcomeToJson(outcome);
+
+		expect(json.forme).toBe('croisement');
+		expect(JSON.parse(JSON.stringify(json))).toEqual(json);
+	});
+
+	it('conserve le masquage dans la sortie publique', () => {
+		const outcome = distributionOf({ threshold: 3 });
+		const json = outcomeToJson(outcome) as { cellules: { masque: boolean; effectif: null }[] };
+
+		const masquee = json.cellules.find((cell) => cell.masque);
+		expect(masquee?.effectif).toBeNull();
+	});
+});
+
+describe('describeDropped', () => {
+	it('ne dit rien quand tous les filtres ont ete appliques', () => {
+		expect(describeDropped([])).toBeNull();
+	});
+
+	it('avertit que le resultat porte sur une population plus large', () => {
+		const message = describeDropped([
+			{ questionCode: 'csp', reason: 'cette question n existe plus' }
+		]);
+
+		expect(message).toContain('csp');
+		expect(message).toContain('plus large');
+	});
+
+	it('regroupe plusieurs filtres tombes', () => {
+		const message = describeDropped([
+			{ questionCode: 'csp', reason: 'absente' },
+			{ questionCode: 'diplome', reason: 'absente' }
+		]);
+
+		expect(message).toContain('csp');
+		expect(message).toContain('diplome');
+	});
+});
+
+describe('selectAxes', () => {
+	const crossable = [{ code: 'priorite' }, { code: 'region' }, { code: 'age' }];
+
+	it('retient les deux questions demandees', () => {
+		expect(selectAxes(crossable, { x: 'region', y: 'age' })).toEqual({
+			x: { code: 'region' },
+			y: { code: 'age' }
+		});
+	});
+
+	it('retombe sur la premiere question quand aucune n est demandee', () => {
+		expect(selectAxes(crossable, { x: null, y: null }).x).toEqual({ code: 'priorite' });
+	});
+
+	it('survit a un lien dont la question a ete supprimee', () => {
+		const { x, y } = selectAxes(crossable, { x: 'disparue', y: 'aussi-disparue' });
+
+		expect(x).toEqual({ code: 'priorite' });
+		expect(y).toBeNull();
+	});
+
+	it('ignore un croisement d une question avec elle-meme', () => {
+		expect(selectAxes(crossable, { x: 'region', y: 'region' }).y).toBeNull();
+	});
+
+	it('ne retient pas une question non croisable passee dans l adresse', () => {
+		// « commentaire » est en texte libre : absente de la liste croisable, elle
+		// ne doit pas pouvoir devenir un axe par un parametre d URL.
+		expect(selectAxes(crossable, { x: 'commentaire', y: null }).x).toEqual({ code: 'priorite' });
+	});
+
+	it('rend deux axes vides sur une enquete sans question croisable', () => {
+		expect(selectAxes([], { x: 'priorite', y: 'region' })).toEqual({ x: null, y: null });
+	});
+});
+
+describe('resolveSort', () => {
+	it('classe par effectif une question sans ordre propre', () => {
+		expect(resolveSort(null, false)).toBe('effectif');
+	});
+
+	it('garde l ordre du questionnaire pour une echelle', () => {
+		expect(resolveSort(null, true)).toBe('questionnaire');
+	});
+
+	it('obeit au visiteur quand il a tranche', () => {
+		expect(resolveSort('effectif', true)).toBe('effectif');
+		expect(resolveSort('questionnaire', false)).toBe('questionnaire');
+	});
+});
+
+describe('sortOutcome', () => {
+	it('classe les modalites de la plus citee a la moins citee', () => {
+		const sorted = sortOutcome(distributionOf(), 'effectif');
+		if (sorted.kind !== 'distribution') throw new Error('distribution attendue');
+
+		const counts = sorted.distribution.bars
+			.filter((bar) => !bar.isNonResponse)
+			.map((bar) => bar.count);
+		expect(counts).toEqual([...counts].sort((a, b) => (b ?? 0) - (a ?? 0)));
+	});
+
+	it('laisse la non-reponse fermer la marche, quel que soit son effectif', () => {
+		const sorted = sortOutcome(distributionOf(), 'effectif');
+		if (sorted.kind !== 'distribution') throw new Error('distribution attendue');
+
+		const last = sorted.distribution.bars[sorted.distribution.bars.length - 1];
+		expect(last?.isNonResponse).toBe(true);
+	});
+
+	it('ne touche a rien en mode questionnaire', () => {
+		const outcome = distributionOf();
+
+		expect(sortOutcome(outcome, 'questionnaire')).toBe(outcome);
+	});
+
+	it('ne change aucun effectif', () => {
+		const before = distributionOf();
+		const after = sortOutcome(before, 'effectif');
+		if (before.kind !== 'distribution' || after.kind !== 'distribution') {
+			throw new Error('distribution attendue');
+		}
+
+		const total = (result: typeof before.distribution) =>
+			result.bars.reduce((sum, bar) => sum + (bar.count ?? 0), 0);
+		expect(total(after.distribution)).toBe(total(before.distribution));
+	});
+
+	it('repousse les cases masquees apres les cases publiees', () => {
+		const sorted = sortOutcome(distributionOf({ threshold: 3 }), 'effectif');
+		if (sorted.kind !== 'distribution') throw new Error('distribution attendue');
+
+		const published = sorted.distribution.bars.filter((bar) => !bar.suppressed);
+		const masked = sorted.distribution.bars.filter((bar) => bar.suppressed);
+		expect(sorted.distribution.bars.slice(0, published.length)).toEqual(published);
+		expect(masked.length).toBeGreaterThan(0);
+	});
+
+	it('classe les lignes d un croisement par effectif de ligne', () => {
+		const outcome = buildOutcome({
+			x: X,
+			y: Y,
+			population: everyone(6),
+			threshold: 1,
+			includeNonResponses: true
+		});
+		const sorted = sortOutcome(outcome, 'effectif');
+		if (sorted.kind !== 'crosstab') throw new Error('croisement attendu');
+
+		const totals = sorted.crosstab.xModalities
+			.filter((modality) => !modality.isNonResponse)
+			.map((modality) => sorted.crosstab.rowTotals.get(modality.key) ?? 0);
+		expect(totals).toEqual([...totals].sort((a, b) => (b ?? 0) - (a ?? 0)));
+	});
+
+	it('ne publie pas un resultat sous le seuil sous pretexte de le trier', () => {
+		const outcome = distributionOf({ threshold: 50 });
+
+		expect(sortOutcome(outcome, 'effectif').kind).toBe('too-small');
+	});
+});

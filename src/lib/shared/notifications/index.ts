@@ -28,6 +28,19 @@ const surveyUnpublished: NotificationType = {
 	})
 };
 
+const surveyDeleted: NotificationType = {
+	key: 'survey.deleted',
+	label: 'Sondage supprimé',
+	requiredPermission: 'survey.read',
+	render: (data) => ({
+		title: 'Sondage supprimé',
+		description: `« ${text(data, 'title', 'Une enquête')} » a été supprimée, avec ${text(data, 'responses', '0')} réponse(s).`,
+		// Le sondage n existe plus : le lien ramene a la liste, pas a une fiche
+		// qui rendrait desormais une 404.
+		href: '/admin/sondages'
+	})
+};
+
 const importCommitted: NotificationType = {
 	key: 'import.committed',
 	label: 'Import validé',
@@ -75,6 +88,7 @@ const invitationAccepted: NotificationType = {
 const REGISTERED: readonly NotificationType[] = [
 	surveyPublished,
 	surveyUnpublished,
+	surveyDeleted,
 	importCommitted,
 	mediaPublished,
 	contentPublished,

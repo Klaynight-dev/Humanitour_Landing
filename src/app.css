@@ -2,83 +2,150 @@
 
 /* Polices auto-hebergees. Le CDN Google Fonts transfere l'IP du visiteur hors UE :
    incompatible avec la politique « aucun tiers » du projet. */
-@import '@fontsource-variable/syne';
-@import '@fontsource-variable/plus-jakarta-sans';
-@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource/bowlby-one';
+@import '@fontsource-variable/jost';
 @import '@fontsource-variable/caveat';
+@import '@fontsource-variable/jetbrains-mono';
 
 /*
- * Identite Humanitour.
+ * Identite Humanitour, extraite de la charte imprimee (docs/sources/, planche
+ * typo et les trois versions du logo).
  *
- * Neo-brutalisme editorial chaleureux : fond creme, aplats noirs francs, ombres
- * portees nettes sans flou, titrages massifs. Les documents d'origine sont
- * composes en SLTF Curo, Crusoe Text et Budger Script, trois polices Canva non
- * redistribuables. Les substituts libres retenus :
+ * Affiche associative chaleureuse : formes rondes et pleines, aplats noirs
+ * francs, degrade corail/rose/orange comme voix de la marque. La charte ne
+ * contient aucune ombre portee ni aucun angle vif : c'est la rondeur qui porte
+ * l'identite, pas le trait.
  *
- *   SLTF Curo    (titrage blocky) -> Syne 800/900
- *   corps        (sans lisible)   -> Plus Jakarta Sans
- *   Budger Script(manuscrit)      -> Caveat, en accent uniquement
- *   chiffres     (data)           -> JetBrains Mono
+ * Les trois polices d'origine sont des fontes Canva non redistribuables. Les
+ * substituts libres retenus, et ce qu'ils remplacent :
+ *
+ *   SLTF Curo     (titrage gras et rond)   -> Bowlby One
+ *   Crusoe Text   (sans geometrique clair) -> Jost, une reprise de Futura
+ *   Budger Script (script monoline)        -> Caveat, en accent uniquement
+ *
+ * JetBrains Mono ne figure pas dans la charte. Il ne sert qu'a une chose que la
+ * charte ne prevoyait pas : aligner des colonnes de chiffres publies et rendre
+ * lisibles les chaines techniques (exports, API). Jamais de titre, jamais de
+ * libelle decoratif.
  */
 @theme {
-	/* Les trois couleurs de la charte. */
-	--color-coral-500: #ff5757;
-	--color-pink-400: #ff88b7;
-	--color-orange-500: #ff751f;
+	/* Les trois couleurs de la charte, sans derivee decorative. */
+	--color-coral: #ff5757;
+	--color-pink: #ff88b7;
+	--color-orange: #ff751f;
 
-	/* Nuances derivees, pour les fonds, bordures et etats. */
-	--color-coral-50: #fff1f1;
-	--color-coral-100: #ffdede;
-	--color-coral-200: #ffbfbf;
-	--color-coral-600: #ed3b3b;
-	--color-coral-700: #c52727;
-	--color-orange-50: #fff4ec;
-	--color-orange-600: #e8600a;
+	/*
+	 * Deux corails assombris, pour le seul cas ou la charte ne suffit pas : du
+	 * texte colore sur fond clair. #FF5757 sur creme ne donne que 2,2:1, sous le
+	 * minimum AA. Ce ne sont pas des teintes de marque, ce sont des correctifs
+	 * de lisibilite, et ils ne servent qu'a du texte.
+	 */
+	--color-coral-ink: #c1201f;
+	--color-coral-wash: #ffe4e0;
 
-	/* Encre et papier. Le noir est pur : c'est lui qui porte le trait. */
+	/* Encre et papier. Le noir est pur : la charte pose le logo principal en
+	   blanc sur noir, le noir est donc une surface, pas seulement un trait. */
 	--color-ink: #000000;
-	--color-ink-soft: #3f3f46;
-	--color-muted: #6b6560;
+	--color-ink-soft: #3d3a38;
+	--color-muted: #6b6360;
 
-	/* Le fond de page est creme, pas blanc : les cartes blanches s'en detachent. */
 	--color-cream: #fff1eb;
 	--color-paper: #ffffff;
-	--color-surface: #ffe8de;
-	--color-line: #000000;
 
-	/* Etats. Le vert et le rouge ne servent jamais a coder une opinion politique. */
-	--color-danger: #d32020;
-	--color-success: #15803d;
-	--color-warning: #b45309;
+	/* Etats. Le vert et le rouge ne codent jamais une opinion politique : ils
+	   sont reserves aux statuts d'interface. */
+	--color-danger: #c1201f;
+	--color-success: #15703a;
+	--color-warning: #9a5b06;
 
-	--font-display: 'Syne Variable', ui-sans-serif, system-ui, sans-serif;
-	--font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-display: 'Bowlby One', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Jost Variable', ui-sans-serif, system-ui, sans-serif;
 	--font-hand: 'Caveat Variable', ui-rounded, cursive;
 	--font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
 
-	--radius-card: 0.75rem;
+	/*
+	 * Trois rayons, et l'ecart entre eux porte une information : un champ de
+	 * saisie ne doit pas ressembler a une carte, ni une carte a un bouton.
+	 * La rondeur vient du lettrage du logo, dont tous les angles sont pleins.
+	 */
+	--radius-field: 0.625rem;
+	--radius-panel: 1rem;
+	--radius-block: 1.75rem;
 	--radius-pill: 999px;
 }
 
 :root {
-	/* Le degrade de marque, exactement celui de la charte. */
-	--gradient-line: linear-gradient(135deg, #ff88b7 0%, #ff5757 50%, #ff751f 100%);
+	/*
+	 * Le degrade de marque, dans l'ordre de la planche source : il part du blanc
+	 * a gauche avant de saturer. Ce blanc de depart est ce qui l'empeche de
+	 * ressembler a un fond colore generique.
+	 */
+	--gradient-brand: linear-gradient(
+		100deg,
+		#ffffff 0%,
+		var(--color-coral) 38%,
+		var(--color-pink) 68%,
+		var(--color-orange) 100%
+	);
 
 	/*
-	 * Le degrade mesh signature : trois halos qui se recouvrent, comme sur les
-	 * fonds des documents d'origine.
+	 * Le meme degrade, sans son depart blanc. Le blanc de `--gradient-brand` est
+	 * ce qui empeche un grand aplat de ressembler a un fond colore generique ;
+	 * sur une etiquette large de trois mots, il ne fait que vider la moitie
+	 * gauche de l'etiquette. Reserve a `mark-brand`.
+	 */
+	--gradient-brand-dense: linear-gradient(
+		100deg,
+		var(--color-coral) 0%,
+		var(--color-pink) 54%,
+		var(--color-orange) 100%
+	);
+
+	/*
+	 * La courbe des gestes d'entree, avec un leger depassement. La charte est
+	 * ronde et pleine : ses mouvements le sont aussi. Un `ease-out` strict
+	 * rendait les entrees plates, ce qui est exactement le reproche fait a la
+	 * page avant cette revision.
+	 */
+	--ease-overshoot: cubic-bezier(0.34, 1.42, 0.64, 1);
+
+	/*
+	 * Le fond mesh des documents d'origine : des halos qui se recouvrent plutot
+	 * qu'une bande reguliere. Sert les moments ou l'association parle en son nom
+	 * propre, jamais derriere un graphique.
 	 */
 	--gradient-mesh:
-		radial-gradient(at 8% 12%, #ffffff 0%, transparent 46%),
-		radial-gradient(at 30% 32%, var(--color-pink-400) 0%, transparent 58%),
-		radial-gradient(at 74% 56%, var(--color-coral-500) 0%, transparent 60%),
-		radial-gradient(at 92% 96%, var(--color-orange-500) 0%, transparent 62%),
-		linear-gradient(135deg, #ff88b7 0%, #ff5757 50%, #ff751f 100%);
+		radial-gradient(at 6% 8%, #ffffff 0%, transparent 44%),
+		radial-gradient(at 34% 30%, var(--color-pink) 0%, transparent 56%),
+		radial-gradient(at 76% 58%, var(--color-coral) 0%, transparent 58%),
+		radial-gradient(at 94% 96%, var(--color-orange) 0%, transparent 60%),
+		linear-gradient(100deg, #ffffff 0%, var(--color-coral) 40%, var(--color-orange) 100%);
 
-	/* L'ombre nette, sans flou : la signature du neo-brutalisme. */
-	--shadow-brut: 5px 5px 0 var(--color-ink);
-	--shadow-brut-sm: 3px 3px 0 var(--color-ink);
-	--shadow-brut-lg: 8px 8px 0 var(--color-ink);
+	/*
+	 * Deux elevations, et aucune autre. Aucune carte n'en porte : une ombre
+	 * partout ne detache plus rien.
+	 *
+	 * `lift` est pour les surfaces qui passent vraiment au-dessus du contenu,
+	 * l'en-tete colle et le menu mobile ouvert.
+	 *
+	 * `photo` est la profondeur ajoutee le 18 septembre 2026 (DESIGN.md), et
+	 * elle ne sert qu'aux blocs photographiques poses sur une surface de marque :
+	 * sans elle, une photo rectangulaire sur le degrade mesh se lit comme un
+	 * trou dans l'aplat plutot que comme une image posee dessus.
+	 */
+	--shadow-lift: 0 10px 30px -12px rgb(0 0 0 / 0.28);
+	--shadow-photo: 0 26px 60px -28px rgb(0 0 0 / 0.5);
+
+	/*
+	 * Hauteur de l'en-tete colle, mesuree dans le navigateur : 68 px, identique
+	 * a tous les paliers, le logo passant de 2 a 2,25 rem sans changer la
+	 * hauteur de la barre. Elle sert aux couvertures qui doivent tenir dans un
+	 * ecran : `calc(100svh - var(--header-h))`.
+	 *
+	 * `svh` et non `vh` : sur mobile, `vh` se cale sur la fenetre barre d'URL
+	 * RETRACTEE, donc une couverture en `100vh` deborde toujours au chargement.
+	 */
+	--header-h: 4.25rem;
 
 	color-scheme: light;
 }
@@ -105,87 +172,355 @@ body {
 	background-color: var(--color-cream);
 	color: var(--color-ink);
 	font-family: var(--font-sans);
+	/* Jost est une geometrique a hauteur d'x basse : elle demande un corps et un
+	   interlignage plus genereux qu'une humaniste pour rester lisible en pave. */
+	font-size: 1.0625rem;
+	line-height: 1.7;
 	-webkit-font-smoothing: antialiased;
 	text-wrap: pretty;
 }
 
-/* Les titres portent le degrade en remplissage, comme dans les documents sources. */
+/*
+ * Le degrade en remplissage de texte, comme sur les titres des documents
+ * imprimes. Reserve aux titres : en petit corps, le contraste local devient
+ * impossible a garantir.
+ */
 @utility text-gradient {
-	background-image: var(--gradient-line);
+	background-image: var(--gradient-brand);
 	background-clip: text;
 	color: transparent;
-	/* Repli si background-clip:text n'est pas supporte : le texte reste lisible. */
 	@supports not (background-clip: text) {
-		color: var(--color-coral-600);
+		color: var(--color-coral-ink);
 	}
+}
+
+/*
+ * Les deux surfaces de marque. Elles portent du texte NOIR, jamais blanc :
+ * blanc sur #FF751F ne donne que 2,69:1 et blanc sur #FF5757 que 3,11:1, tous
+ * deux sous le minimum AA. Noir donne 6,75:1 au pire. Ce n'est pas un gout,
+ * c'est la seule combinaison lisible.
+ */
+@utility surface-brand {
+	background-image: var(--gradient-brand);
+	background-color: var(--color-coral);
+	color: var(--color-ink);
 }
 
 @utility surface-mesh {
 	background-image: var(--gradient-mesh);
-	background-color: var(--color-coral-500);
+	background-color: var(--color-coral);
+	color: var(--color-ink);
 }
 
 /*
- * Bloc brutaliste : trait noir franc et ombre portee nette.
- *
- * Declare une fois ici plutot que recopie en quatre classes Tailwind sur chaque
- * carte : changer l'epaisseur du trait doit se faire a un seul endroit.
+ * Le bloc de contenu : une surface pleine aux angles francs et arrondis, sans
+ * bordure ni ombre. Ce qui le detache, c'est le contraste de fond, pas un
+ * contour. Declare ici plutot que recopie sur chaque carte.
  */
-@utility brut {
-	border: 2px solid var(--color-ink);
-	box-shadow: var(--shadow-brut);
+@utility block-card {
+	border-radius: var(--radius-block);
+	background-color: var(--color-paper);
 }
 
-@utility brut-sm {
-	border: 2px solid var(--color-ink);
-	box-shadow: var(--shadow-brut-sm);
+/*
+ * La surface du back-office. Moins ronde et cernee d'un trait fin, parce qu'un
+ * ecran d'administration aligne des tableaux denses : l'oeil a besoin de voir ou
+ * un conteneur s'arrete, ce que le seul contraste de fond ne donne pas. Le site
+ * public, lui, n'a pas cette contrainte et reste sans bordure.
+ */
+@utility panel {
+	border-radius: var(--radius-panel);
+	background-color: var(--color-paper);
+	border: 1px solid --alpha(var(--color-ink) / 12%);
 }
 
-/* Au survol, le bloc s'enfonce : l'ombre se reduit d'autant qu'il se deplace. */
-@utility brut-press {
+/*
+ * Retour tactile des elements cliquables. La charte est ronde et pleine : le
+ * bloc s'enfonce legerement au lieu de se soulever. Sert aussi de reponse
+ * visible au toucher, ou il n'y a pas de survol.
+ */
+@utility press {
 	transition:
 		transform 120ms ease,
-		box-shadow 120ms ease;
+		filter 120ms ease;
 
 	&:hover {
-		transform: translate(2px, 2px);
-		box-shadow: var(--shadow-brut-sm);
+		filter: brightness(0.94);
 	}
 
 	&:active {
-		transform: translate(5px, 5px);
-		box-shadow: 0 0 0 var(--color-ink);
+		transform: scale(0.98);
 	}
 }
 
-/* Les chiffres publies se lisent en colonne : chasse fixe et monospace. */
+/* Les chiffres publies se lisent en colonne : chasse fixe et chiffres tabulaires. */
 @utility tabular {
 	font-family: var(--font-mono);
 	font-variant-numeric: tabular-nums;
 	font-feature-settings: 'tnum' 1;
 }
 
+/* Mesure de lecture. Jost etant une sans, on reste nettement sous 80 signes. */
+@utility measure {
+	max-width: 62ch;
+}
+
+/*
+ * LE MOTIF : le mot surligne.
+ *
+ * Un mot du titre est pose sur une etiquette au degrade de marque, legerement
+ * de travers, comme un coup de surligneur sur une affiche imprimee. C'est le
+ * seul endroit ou le degrade apparait sur un aplat noir en tant que surface, et
+ * c'est ce qui fait qu'on reconnait une page Humanitour a sa premiere ligne.
+ *
+ * Reserve aux titres, et a un ou deux mots par surface. Le texte y est NOIR :
+ * sur le corail, le rose et l'orange de la charte, le noir donne au pire
+ * 6,75:1, le blanc au mieux 3,11:1.
+ *
+ * `line-height: 1` et un rembourrage vertical mesure : sans eux, l'etiquette
+ * mordrait sur la ligne au-dessus, les titres etant interlignes a 0,95.
+ */
+@utility mark-brand {
+	display: inline-block;
+	background-image: var(--gradient-brand-dense);
+	background-color: var(--color-coral);
+	color: var(--color-ink);
+	border-radius: 0.28em;
+	padding: 0.06em 0.26em 0.12em;
+	line-height: 1;
+	rotate: -1.5deg;
+}
+
+/*
+ * La forme du motif pour les surfaces de marque.
+ *
+ * Sur le degrade, `mark-brand` serait un degrade sur un degrade : l'etiquette
+ * disparaitrait. Le noir est la seconde surface primaire de la charte, et le
+ * blanc sur le noir donne 21:1. C'est la meme etiquette, retournee, pas un
+ * second motif.
+ */
+@utility mark-ink {
+	display: inline-block;
+	background-color: var(--color-ink);
+	color: var(--color-paper);
+	border-radius: 0.28em;
+	padding: 0.06em 0.26em 0.12em;
+	line-height: 1;
+	rotate: -1.5deg;
+}
+
+/*
+ * LES APLATS ORGANIQUES
+ *
+ * Deux formes pleines aux contours irreguliers, en debord de coin. La charte
+ * est faite de formes rondes et pleines, son logo est un globe enlace, et
+ * l'affiche imprimee travaille par aplats decoupes : c'est la meme grammaire, a
+ * l'echelle de la page.
+ *
+ * Trois regles les tiennent, et ce sont elles qui les separent de l'orbe floue
+ * generique : elles sont PLATES (aucun degrade, aucun flou, aucune lueur),
+ * IMMOBILES, et sans teinte hors charte.
+ *
+ * Leur geometrie est FIGEE ici, et non repetee page par page : deux formes, aux
+ * memes deux coins, aux memes tailles. C'est ce qui en fait un motif reconnu
+ * d'une page a l'autre plutot que deux taches posees au hasard.
+ *
+ * La section qui les accueille doit porter `relative isolate overflow-hidden` :
+ * c'est le recoupement par le bord qui donne l'aplat decoupe, et le contexte
+ * d'empilement qui empeche le `z-index` negatif de passer sous le fond.
+ *
+ * Contraste : elles ne portent que du texte noir, qui passe AA sur le corail
+ * (6,75:1) comme sur le rose (9,46:1) et sur le creme. Aucune zone de la
+ * composition ne peut donc casser la lisibilite.
+ *
+ * Les contours sont volontairement dissymetriques : un rapport proche de 50/50
+ * redonnerait un simple cercle.
+ */
+@utility shape-field {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+}
+
+@utility shape {
+	position: absolute;
+	display: block;
+}
+
+@utility shape-coral {
+	top: clamp(-9rem, -13vw, -5rem);
+	right: clamp(-9rem, -13vw, -5rem);
+	width: clamp(9rem, 16vw, 16rem);
+	height: clamp(8rem, 13vw, 13rem);
+	border-radius: 62% 38% 30% 70% / 58% 34% 66% 42%;
+	background-color: var(--color-coral);
+}
+
+@utility shape-pink {
+	bottom: clamp(-7rem, -11vw, -4rem);
+	left: clamp(-8rem, -12vw, -4.5rem);
+	width: clamp(8rem, 14vw, 14rem);
+	height: clamp(7rem, 12vw, 12rem);
+	border-radius: 36% 64% 68% 32% / 63% 39% 61% 37%;
+	background-color: var(--color-pink);
+}
+
+/*
+ * La vignette legerement de travers.
+ *
+ * L'angle est minuscule et s'OPPOSE d'une vignette a l'autre : c'est ce qui le
+ * fait lire comme une pose a la main plutot que comme une grille ratee. Au-dela
+ * de deux degres, ce n'est plus une inclinaison, c'est une faute.
+ *
+ * `rotate` et non `transform` : l'element peut ainsi porter une transition ou
+ * une animation d'entree sur `transform` sans que les deux se battent.
+ */
+@utility tilted {
+	rotate: var(--tilt, 0deg);
+}
+
+/*
+ * Bloc photographique. Meme rayon que `block-card`, plus l'elevation `photo` :
+ * c'est le seul endroit du site public ou une ombre apparait sous un contenu.
+ * `overflow: hidden` parce que l'image est en `object-fit: cover` et deborderait
+ * sinon des angles arrondis.
+ */
+@utility photo-block {
+	border-radius: var(--radius-block);
+	overflow: hidden;
+	background-color: var(--color-ink);
+	box-shadow: var(--shadow-photo);
+}
+
+/*
+ * Apparition au defilement, posee par l'action `reveal` ($lib/actions/reveal).
+ *
+ * L'etat de base est l'etat final : `data-reveal` n'existe que si le script a
+ * tourne, donc sans JavaScript, ou sous `prefers-reduced-motion`, le contenu
+ * est simplement la. Le geste est unique et toujours le meme, une montee de
+ * 1,25rem : DESIGN.md le limite a deux moments de la page d'accueil.
+ */
+/*
+ * L'ENTREE DE COUVERTURE
+ *
+ * Elle echelonne la couverture dans l'ordre de lecture, une seule fois au
+ * chargement. Declaree ici et non page par page : c'est le meme geste sur
+ * toutes les pages du registre « argument », et le recopier garantissait qu'il
+ * finirait par diverger.
+ *
+ * `backwards` ne masque l'element que pendant son delai, et l'etat de base est
+ * l'etat final : sans animation, la couverture se lit telle quelle.
+ *
+ * `--enter-delay` porte le decalage, pose en style en ligne sur chaque element.
+ */
+@keyframes rise-in {
+	from {
+		opacity: 0;
+		transform: translateY(1rem) scale(0.97);
+	}
+}
+
+@utility enter {
+	animation: rise-in 700ms var(--ease-overshoot) var(--enter-delay, 0ms) backwards;
+}
+
+/*
+ * `animation: none` et non une duree nulle : la reinitialisation globale
+ * ci-dessus ecrase la duree en `!important` mais pas le NOM, et un delai
+ * subsisterait donc sur un element masque.
+ */
+@media (prefers-reduced-motion: reduce) {
+	.enter {
+		animation: none;
+	}
+}
+
+/* L'opacite garde une courbe sans depassement : une valeur qui depasse 1 est
+   ecretee par le navigateur, le fondu se figerait avant la fin du deplacement. */
+[data-reveal] {
+	transition:
+		opacity 500ms ease-out var(--reveal-delay, 0ms),
+		transform 700ms var(--ease-overshoot) var(--reveal-delay, 0ms);
+}
+
+[data-reveal='pending'] {
+	opacity: 0;
+	transform: translateY(1.25rem) scale(0.97);
+}
+
+/*
+ * Un lien atteint au clavier avant que sa section soit apparue resterait
+ * invisible sous le focus. Le `focus-within` annule l'attente pour ce cas.
+ */
+[data-reveal='shown'],
+[data-reveal='pending']:focus-within {
+	opacity: 1;
+	transform: none;
+}
+
 @layer base {
 	h1,
 	h2,
 	h3 {
-		font-family: var(--font-display);
-		font-weight: 800;
-		letter-spacing: -0.03em;
 		text-wrap: balance;
 	}
 
+	/*
+	 * Bowlby One n'existe qu'en une graisse et n'a pas de bas de casse
+	 * distinctif : elle ne tient que sur les titres courts et gros. Les niveaux
+	 * inferieurs reviennent a Jost, qui module, elle, sa graisse.
+	 */
+	/*
+	 * Le plancher du `clamp` est dicte par le mobile, pas par le gout : Bowlby
+	 * One est tres large et ne se coupe pas toute seule. A 2,375rem, « disent-ils »
+	 * debordait de l ecran sur un telephone de 390px et emportait la page entiere
+	 * en defilement horizontal.
+	 *
+	 * Pas de `hyphens: auto` : combinee a `text-wrap: balance`, la cesure
+	 * automatique donnait au navigateur une coupure au milieu d un mot la ou le
+	 * passage a la ligne suivante suffisait, et « Un collectif engage » se lisait
+	 * « Un collec- / tif engage ». Un titre d affiche ne se coupe pas.
+	 *
+	 * `overflow-wrap` reste, en dernier recours seulement : il ne se declenche
+	 * que si un mot ne tient pas sur sa propre ligne, ce qui n arrive avec aucun
+	 * titre du site au plancher de 2rem, et il vaut mieux qu un defilement
+	 * horizontal si un titre plus long arrive un jour.
+	 */
 	h1 {
-		font-weight: 900;
+		font-family: var(--font-display);
+		font-size: clamp(2rem, 8vw, 5rem);
+		line-height: 0.95;
+		letter-spacing: -0.015em;
+		overflow-wrap: break-word;
 	}
 
+	h2 {
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.75rem);
+		line-height: 1.1;
+		letter-spacing: -0.02em;
+		overflow-wrap: break-word;
+	}
+
+	h3 {
+		font-family: var(--font-sans);
+		font-weight: 600;
+		font-size: 1.1875rem;
+		line-height: 1.35;
+		letter-spacing: -0.01em;
+	}
+
+	/* `currentColor` et non l'encre : sur les sections noires, un contour noir
+	   est invisible et le focus disparait pour qui navigue au clavier. */
 	:focus-visible {
-		outline: 3px solid var(--color-ink);
+		outline: 3px solid currentColor;
 		outline-offset: 3px;
+		border-radius: 2px;
 	}
 
 	::selection {
-		background-color: var(--color-pink-400);
+		background-color: var(--color-pink);
 		color: var(--color-ink);
 	}
 }

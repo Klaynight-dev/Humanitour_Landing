@@ -115,6 +115,30 @@ async function seedAdmin() {
 	console.warn(`  compte admin : ${email} / ${password}`);
 }
 
+/**
+ * Compte supplementaire, optionnel.
+ *
+ * Ni email ni mot de passe en dur ici : contrairement a `seedAdmin`, ce compte
+ * n'est pas partage entre developpeurs, donc ses identifiants n'ont rien a
+ * faire dans le depot. Sans les deux variables, cette fonction ne fait rien.
+ */
+async function seedExtraAccount() {
+	const email = process.env.SEED_EXTRA_EMAIL;
+	const password = process.env.SEED_EXTRA_PASSWORD;
+	if (!email || !password) return;
+
+	const role = await prisma.role.findUniqueOrThrow({ where: { slug: 'administration' } });
+	const passwordHash = await hash(password, { algorithm: 2, memoryCost: 19_456, timeCost: 2, parallelism: 1 });
+
+	await prisma.user.upsert({
+		where: { email },
+		create: { email, passwordHash, displayName: email.split('@')[0]!, roleId: role.id },
+		update: { passwordHash, roleId: role.id, isActive: true }
+	});
+
+	console.warn(`  compte supplementaire : ${email}`);
+}
+
 async function seedSettings() {
 	await prisma.appSetting.upsert({
 		where: { key: 'anonymity.k' },
@@ -266,31 +290,34 @@ const QUESTIONS: QuestionSeed[] = [
 
 const SURVEY_SLUG = 'presidentielle-2027';
 
+/**
+ * Les textes de l enquete de demonstration, declares une seule fois.
+ *
+ * Ils etaient auparavant recopies entre `create` et `update`, et l `update` avait
+ * oublie `methodology` : une correction de ce texte ne se voyait donc jamais sur
+ * une base deja semee. Un seul objet, plus de branche a oublier.
+ */
+const SURVEY_TEXTS = {
+	title: 'Présidentielle 2027, le tour de France',
+	subtitle: '4 000 kilomètres à vélo, à la rencontre des habitants',
+	description:
+		"Enquête menée en face-à-face pendant le tour de France à vélo d'Humanitour. Chaque réponse a été recueillie sur le terrain, sans panel ni rémunération.",
+	methodology:
+		"Collecte en face-à-face, sur la voie publique et dans les commerces, le long d'un parcours de 4 000 kilomètres traversant les régions métropolitaines. Aucun redressement n'est appliqué : les effectifs publiés sont des comptages bruts. Les non-réponses, refus et « sans opinion » sont comptés comme des modalités à part entière. L'échantillon n'est pas représentatif au sens des instituts privés : il est décrit tel qu'il est, région par région."
+} as const;
+
 async function seedSurvey() {
 	const survey = await prisma.survey.upsert({
 		where: { slug: SURVEY_SLUG },
 		create: {
 			slug: SURVEY_SLUG,
-			title: 'Présidentielle 2027 — le tour de France',
-			subtitle: '5 000 kilomètres à vélo, à la rencontre des habitants',
-			description:
-				"Enquête menée en face-à-face pendant le tour de France à vélo d'Humanitour. Chaque réponse a été recueillie sur le terrain, sans panel ni rémunération.",
-			methodology:
-				"Collecte en face-à-face, sur la voie publique et dans les commerces, le long d'un parcours de 5 000 kilomètres traversant les régions métropolitaines. Aucun redressement n'est appliqué : les effectifs publiés sont des comptages bruts. Les non-réponses, refus et « sans opinion » sont comptés comme des modalités à part entière. L'échantillon n'est pas représentatif au sens des instituts privés : il est décrit tel qu'il est, région par région.",
+			...SURVEY_TEXTS,
 			status: 'PUBLISHED',
 			publishedAt: new Date('2026-09-01'),
 			fieldworkStart: new Date('2026-06-15'),
 			fieldworkEnd: new Date('2026-08-20')
 		},
-		// On rafraichit les textes : un seed qui cree mais ne met jamais a jour
-		// laisse croire qu'une correction de libelle n'a pas pris.
-		update: {
-			status: 'PUBLISHED',
-			title: 'Présidentielle 2027 — le tour de France',
-			subtitle: '5 000 kilomètres à vélo, à la rencontre des habitants',
-			description:
-				"Enquête menée en face-à-face pendant le tour de France à vélo d'Humanitour. Chaque réponse a été recueillie sur le terrain, sans panel ni rémunération."
-		}
+		update: { ...SURVEY_TEXTS, status: 'PUBLISHED' }
 	});
 
 	await prisma.question.deleteMany({ where: { surveyId: survey.id } });
@@ -598,6 +625,7 @@ async function main() {
 	console.warn('Seed Humanitour');
 	await seedRoles();
 	await seedAdmin();
+	await seedExtraAccount();
 	await seedSettings();
 	const surveyId = await seedSurvey();
 	await seedResponses(surveyId);

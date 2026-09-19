@@ -27,6 +27,7 @@ export const freeText: QuestionType = {
 	description: 'Un verbatim. Conservé et exporté, mais jamais proposé au croisement.',
 	usesOptions: false,
 	multiValued: false,
+	ordered: false,
 	crossable: false,
 
 	parseConfig(raw) {

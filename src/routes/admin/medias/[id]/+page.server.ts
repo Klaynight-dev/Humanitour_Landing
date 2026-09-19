@@ -1,4 +1,4 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { recordAudit } from '$lib/server/audit';
 import { notify } from '$lib/server/notifications/emit';
 import { prisma } from '$lib/server/db';
@@ -173,5 +173,30 @@ export const actions: Actions = {
 		});
 
 		return { message: 'Media repasse en brouillon.' };
+	},
+
+	/**
+	 * Supprime le media depuis sa propre page.
+	 *
+	 * La liste portait deja cette action, mais pas la fiche : il fallait revenir
+	 * en arriere et retrouver la ligne pour supprimer ce qu on avait justement
+	 * sous les yeux.
+	 */
+	delete: async ({ params, locals }) => {
+		const user = requirePermission(locals.user, 'media.delete');
+
+		const item = await prisma.mediaItem.findUnique({ where: { id: params.id } });
+		if (!item) return fail(404, { message: 'Media introuvable.' });
+
+		await prisma.mediaItem.delete({ where: { id: params.id } });
+		await recordAudit({
+			actorId: user.id,
+			action: 'media.delete',
+			entity: 'MediaItem',
+			entityId: params.id,
+			metadata: { slug: item.slug }
+		});
+
+		redirect(303, '/admin/medias');
 	}
 };

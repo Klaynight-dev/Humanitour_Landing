@@ -13,10 +13,147 @@ export const SITE = {
 	name: 'Humanitour',
 	tagline: "L'institut de sondage citoyen",
 	description:
-		'Un institut de sondage citoyen : 5 000 kilomètres à vélo, des entretiens en face-à-face, et la totalité des données brutes publiées.',
+		"Un institut de sondage citoyen : 4 000 kilomètres à vélo, 1 000 personnes rencontrées en face-à-face, et la totalité des données brutes publiées.",
 	email: 'contact@humanitour.fr',
 	domain: 'humanitour.fr'
 } as const;
+
+/**
+ * Ce que la premiere enquete de terrain a produit.
+ *
+ * Source unique : la plaquette de l association (`docs/sources/`, section
+ * « Le lancement »). Chaque valeur y est ecrite noir sur blanc. Aucun de ces
+ * nombres n est estime, arrondi a la hausse ou reconstitue : un chiffre sans
+ * source ne s affiche pas, c est la regle que l institut reproche aux autres
+ * de ne pas tenir.
+ */
+export const TOUR = {
+	kilometres: 4000,
+	months: 2,
+	regions: 13,
+	/** Personnes rencontrees en face-a-face pendant les deux mois. */
+	respondents: 1000,
+	/** Part des personnes rencontrees ayant accepte de partager leur vote. */
+	voteSharedRatio: '7 sur 10',
+	/** Part ayant accepte de repondre face camera. */
+	onCameraRatio: "près d'un quart",
+	/** L echeance que l enquete documente. */
+	election: 'présidentielle 2027'
+} as const;
+
+/**
+ * Les quatre questions, dans l ordre exact de passation sur le terrain.
+ *
+ * Le libelle est celui qui a ete pose, pas une reformulation editoriale : la
+ * formulation fait partie du resultat (AGENTS.md § 0). Le futur des questions 2
+ * et 3 est celui du questionnaire, pose avant le scrutin.
+ */
+export const QUESTIONS = [
+	'Quel sujet vous tient le plus à cœur ?',
+	'Au premier tour, pour qui voterez-vous ?',
+	'Au second tour, contre qui voterez-vous ?',
+	'Pour vous informer, quels médias consultez-vous ?'
+] as const;
+
+/**
+ * L equipe de l association.
+ *
+ * Noms, fonctions et notices sont repris MOT POUR MOT de la plaquette
+ * (`source/Humanitour.pdf`, page « L equipe »). Ce sont des personnes reelles :
+ * rien ici ne s invente ni ne se reformule sans leur accord.
+ *
+ * Les portraits viennent de la meme page et sont stockes dans
+ * `static/equipe/`. Le visuel de l incubateur, lui, n a pas ete repris : c est
+ * une image de communication de TAG BZH, pas une image de l association
+ * (AGENTS.md § 6, pas d image sous droits).
+ */
+export interface TeamMember {
+	readonly slug: string;
+	readonly name: string;
+	readonly role: string;
+	readonly bio: string;
+	/**
+	 * Site personnel, quand la personne en a un et accepte qu il soit publie.
+	 * Optionnel : l absence de champ ne dit rien de plus que l absence de site,
+	 * et les fiches restent identiques par ailleurs.
+	 */
+	readonly website?: string;
+}
+
+/*
+ * Type explicite et non `as const satisfies` : avec la narration litterale, un
+ * champ optionnel present sur une seule fiche (`website`) n existe pas sur le
+ * type des trois autres, et toute lecture uniforme de la liste echoue.
+ */
+export const TEAM: readonly TeamMember[] = [
+	{
+		slug: 'come-moudenner',
+		name: 'Côme Moudenner',
+		role: 'Référent des sondages',
+		bio: "Entrepreneur et agent sportif, Côme a dit non aux millions, pour faire le tour de l'humanité et entreprendre socialement."
+	},
+	{
+		slug: 'elouan-passereau',
+		name: 'Elouan Passereau',
+		role: 'Référent du numérique',
+		bio: 'Engagé pour la démocratie, Elouan développe la première plateforme numérique indépendante et sécurisée pour les sondages.',
+		website: 'https://klaynight.fr'
+	},
+	{
+		slug: 'mareva-vaucher',
+		name: 'Mareva Vaucher',
+		role: 'Référente anthropologie',
+		bio: "Cadre et anthropologue, elle met sa connaissance de l'humain au service d'Humanitour."
+	},
+	{
+		slug: 'jeanne-tardivel',
+		name: 'Jeanne Tardivel',
+		role: 'Référente de la communication',
+		bio: "Communicante et créative, elle est à l'origine de la direction artistique Humanitour."
+	}
+];
+
+/** L incubateur qui heberge le projet. Meme source. */
+export const INCUBATOR = {
+	name: "TAG 22, RICH'ESS",
+	label: 'Incubateur ESS',
+	body: "Humanitour a été sélectionné pour intégrer l'incubateur ESS Bretagne, au Totem de l'innovation, à Saint-Brieuc."
+} as const;
+
+/**
+ * Les cinq engagements de l association, repris de sa plaquette.
+ *
+ * C est sa propre definition d elle-meme, pas une liste d arguments ecrite pour
+ * le site.
+ *
+ * Une divergence assumee avec la source : la plaquette ecrit « ponderer et
+ * contextualiser les resultats ». La ponderation est explicitement exclue par
+ * AGENTS.md § 6, et c est le reproche central adresse aux autres instituts.
+ * Le mot est donc retire ici plutot qu affiche puis dementi par le produit.
+ * A trancher avec l association avant mise en production.
+ */
+export const PILLARS = [
+	{
+		title: 'Citoyen',
+		body: "Un institut qui appartient aux citoyennes et citoyens adhérents. Humanitour est une association à but non lucratif, incubée par l'ESS."
+	},
+	{
+		title: 'Local',
+		body: "Des sondages humains, sur le terrain, au plus près de chacun, pour arrêter d'invisibiliser une partie de la population."
+	},
+	{
+		title: 'Indépendant',
+		body: "Des questions choisies par les citoyens, qui s'imposent aux médias et aux politiques publiques."
+	},
+	{
+		title: 'Transparent',
+		body: 'Les méthodes, les données et les témoignages partagés en toute transparence, pour faire progresser le débat public.'
+	},
+	{
+		title: 'Sociologique',
+		body: 'Informer, considérer les non-réponses, poser des questions ouvertes et non binaires, contextualiser les résultats.'
+	}
+] as const;
 
 /** Association declaree. Valeurs reprises des mentions legales publiees. */
 export const ORGANISATION = {
@@ -103,5 +240,6 @@ export const NAV = [
 	{ href: '/le-tour', label: 'Le tour' },
 	{ href: '/donnees', label: 'Les données' },
 	{ href: '/medias', label: 'Médias' },
-	{ href: '/methodologie', label: 'Méthodologie' }
+	{ href: '/methodologie', label: 'Méthodologie' },
+	{ href: '/a-propos', label: 'À propos' }
 ] as const;

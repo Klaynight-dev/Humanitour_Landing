@@ -1,22 +1,22 @@
 <script lang="ts">
+	import NavigationProgress from '$components/NavigationProgress.svelte';
 	import '../app.css';
-	import Footer from '$components/Footer.svelte';
-	import Header from '$components/Header.svelte';
 
 	let { children } = $props();
 </script>
 
-<a
-	href="#contenu"
-	class="bg-ink text-paper sr-only rounded-lg px-4 py-2 focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100]"
->
-	Aller au contenu
-</a>
+<!--
+	Layout racine : la feuille de styles, et le seul element commun a TOUTES les
+	pages, la barre de progression des navigations.
 
-<div class="flex min-h-full flex-col">
-	<Header />
-	<main id="contenu" class="flex-1">
-		{@render children()}
-	</main>
-	<Footer />
-</div>
+	Elle est posee ici et non dans `(public)` : une navigation lente se produit
+	aussi bien au back-office, et l attente y merite le meme retour.
+
+	Le chrome public (en-tete, pied de page) vit dans `(public)/+layout.svelte`,
+	le back-office a le sien. Sans cette separation, l administration s affichait
+	entouree de la navigation marketing et du pied de page de l association.
+	Les pages d authentification, elles, restent volontairement nues.
+-->
+<NavigationProgress />
+
+{@render children()}

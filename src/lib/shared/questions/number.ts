@@ -60,6 +60,7 @@ export const numberQuestion: QuestionType = {
 	description: 'Une valeur numérique, regroupée en tranches pour les croisements.',
 	usesOptions: false,
 	multiValued: false,
+	ordered: true,
 	crossable: true,
 
 	parseConfig(raw) {

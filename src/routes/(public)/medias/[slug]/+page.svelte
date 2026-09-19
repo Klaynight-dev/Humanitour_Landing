@@ -23,7 +23,7 @@
 </script>
 
 <svelte:head>
-	<title>{media.title} — Humanitour</title>
+	<title>{media.title}, Humanitour</title>
 	<meta name="description" content={media.excerpt ?? media.title} />
 	<meta property="og:title" content={media.title} />
 	<meta property="og:type" content="article" />
@@ -40,7 +40,7 @@
 
 	<header>
 		<div class="flex flex-wrap items-center gap-3 text-xs">
-			<span class="bg-coral-50 text-coral-700 rounded-pill px-2.5 py-1 font-semibold">
+			<span class="bg-coral-wash text-coral-ink rounded-pill px-3 py-1 font-semibold">
 				{type?.label ?? media.kind}
 			</span>
 			{#if media.publishedAt}
@@ -53,7 +53,7 @@
 			{/if}
 		</div>
 
-		<h1 class="font-display mt-4 text-4xl leading-tight font-semibold sm:text-5xl">
+		<h1 class="mt-4 text-4xl sm:text-5xl">
 			{media.title}
 		</h1>
 
@@ -68,7 +68,7 @@
 		<img
 			src={media.coverUrl}
 			alt={media.coverAlt ?? ''}
-			class="rounded-card mt-8 w-full object-cover"
+			class="rounded-block mt-8 w-full object-cover"
 		/>
 	{/if}
 
@@ -77,10 +77,10 @@
 		<div class="mt-8">
 			<VideoEmbed embedUrl={text('embedUrl')!} title={media.title} />
 			{#if text('watchUrl')}
-				<p class="text-muted mt-3 text-xs">
-					Hébergé par {text('providerLabel')} —
+				<p class="text-muted mt-3 text-sm">
+					Hébergé par {text('providerLabel')}.
 					<a
-						class="underline"
+						class="underline decoration-2 underline-offset-2"
 						href={text('watchUrl')!}
 						target="_blank"
 						rel="noopener noreferrer">voir sur le site d'origine</a
@@ -108,7 +108,7 @@
 
 	{#if media.kind === 'PODCAST' && text('transcript')}
 		<section class="mt-12" aria-labelledby="transcription">
-			<h2 id="transcription" class="font-display text-2xl font-semibold">Transcription</h2>
+			<h2 id="transcription" class="text-2xl">Transcription</h2>
 			<p class="text-ink-soft mt-4 leading-relaxed whitespace-pre-line">{text('transcript')}</p>
 		</section>
 	{/if}
@@ -116,15 +116,15 @@
 	{#if media.tags.length > 0}
 		<ul class="mt-10 flex flex-wrap gap-2">
 			{#each media.tags as tag (tag)}
-				<li class="border-ink text-muted bg-paper rounded-pill border-2 px-3 py-1 text-xs">{tag}</li>
+				<li class="bg-cream text-ink-soft rounded-pill px-3 py-1 text-sm">{tag}</li>
 			{/each}
 		</ul>
 	{/if}
 </article>
 
 {#if data.related.length > 0}
-	<section class="border-ink mx-auto max-w-6xl border-t-2 px-4 py-12 sm:px-6" aria-labelledby="suite">
-		<h2 id="suite" class="font-display text-2xl font-semibold">À lire et à écouter ensuite</h2>
+	<section class="border-ink/12 mx-auto max-w-6xl border-t px-4 py-12 sm:px-6" aria-labelledby="suite">
+		<h2 id="suite" class="text-2xl">À lire et à écouter ensuite</h2>
 		<ul class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{#each data.related as item (item.slug)}
 				<li><MediaCard media={item} /></li>

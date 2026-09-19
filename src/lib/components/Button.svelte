@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 
-	type Variant = 'primary' | 'gradient' | 'outline' | 'ghost';
+	type Variant = 'primary' | 'brand' | 'outline' | 'inverse' | 'ghost';
 	type Size = 'md' | 'lg';
 
 	interface Props {
@@ -24,37 +24,40 @@
 	}: Props & HTMLAnchorAttributes & HTMLButtonAttributes = $props();
 
 	/**
-	 * Les variantes portent le trait noir et l'ombre nette, sauf « ghost » qui
-	 * n'est pas un bloc mais un lien deguise en bouton.
+	 * La pilule vient du lettrage du logo, dont tous les angles sont pleins.
+	 *
+	 * « brand » porte du texte noir et non blanc : blanc sur le corail de la
+	 * charte ne donne que 3,11:1, sous le minimum AA pour du texte courant.
+	 *
+	 * « inverse » est le contour des surfaces d encre : sur un aplat noir, le
+	 * contour d encre d « outline » serait invisible. Il n existe que pour ca.
 	 */
 	const VARIANTS: Record<Variant, string> = {
-		primary: 'brut brut-press bg-ink text-white',
-		gradient: 'brut brut-press text-ink',
-		outline: 'brut brut-press bg-paper text-ink',
-		ghost: 'text-ink hover:bg-ink/5 border-2 border-transparent'
+		primary: 'press bg-ink text-paper',
+		brand: 'press surface-brand',
+		outline: 'press border-2 border-ink bg-transparent text-ink',
+		inverse: 'press border-2 border-paper bg-transparent text-paper',
+		ghost: 'press text-ink underline decoration-2 underline-offset-4'
 	};
 
+	/* Taille de cible tactile : 44px au minimum, meme quand le libelle est court. */
 	const SIZES: Record<Size, string> = {
-		md: 'px-5 py-2.5 text-sm',
-		lg: 'px-7 py-3.5 text-base'
+		md: 'min-h-11 px-5 py-2.5 text-sm',
+		lg: 'min-h-13 px-7 py-3.5 text-base'
 	};
 
 	const base =
-		'inline-flex items-center justify-center gap-2 rounded-pill font-display font-bold tracking-tight disabled:cursor-not-allowed disabled:opacity-50';
+		'inline-flex items-center justify-center gap-2 rounded-pill font-semibold tracking-tight disabled:cursor-not-allowed disabled:opacity-50';
 
 	// $derived et non const : sans cela la classe figerait la valeur initiale des
 	// props et un changement de variante ne se verrait jamais.
 	const className = $derived(`${base} ${VARIANTS[variant]} ${SIZES[size]}`);
-	const style = $derived(
-		variant === 'gradient' ? 'background-image: var(--gradient-line)' : undefined
-	);
 </script>
 
 {#if href}
 	<a
 		{href}
 		class={className}
-		{style}
 		target={external ? '_blank' : undefined}
 		rel={external ? 'noopener noreferrer' : undefined}
 		{...rest}
@@ -62,7 +65,7 @@
 		{@render children()}
 	</a>
 {:else}
-	<button class={className} {style} {...rest}>
+	<button class={className} {...rest}>
 		{@render children()}
 	</button>
 {/if}

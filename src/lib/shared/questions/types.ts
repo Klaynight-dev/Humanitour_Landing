@@ -79,6 +79,20 @@ export interface QuestionType {
 	/** Croisable par defaut dans l explorateur. */
 	readonly crossable: boolean;
 
+	/**
+	 * Les modalites portent-elles un ordre qui leur est propre ?
+	 *
+	 * Vrai pour une echelle ou des tranches numeriques : « 18-24 » vient avant
+	 * « 25-34 », et ce n est pas negociable. Faux pour une liste de choix, ou
+	 * l ordre du questionnaire n a pas de sens en soi et ou trier par effectif
+	 * rend le resultat lisible.
+	 *
+	 * L affichage s en sert pour decider s il PEUT reordonner. Trier une echelle
+	 * par effectif produit un graphique en dents de scie dont l axe ne veut plus
+	 * rien dire.
+	 */
+	readonly ordered: boolean;
+
 	/** Valide la configuration saisie au back-office. */
 	parseConfig(raw: unknown): ConfigResult;
 

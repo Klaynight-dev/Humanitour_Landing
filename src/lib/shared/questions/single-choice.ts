@@ -18,6 +18,7 @@ export const singleChoice: QuestionType = {
 	description: 'Une seule réponse parmi une liste de modalités déclarées.',
 	usesOptions: true,
 	multiValued: false,
+	ordered: false,
 	crossable: true,
 	parseConfig(raw) {
 		const parsed = configSchema.safeParse(raw ?? {});

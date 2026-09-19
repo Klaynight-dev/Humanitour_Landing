@@ -7,14 +7,19 @@ Les règles de modification du code sont dans [`AGENTS.md`](./AGENTS.md).
 
 ## Le projet
 
-**Humanitour** est un institut de sondage citoyen : une association loi 1901 qui
-parcourt **5 000 km à vélo en deux mois**, à travers toutes les régions
-métropolitaines, pour recueillir en face-à-face un échantillon de la population sur
-la présidentielle. Trois questions simples :
+**Humanitour** est un institut de sondage citoyen : une association loi 1901 qui a
+parcouru **4 000 km à vélo en deux mois**, à travers les treize régions
+métropolitaines, pour rencontrer **1 000 personnes** en face-à-face en vue de la
+présidentielle 2027. Quatre questions, posées dans cet ordre :
 
-1. Quelle est votre priorité pour la France ?
-2. Au premier tour, pour qui allez-vous voter ?
-3. Au second tour, pour qui ne voterez-vous **jamais** ?
+1. Quel sujet vous tient le plus à cœur ?
+2. Au premier tour, pour qui voterez-vous ?
+3. Au second tour, contre qui voterez-vous ?
+4. Pour vous informer, quels médias consultez-vous ?
+
+Ces valeurs viennent de la plaquette de l'association et vivent dans les
+constantes `TOUR` et `QUESTIONS` de `src/lib/shared/site.ts`. **L'enquête a eu
+lieu : le site public s'écrit au passé.**
 
 La promesse tient en trois mots : **sur le terrain, humain, citoyen**. Et en une
 différence : les données brutes sont publiées, la méthodologie est publique, les
@@ -36,6 +41,13 @@ médiathèque et le back-office.
 | Contact | contact@humanitour.fr |
 | Hébergeur | Contabo GmbH — datacenter de Nuremberg, Allemagne (UE) |
 | Code déontologique | ICC/ESOMAR — Commission des sondages |
+
+**Mandat.** Côme Moudenner, référent des sondages, a missionné Elouan Passereau
+pour ce site. **Les quatre membres de l'équipe ont donné leur accord pour
+l'usage de leur image**, portraits et photographies de terrain comprises : ni le
+portrait ni la photo de couverture n'ont à être revalidés au cas par cas. La
+règle « pas d'image sous droits » (`AGENTS.md` § 6) reste entière et vise les
+images de tiers, pas celles de l'association.
 
 ### L'écosystème existant
 
@@ -61,7 +73,7 @@ médiathèque et le back-office.
 | Lint | ESLint 9 (flat config) + `eslint-plugin-svelte` | |
 | Exécution | Bun | |
 | Déploiement | `adapter-node` + Docker Compose sur VPS | Cohérent avec l'hébergement Contabo déjà déclaré |
-| Base en développement | **PGlite** servi par `pglite-server` | Un PostgreSQL compilé en WebAssembly, parlant le vrai protocole réseau. Zéro installation, mêmes types que la production — tableaux, énumérations et tout le reste |
+| Base en développement | **PostgreSQL**, via `docker-compose` | Le même moteur qu'en production. Une base de développement qui diffère du moteur réel laisse passer ce qui casse ensuite : types, transactions, contraintes |
 
 ---
 
@@ -133,7 +145,7 @@ raison, pas une préférence.
 | 5 | Explorateur | Cartes publiées par le back-office **et** exploration libre avec permalien |
 | 6 | Visualisations | Carte choroplèthe, barres / barres empilées / camembert, tableau croisé, évolution temporelle |
 | 7 | Médias | Articles rédigés au back-office, vidéos et reportages, podcasts, revue de presse |
-| 8 | Sections vitrine | Le constat (Bourdieu), le tour et son parcours, méthodologie et transparence, soutien HelloAsso et newsletter |
+| 8 | Sections vitrine | Le constat (Bourdieu), le tour et son parcours, méthodologie et transparence, **l'équipe et l'association** (`/a-propos`), soutien HelloAsso et newsletter |
 
 ### Données et droit
 
@@ -164,17 +176,25 @@ raison, pas une préférence.
 | 21 | Ton | Vouvoiement sur les données et le légal, tutoiement sur les appels à l'action |
 | 22 | Langue | Interface en français, code en anglais, chaînes externalisées |
 | 23 | Attribution | Les commits ne portent **aucune ligne de co-auteur** |
+| 24 | Photographie | La page d'accueil s'ouvre sur une **photographie de terrain**, pas sur un tableau. Uniquement des images de l'association : ni banque d'images, ni image générée |
+| 25 | Mouvement | Cadran passé de `MOTION 1` à **`MOTION 2`** le 18 septembre 2026 (apparition au défilement autorisée sur deux blocs nommés, boucles et parallaxe toujours interdites) |
+| 26 | Résilience | La lecture de session **échoue en visiteur anonyme** si la base est injoignable (`src/hooks.server.ts`). Sans cela, une base en panne renvoyait 500 sur tout le site public, y compris les pages qui n'affichent aucune donnée. Échouer ainsi n'accorde aucun droit, il en retire |
 
 ### Ce qui reste à construire
 
 | Sujet | État |
 | --- | --- |
-| Pages légales `/legal/*` | À récupérer depuis `forms.humanitour.fr` (décision 13) |
-| Page « Le tour » et carte du parcours | À construire |
+| Pages légales `/legal/*` | **Manquantes** : le pied de page pointe vers cinq pages qui n'existent pas (décision 13) |
 | Carte choroplèthe | Bloquée : il faut une géométrie des régions sous licence compatible (ODbL ou Etalab) |
 | Courbe d'évolution temporelle | À construire ; la donnée existe déjà (`Response.collectedAt`) |
-| Textes du back-office | Encore sans accents, contrairement au site public |
+| Tracé du parcours | `TourMap` est un schéma assumé : l'itinéraire ville par ville n'est pas publié |
+| Jeu de démonstration | `prisma/seed.ts` porte encore trois questions, pas les quatre de la plaquette |
+| Pondération | La plaquette annonce « pondérer les résultats », `AGENTS.md` § 6 l'interdit. À trancher |
+| Portrait de Mareva Vaucher | Extrait de la plaquette en 210 px : nettement plus doux que les trois autres, à remplacer par un original |
+| Photographies de terrain | `static/photos/` ne contient que deux images, extraites de la plaquette et plafonnant à 480×640. **À remplacer par les originaux** (le compte Instagram `humanitour.france` en héberge d'autres, mais il est derrière un mur de connexion et rien ne peut en être récupéré automatiquement) |
 | URL de la campagne HelloAsso | `TODO` explicite dans `src/lib/shared/site.ts` |
+| Contact | Le code utilise `contact@humanitour.fr`, la plaquette `humanitour.france@gmail.com` |
+| Externalisation des chaînes | `src/lib/i18n/` est annoncé en § 5 d'`AGENTS.md` mais n'existe pas |
 
 ---
 
@@ -184,19 +204,26 @@ Extraite des documents de communication de l'association (`docs/sources/`).
 
 | Token | Valeur | Usage |
 | --- | --- | --- |
-| `--brand-coral` | `#FF5757` | Couleur principale, cœur du dégradé |
-| `--brand-pink` | `#FF88B7` | Transition |
-| `--brand-orange` | `#FF751F` | Fin du dégradé, accents |
-| `--ink` | `#000000` | Texte |
-| `--paper` | `#FFFFFF` | Fond |
+| `--color-coral` | `#FF5757` | Couleur principale, cœur du dégradé |
+| `--color-pink` | `#FF88B7` | Transition |
+| `--color-orange` | `#FF751F` | Fin du dégradé |
+| `--color-ink` | `#000000` | Texte **et surface pleine** |
+| `--color-cream` | `#FFF1EB` | Fond du registre « argument » |
+| `--color-paper` | `#FFFFFF` | Fond du registre « chiffres » |
 
-Le fond signature est un **dégradé mesh** blanc → corail → rose → orange. Les titres
-forts portent ce dégradé en remplissage de texte.
+Le fond signature est un **dégradé mesh** blanc → corail → rose → orange. Sur ce
+dégradé, le texte est **noir, jamais blanc** : blanc sur orange ne donne que
+2,69:1, sous le minimum WCAG AA.
 
-**Typographies.** Les documents utilisent Crusoe Text (serif éditorial), un sans
-arrondi et BadgerScript en accent manuscrit — des polices Canva non redistribuables.
-Les équivalents web libres retenus sont documentés dans `src/app.css`, avec pour
-chaque rôle la fonte d'origine qu'elle remplace.
+**Typographies.** Les documents utilisent SLTF Curo (titrage très gras et rond),
+Crusoe Text (sans géométrique légère, famille Futura) et Budger Script en accent
+manuscrit, des polices Canva non redistribuables. Les substituts libres retenus
+sont Bowlby One, Jost et Caveat, documentés dans `src/app.css` avec pour chaque
+rôle la fonte d'origine qu'elle remplace.
+
+**La direction artistique complète est dans [`DESIGN.md`](./DESIGN.md)**, y
+compris la raison pour laquelle le « néo-brutalisme » décrit dans les versions
+antérieures a été retiré : il ne figurait pas dans la charte.
 
 ---
 
@@ -205,9 +232,10 @@ chaque rôle la fonte d'origine qu'elle remplace.
 | Commande | Effet |
 | --- | --- |
 | `bun install` | Installe les dépendances |
-| `bun run dev:local` | **Base embarquée + serveur de développement, en une commande** |
-| `bun run db:local` | PostgreSQL embarqué seul (PGlite, port 55432) |
+| `bun run services:up` | PostgreSQL de développement (docker-compose, port 5432) |
+| `bun run setup` | Base, migrations et jeu de démonstration |
 | `bun run dev` | Serveur de développement, contre une base déjà démarrée |
+| `bun run db:migrate:deploy` | Applique les migrations existantes, sans en générer |
 | `bun run build` | Build de production |
 | `bun run lint` | ESLint |
 | `bun run typecheck` | `svelte-check` |

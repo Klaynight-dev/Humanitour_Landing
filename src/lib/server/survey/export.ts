@@ -115,7 +115,7 @@ export const EXPORT_NOTICE =
 	'Effectifs bruts, sans pondération ni redressement. Les non-réponses sont comptées comme une modalité. ' +
 	"Les valeurs numériques sont regroupées en tranches et les verbatims sont exclus, pour empêcher la réidentification.";
 
-export const EXPORT_LICENSE = "ODbL 1.0 — attribution à Humanitour et partage à l'identique.";
+export const EXPORT_LICENSE = "ODbL 1.0 : attribution à Humanitour et partage à l'identique.";
 
 export function toJson(
 	survey: {

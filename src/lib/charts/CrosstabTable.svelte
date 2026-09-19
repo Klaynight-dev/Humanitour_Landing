@@ -11,9 +11,17 @@
 	let { data, xLabel, yLabel }: Props = $props();
 </script>
 
-<!-- Le tableau deborde horizontalement sur mobile plutot que de comprimer les
-     colonnes jusqu'a l'illisible. -->
-<div class="overflow-x-auto">
+<!--
+	Le tableau deborde horizontalement sur mobile plutot que de comprimer les
+	colonnes jusqu'a l'illisible.
+
+	La regle svelte que l'on desactive vise les elements rendus focalisables sans
+	raison. Ici la raison est WCAG 2.1.1 : une zone qui defile et qu'on ne peut pas
+	atteindre au clavier cache ses colonnes de droite a qui n'a pas de souris. Le
+	couple role="region" + tabindex="0" est la technique recommandee pour ce cas.
+-->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<div class="overflow-x-auto" tabindex="0" role="region" aria-label="Tableau croisé, défilement horizontal">
 	<table class="w-full min-w-[36rem] border-collapse text-sm">
 		<caption class="text-muted pb-3 text-left text-sm">
 			{xLabel} croisé avec {yLabel}. Chaque case indique la part en ligne et son effectif.

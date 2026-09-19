@@ -33,6 +33,7 @@ export const scale: QuestionType = {
 	description: 'Une note entière entre deux bornes, par exemple de 1 à 10.',
 	usesOptions: false,
 	multiValued: false,
+	ordered: true,
 	crossable: true,
 
 	parseConfig(raw) {
@@ -83,7 +84,7 @@ export const scale: QuestionType = {
 	}
 };
 
-/** Les bornes portent un libelle (« 1 — pas du tout »), les pas intermediaires non. */
+/** Les bornes portent un libelle (« 1 (pas du tout) »), les pas intermediaires non. */
 function labelSuffix(
 	value: number,
 	min: number,
@@ -91,7 +92,7 @@ function labelSuffix(
 	minLabel: string | null,
 	maxLabel: string | null
 ): string {
-	if (value === min && minLabel) return ` — ${minLabel}`;
-	if (value === max && maxLabel) return ` — ${maxLabel}`;
+	if (value === min && minLabel) return ` (${minLabel})`;
+	if (value === max && maxLabel) return ` (${maxLabel})`;
 	return '';
 }

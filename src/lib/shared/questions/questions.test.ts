@@ -209,8 +209,8 @@ describe('scale', () => {
 		const modalities = type.modalities(context([], config));
 
 		expect(modalities).toHaveLength(11); // 1 a 10, plus la non-reponse
-		expect(modalities[0]?.label).toBe('1 — pas du tout');
-		expect(modalities[9]?.label).toBe('10 — tout a fait');
+		expect(modalities[0]?.label).toBe('1 (pas du tout)');
+		expect(modalities[9]?.label).toBe('10 (tout a fait)');
 		expect(modalities[4]?.label).toBe('5');
 	});
 

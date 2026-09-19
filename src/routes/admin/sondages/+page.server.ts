@@ -3,7 +3,9 @@ import { recordAudit } from '$lib/server/audit';
 import { notify } from '$lib/server/notifications/emit';
 import { prisma } from '$lib/server/db';
 import { readText } from '$lib/server/forms';
+import { importFileKey } from '$lib/server/import';
 import { requirePermission } from '$lib/server/rbac/guard';
+import { storage } from '$lib/server/storage';
 import { toSlug, uniqueSlug } from '$lib/shared/slug';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -79,7 +81,10 @@ export const actions: Actions = {
 		}
 
 		const taken = await prisma.survey.findMany({ select: { slug: true } });
-		const slug = uniqueSlug(toSlug(title), taken.map((row) => row.slug));
+		const slug = uniqueSlug(
+			toSlug(title),
+			taken.map((row) => row.slug)
+		);
 
 		const survey = await prisma.survey.create({ data: { title, slug } });
 		await recordAudit({
@@ -111,7 +116,8 @@ export const actions: Actions = {
 		// exactement ce qu'on reproche aux instituts prives.
 		if (!survey.methodology?.trim()) {
 			return fail(400, {
-				message: "Renseignez la methodologie avant de publier : c'est ce qui distingue cette enquete d'un sondage opaque."
+				message:
+					"Renseignez la methodologie avant de publier : c'est ce qui distingue cette enquete d'un sondage opaque."
 			});
 		}
 
@@ -173,5 +179,87 @@ export const actions: Actions = {
 		});
 
 		return { message: `« ${survey.title} » est repasse en brouillon.` };
+	},
+
+	/**
+	 * Supprime une enquete, et tout ce qu elle porte.
+	 *
+	 * Le schema cascade : questions, modalites, reponses, lots d import et
+	 * cartes publiees partent avec elle. Les fichiers d origine des lots, eux,
+	 * vivent hors de la base et sont retires explicitement, sinon ils resteraient
+	 * sur le disque sans plus rien pour les nommer.
+	 *
+	 * UNE ENQUETE PUBLIEE NE SE SUPPRIME PAS. Son slug fait partie du contrat de
+	 * permalien (AGENTS.md section 1.4) : un croisement cite par un journaliste
+	 * doit continuer de repondre. Il faut donc la depublier d abord, ce qui est
+	 * un geste separe, reversible, et qui laisse une trace au journal.
+	 */
+	delete: async ({ request, locals }) => {
+		const user = requirePermission(locals.user, 'survey.delete');
+
+		const form = await request.formData();
+		const id = readText(form, 'id');
+
+		const survey = await prisma.survey.findUnique({
+			where: { id },
+			include: {
+				importBatches: { select: { id: true, filename: true } },
+				_count: { select: { responses: true, questions: true } }
+			}
+		});
+		if (!survey) return fail(404, { message: 'Sondage introuvable.' });
+
+		if (survey.status === 'PUBLISHED') {
+			return fail(400, {
+				message:
+					"Depubliez l'enquete avant de la supprimer : son adresse est peut-etre deja citee ailleurs."
+			});
+		}
+
+		// Confirmation par le slug des qu il y a des reponses en jeu. Une boite de
+		// dialogue se valide par reflexe ; recopier le nom de ce qu on detruit,
+		// non.
+		if (survey._count.responses > 0 && readText(form, 'confirmation') !== survey.slug) {
+			return fail(400, {
+				message: `Pour supprimer une enquete portant ${survey._count.responses} reponses, recopiez son identifiant : ${survey.slug}`
+			});
+		}
+
+		await prisma.survey.delete({ where: { id } });
+
+		// Apres la base : un fichier orphelin est un desagrement, une enquete a
+		// moitie supprimee serait une incoherence.
+		await Promise.all(
+			survey.importBatches.map((batch) =>
+				storage()
+					.remove(importFileKey(id, batch.id, batch.filename))
+					.catch(() => undefined)
+			)
+		);
+
+		await recordAudit({
+			actorId: user.id,
+			action: 'survey.delete',
+			entity: 'Survey',
+			entityId: id,
+			metadata: {
+				slug: survey.slug,
+				title: survey.title,
+				responses: survey._count.responses,
+				questions: survey._count.questions
+			}
+		});
+
+		await notify({
+			type: 'survey.deleted',
+			entity: 'Survey',
+			entityId: id,
+			actorId: user.id,
+			data: { title: survey.title, responses: survey._count.responses }
+		});
+
+		return {
+			message: `« ${survey.title} » est supprime, avec ses ${survey._count.responses} reponses.`
+		};
 	}
 };

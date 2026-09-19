@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Dialog from '$components/admin/Dialog.svelte';
 	import Flash from '$components/admin/Flash.svelte';
 	import PageHeader from '$components/admin/PageHeader.svelte';
 	import Panel from '$components/admin/Panel.svelte';
@@ -10,6 +11,9 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const editable = $derived(can(data.user, 'media.write'));
+
+	let confirmingDelete = $state(false);
+	let deleteForm: HTMLFormElement | null = $state(null);
 
 	/** Une date vers la valeur attendue par un champ `datetime-local`. */
 	function dateTimeValue(value: Date | null): string {
@@ -58,7 +62,8 @@
 						name="excerpt"
 						rows="2"
 						disabled={!editable}
-						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">{data.item.excerpt ?? ''}</textarea
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
+						>{data.item.excerpt ?? ''}</textarea
 					>
 				</label>
 
@@ -72,7 +77,8 @@
 							name="body"
 							rows="16"
 							disabled={!editable}
-							class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">{data.item.body ?? ''}</textarea
+							class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
+							>{data.item.body ?? ''}</textarea
 						>
 					</label>
 				{/if}
@@ -95,7 +101,8 @@
 									name="data.{field.name}"
 									rows="6"
 									disabled={!editable}
-									class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">{field.value}</textarea
+									class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
+									>{field.value}</textarea
 								>
 							{:else}
 								<input
@@ -223,3 +230,50 @@
 		</Panel>
 	</aside>
 </form>
+
+{#if can(data.user, 'media.delete')}
+	<!--
+		Hors du formulaire d edition, et en bas de page : la suppression ne se
+		trouve pas sous la main pendant qu on redige, mais elle existe la ou on
+		la cherche, sur la fiche elle-meme.
+	-->
+	<div class="border-ink/12 mt-6 flex flex-wrap items-center justify-between gap-3 border-t pt-6">
+		<p class="text-muted text-sm">Supprimer ce média le retire aussi de la médiathèque publique.</p>
+		<button
+			type="button"
+			onclick={() => (confirmingDelete = true)}
+			class="border-ink/25 text-danger bg-paper press rounded-pill border px-4 py-2 text-sm font-medium min-h-11 inline-flex items-center justify-center"
+		>
+			Supprimer ce média
+		</button>
+	</div>
+
+	<form bind:this={deleteForm} method="POST" action="?/delete" use:enhance class="hidden"></form>
+
+	<Dialog
+		open={confirmingDelete}
+		title="Supprimer ce média ?"
+		onClose={() => (confirmingDelete = false)}
+	>
+		<p>
+			« {data.item.title} » sera supprimé définitivement, y compris de la page publique /medias/{data
+				.item.slug}. Rien n'est récupérable.
+		</p>
+		{#snippet footer()}
+			<button
+				type="button"
+				onclick={() => (confirmingDelete = false)}
+				class="border-ink/25 press bg-paper rounded-pill border px-4 py-2 text-sm font-medium min-h-11 inline-flex items-center justify-center"
+			>
+				Annuler
+			</button>
+			<button
+				type="button"
+				onclick={() => deleteForm?.requestSubmit()}
+				class="text-danger border-ink/25 press bg-paper rounded-pill border px-4 py-2 text-sm font-semibold min-h-11 inline-flex items-center justify-center"
+			>
+				Supprimer définitivement
+			</button>
+		{/snippet}
+	</Dialog>
+{/if}

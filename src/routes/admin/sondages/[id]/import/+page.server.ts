@@ -6,6 +6,7 @@ import {
 	detectImportFormat,
 	getImportFormat,
 	IdentifyingDataError,
+	importFileKey,
 	IMPORT_FORMATS,
 	mapRows,
 	suggestMapping,
@@ -15,7 +16,7 @@ import {
 } from '$lib/server/import';
 import { readPrefixed, readText } from '$lib/server/forms';
 import { requirePermission } from '$lib/server/rbac/guard';
-import { safeKeySegment, storage } from '$lib/server/storage';
+import { storage } from '$lib/server/storage';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -60,12 +61,8 @@ async function reparse(batchId: string, surveyId: string): Promise<{ rowSet: Row
 	const format = getImportFormat(batch.format);
 	if (!format) error(400, { message: `Format « ${batch.format} » inconnu.` });
 
-	const content = await storage().get(storageKey(surveyId, batchId, batch.filename));
+	const content = await storage().get(importFileKey(surveyId, batchId, batch.filename));
 	return { rowSet: format.parse(content), batch };
-}
-
-function storageKey(surveyId: string, batchId: string, filename: string): string {
-	return `imports/${surveyId}/${batchId}-${safeKeySegment(filename)}`;
 }
 
 export const load: PageServerLoad = async ({ params, locals, url }) => {
@@ -210,7 +207,7 @@ export const actions: Actions = {
 		// Le fichier est conserve tel quel : il fait foi si un resultat publie est
 		// conteste, et permet de rejouer l'import sans redemander le fichier.
 		await storage().put(
-			storageKey(params.id, batch.id, file.name),
+			importFileKey(params.id, batch.id, file.name),
 			content,
 			file.type || 'application/octet-stream'
 		);
@@ -394,7 +391,7 @@ export const actions: Actions = {
 		const removed = await prisma.response.deleteMany({ where: { importBatchId: batchId } });
 		await prisma.importBatch.delete({ where: { id: batchId } });
 		await storage()
-			.remove(storageKey(params.id, batchId, batch.filename))
+			.remove(importFileKey(params.id, batchId, batch.filename))
 			.catch(() => undefined);
 
 		await recordAudit({

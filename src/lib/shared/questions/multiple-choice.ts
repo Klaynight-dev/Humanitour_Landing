@@ -34,6 +34,7 @@ export const multipleChoice: QuestionType = {
 	description: 'Plusieurs réponses possibles parmi une liste de modalités déclarées.',
 	usesOptions: true,
 	multiValued: true,
+	ordered: false,
 	crossable: true,
 
 	parseConfig(raw) {

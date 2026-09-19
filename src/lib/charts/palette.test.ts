@@ -3,10 +3,11 @@ import {
 	ALL_PAIRS_MAX,
 	ALL_PAIRS_SAFE,
 	CATEGORICAL,
-	colorFor,
-	exceedsPalette,
 	NON_RESPONSE_COLOR,
 	SEQUENTIAL,
+	colorFor,
+	colorSlots,
+	exceedsPalette,
 	sequentialStep
 } from './palette';
 
@@ -75,5 +76,18 @@ describe('sequentialStep', () => {
 
 	it('resiste a une valeur invalide', () => {
 		expect(sequentialStep(Number.NaN)).toBe(SEQUENTIAL[0]);
+	});
+});
+
+describe('colorSlots', () => {
+	it('numerote les modalites dans leur ordre declare', () => {
+		expect(colorSlots([{ key: 'a' }, { key: 'b' }, { key: 'c' }])).toEqual({ a: 0, b: 1, c: 2 });
+	});
+
+	it('garde le meme emplacement quel que soit l ordre d affichage', () => {
+		// Le graphique peut trier par effectif : la couleur, elle, ne bouge pas.
+		const slots = colorSlots([{ key: 'a' }, { key: 'b' }]);
+
+		expect(colorFor(slots.b ?? 0)).toBe(colorFor(1));
 	});
 });
