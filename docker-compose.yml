@@ -31,6 +31,10 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET est obligatoire en production}
       PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://humanitour.fr}
       STORAGE_LOCAL_PATH: /var/storage
+      # Connecteur Openforms : absent, le back-office propose simplement le
+      # depot de fichier a la place, sans erreur.
+      OPENFORMS_URL: ${OPENFORMS_URL:-}
+      OPENFORMS_API_KEY: ${OPENFORMS_API_KEY:-}
       NODE_ENV: production
       PORT: 3000
     ports:

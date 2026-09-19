@@ -18,9 +18,9 @@ import type { PageServerLoad } from './$types';
  * (AGENTS.md section 6).
  *
  * Les lectures s enchainent au lieu de partir ensemble : a une dizaine de
- * requetes, un `Promise.all` epuise le pool de connexions de la base de
- * developpement (PGlite, dix connexions) et l ecran tombe en 500. Les gagner en
- * parallele ne ferait economiser que quelques millisecondes sur des comptages.
+ * requetes concurrentes, un `Promise.all` epuise le pool de connexions et
+ * l ecran tombe en 500. Les gagner en parallele ne ferait economiser que
+ * quelques millisecondes sur des comptages.
  */
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;

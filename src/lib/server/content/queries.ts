@@ -12,6 +12,19 @@ import type { ContentBlockRecord, ContentPageKey } from '$lib/shared/content';
 export async function publishedBlocks(
 	key: ContentPageKey
 ): Promise<readonly ContentBlockRecord[] | null> {
+	try {
+		return await readBlocks(key);
+	} catch (error) {
+		// Base injoignable : la page publique retombe sur le contenu ecrit dans le
+		// code plutot que de rendre une erreur. Meme principe que la lecture de
+		// session dans hooks.server.ts (CLAUDE.md, decision 26) — echouer ainsi ne
+		// prive de rien, cela sert la version d'avant.
+		console.error('[contenu] lecture impossible', key, error);
+		return null;
+	}
+}
+
+async function readBlocks(key: ContentPageKey): Promise<readonly ContentBlockRecord[] | null> {
 	const page = await prisma.contentPage.findUnique({
 		where: { key },
 		select: {
