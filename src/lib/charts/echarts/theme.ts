@@ -96,15 +96,19 @@ export function categoryAxis(labels: readonly string[]) {
  * C est l etiquetage direct : la valeur contre la forme qu elle mesure, plutot
  * qu une legende a dechiffrer a cote. Elle rend aussi le graphique lisible
  * quand la couleur ne passe pas, ce que la palette impose (`palette.ts`).
+ *
+ * AUCUN gabarit de formatage ici, volontairement. Les gabarits d ECharts
+ * (« {c} ») ecrivent les nombres a l anglaise : « 30.4 » la ou tout le reste du
+ * site ecrit « 30,4 % ». Chaque donnee porte donc son libelle deja compose par
+ * `shared/format.ts`, seule implementation du formatage des chiffres publies.
  */
-export function endLabel(percent = true) {
+export function endLabel() {
 	return {
 		show: true,
 		position: 'right' as const,
 		color: INK,
 		fontFamily: FONT_MONO,
 		fontSize: 12,
-		fontWeight: 600 as const,
-		formatter: percent ? '{c} %' : '{c}'
+		fontWeight: 600 as const
 	};
 }

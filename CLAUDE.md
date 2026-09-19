@@ -68,7 +68,7 @@ images de tiers, pas celles de l'association.
 | Styles | **Tailwind 4** + tokens CSS | Le thème vit dans des variables CSS, donc reskinnable en une passe |
 | Base | **PostgreSQL** + Prisma | Schéma découpé par domaine sous `prisma/schema/` |
 | Auth | Maison : Argon2id + sessions en base | Aucune dépendance d'identité à un tiers |
-| Graphiques | Chart.js + SVG maison pour la carte | Chart.js est déjà maîtrisé en interne |
+| Graphiques | **Apache ECharts 6** (rendu SVG, côté serveur puis repris côté client) | Le même moteur que `forms.humanitour.fr` : une seule bibliothèque à maîtriser pour les deux applications. Rendu en SVG et non en canvas, parce que cette page est publique : les libellés et les chiffres doivent être du texte, indexable et lisible par un lecteur d'écran, présents avant tout JavaScript |
 | Tests | **Vitest** + couverture | Runner natif de l'écosystème Vite |
 | Lint | ESLint 9 (flat config) + `eslint-plugin-svelte` | |
 | Exécution | Bun | |

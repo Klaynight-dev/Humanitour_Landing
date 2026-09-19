@@ -223,13 +223,39 @@ les aplats et le mouvement s'arrêtent à la porte des pages de données.**
 | `/le-tour` | argument | `France` (`mark-ink`) | méthode | oui | schéma du parcours |
 | `/a-propos` | argument | `engagé` | couverture | oui | portraits |
 | `/medias` | éditorial | `voix` | non | oui | cartes, par rangée |
-| `/donnees` | **chiffres** | non | non | non | non |
+| `/donnees` | **chiffres, en-tête colorée** | non | en-tête de fiche | non | non |
 | `/methodologie` | **chiffres** | non | non | non | non |
 | back-office | outil | non | non | non | non |
 
-Les deux pages de chiffres restent à `ENERGY 1 / MOTION 1`, en blanc pur, sans
-dégradé ni ombre. Ce n'est pas un oubli : c'est la règle, et la rouvrir revient
-à rouvrir la séparation des registres.
+Les deux pages de chiffres restent à `ENERGY 1 / MOTION 1`, sans ombre et sans
+apparition. Ce n'est pas un oubli : c'est la règle, et la rouvrir revient à
+rouvrir la séparation des registres.
+
+**Révision du 19 septembre 2026, à la demande du porteur du projet.** La fiche
+d'une enquête (`/donnees/[slug]`) ouvre désormais sur un bandeau au dégradé de
+marque, texte noir, portant le titre, les trois repères de l'enquête et le seuil
+d'anonymat. La règle qui la précédait interdisait toute couleur sur les pages de
+chiffres ; elle est remplacée par une règle plus étroite, et c'est elle qui
+compte :
+
+> **Le dégradé se pose là où l'enquête se présente, jamais là où elle se
+> mesure.** L'en-tête est coloré, la zone de résultat ne l'est pas : fond blanc,
+> aucun aplat derrière un graphique, aucune ombre. Les seules couleurs qui
+> entrent dans la zone de résultat sont celles de la palette de données
+> (`src/lib/charts/palette.ts`), et chacune désigne une modalité.
+
+Ce qui justifie l'écart : un bandeau qui identifie l'enquête n'habille aucun
+chiffre. Un aplat derrière une barre, lui, en change la lecture. Le reproche
+adressé aux instituts porte sur le second, pas sur le premier.
+
+Trois garde-fous conservés, non négociables :
+
+1. **Texte noir sur le dégradé, jamais blanc.** Blanc sur `#FF751F` donne 2,69:1.
+2. **Aucun chiffre posé directement sur le dégradé.** Les repères de l'en-tête
+   sont sur des cartouches blancs : du texte de corps sur un fond qui varie ne
+   tient pas le contraste d'un bout à l'autre.
+3. **La zone de résultat reste à `MOTION 1`.** Les animations d'apparition
+   d'ECharts sont désactivées d'office (`charts/echarts/theme.ts`).
 ## La signature du pied de page
 
 Le nom, en Bowlby One, occupe toute la largeur du conteneur en sous-fond du pied

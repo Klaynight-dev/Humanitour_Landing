@@ -1,5 +1,5 @@
 import type { CrosstabResult, DistributionResult } from '$lib/server/survey/aggregate';
-import { SUPPRESSED_LABEL } from '$shared/format';
+import { formatCount, formatShare, SUPPRESSED_LABEL } from '$shared/format';
 import { colorFor, SUPPRESSED_COLOR } from '../palette';
 import { categoryAxis, chartBase, CHART_MUTED, endLabel, valueAxis } from './theme';
 
@@ -11,11 +11,15 @@ import { categoryAxis, chartBase, CHART_MUTED, endLabel, valueAxis } from './the
  * l etaient pas (AGENTS.md section 3.2 : si une logique est difficile a
  * tester, elle est au mauvais endroit).
  *
- * Contrainte a respecter dans tout ce fichier : l objet produit doit rester
- * SERIALISABLE en JSON. Il est calcule sur le serveur, rendu en SVG la-bas,
- * puis renvoye tel quel au navigateur qui reprend la main dessus. Une fonction
- * de formatage ne traverserait pas : on n emploie que des gabarits en chaine,
- * du type « {b} : {c} % ».
+ * DEUX CONTRAINTES a respecter dans tout ce fichier.
+ *
+ * 1. L objet produit doit rester SERIALISABLE en JSON. Il est calcule sur le
+ *    serveur, rendu en SVG la-bas, puis renvoye tel quel au navigateur qui
+ *    reprend la main dessus. Une fonction de formatage ne traverserait pas.
+ * 2. Les chiffres sont composes ICI, par `shared/format.ts`, et jamais laisses
+ *    aux gabarits d ECharts. « {c} » ecrit « 30.4 » quand le reste du site
+ *    ecrit « 30,4 % » : deux formatages concurrents de la meme part, ce que
+ *    `format.ts` existe precisement pour empecher.
  */
 
 /** Un objet d options ECharts, volontairement non type finement. */
@@ -91,13 +95,16 @@ export function barsOption(result: DistributionResult, context: ChartContext): B
 						},
 						// Une case masquee ne montre pas un zero : elle dit pourquoi elle
 						// est vide, sinon on lirait « personne n a choisi cette reponse ».
+						// Le gabarit « {c} » d ECharts ecrirait « 30.4 » : la part est donc
+						// composee ici, avec le formatage unique du projet, sinon la meme
+						// valeur s ecrirait de deux facons selon l endroit de la page.
 						label: bar.suppressed
 							? { formatter: SUPPRESSED_LABEL, color: CHART_MUTED, fontWeight: 400 }
-							: undefined,
+							: { formatter: formatShare(bar.share) },
 						tooltip: {
 							formatter: bar.suppressed
 								? `${bar.label} : ${SUPPRESSED_LABEL}`
-								: `${bar.label}<br/><b>{c} %</b> (${bar.count ?? 0} répondants)`
+								: `${bar.label}<br/><b>${formatShare(bar.share)}</b> (${formatCount(bar.count)} répondants)`
 						}
 					}))
 				}
@@ -124,7 +131,6 @@ export function donutOption(result: DistributionResult, context: ChartContext): 
 					avoidLabelOverlap: true,
 					itemStyle: { borderColor: '#ffffff', borderWidth: 2 },
 					label: {
-						formatter: '{b}\n{c} %',
 						fontSize: 12,
 						lineHeight: 16,
 						color: '#000000'
@@ -134,7 +140,10 @@ export function donutOption(result: DistributionResult, context: ChartContext): 
 						name: bar.label,
 						value: percent(bar.share),
 						itemStyle: { color: colorOf(context, bar) },
-						tooltip: { formatter: `${bar.label}<br/><b>{c} %</b> (${bar.count ?? 0} répondants)` }
+						label: { formatter: `${bar.label}\n${formatShare(bar.share)}` },
+						tooltip: {
+							formatter: `${bar.label}<br/><b>${formatShare(bar.share)}</b> (${formatCount(bar.count)} répondants)`
+						}
 					}))
 				}
 			]
@@ -158,19 +167,32 @@ function crossSeries(
 		itemStyle: {
 			color: colorOf(context, yModality)
 		},
-		data: rows.map((xModality) => {
-			const cell = table.cells.get(xModality.key)?.get(yModality.key);
-			return {
-				value: cell?.suppressed ? 0 : percent(cell?.share ?? null),
-				itemStyle: cell?.suppressed ? { color: SUPPRESSED_COLOR } : undefined,
-				tooltip: {
-					formatter: cell?.suppressed
-						? `${xModality.label} / ${yModality.label} : ${SUPPRESSED_LABEL}`
-						: `${xModality.label}<br/>${yModality.label} : <b>{c} %</b> (${cell?.count ?? 0})`
-				}
-			};
-		})
+		data: rows.map((xModality) => crossCell(table, xModality, yModality))
 	}));
+}
+
+/** Une case du croisement, avec son infobulle deja redigee. */
+function crossCell(
+	table: CrosstabResult,
+	xModality: { key: string; label: string },
+	yModality: { key: string; label: string }
+): ChartOption {
+	const cell = table.cells.get(xModality.key)?.get(yModality.key);
+
+	if (cell?.suppressed) {
+		return {
+			value: 0,
+			itemStyle: { color: SUPPRESSED_COLOR },
+			tooltip: { formatter: `${xModality.label} / ${yModality.label} : ${SUPPRESSED_LABEL}` }
+		};
+	}
+
+	return {
+		value: percent(cell?.share ?? null),
+		tooltip: {
+			formatter: `${xModality.label}<br/>${yModality.label} : <b>${formatShare(cell?.share ?? null)}</b> (${formatCount(cell?.count ?? null)})`
+		}
+	};
 }
 
 function crossLegend(): ChartOption {

@@ -70,30 +70,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const filterable = filterableQuestions(survey);
 	const base = baseOf(outcome);
 
-	/*
-	 * Le graphique est rendu ICI, en SVG.
-	 *
-	 * Les couleurs sont figees sur l ordre DECLARE des modalites, et non sur
-	 * leur position a l ecran : trier par effectif ou masquer la non-reponse ne
-	 * doit pas repeindre le graphique, sinon deux captures de la meme enquete ne
-	 * se comparent plus (`charts/palette.ts`). Les series portent les modalites
-	 * croisees quand il y en a, celles de la question sinon.
-	 */
-	const painted = prepared.y ?? prepared.x;
-	const chartContext = {
-		question: prepared.x.label,
-		crossedWith: prepared.y?.label,
-		colorSlots: colorSlots(painted.modalities)
-	};
-
-	const built =
-		outcome.kind === 'too-small'
-			? null
-			: buildChart(
-					chart,
-					outcome.kind === 'crosstab' ? outcome.crosstab : outcome.distribution,
-					chartContext
-				);
+	const built = paintChart(chart, outcome, prepared);
 
 	const share = buildShare({ survey, requested, prepared, filterable, base, origin: url.origin });
 
@@ -140,6 +117,34 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		share
 	};
 };
+
+/**
+ * Construit le graphique, ou rien s il n y a rien a dessiner.
+ *
+ * Les couleurs sont figees sur l ordre DECLARE des modalites, et non sur leur
+ * position a l ecran : trier par effectif ou masquer la non-reponse ne doit pas
+ * repeindre le graphique, sinon deux captures de la meme enquete ne se
+ * comparent plus (`charts/palette.ts`). Les series portent les modalites
+ * croisees quand il y en a, celles de la question sinon.
+ */
+function paintChart(
+	chart: ReturnType<typeof resolveChart>,
+	outcome: ReturnType<typeof buildOutcome>,
+	prepared: {
+		x: { label: string; modalities: readonly { key: string }[] };
+		y: { label: string; modalities: readonly { key: string }[] } | null;
+	}
+) {
+	if (outcome.kind === 'too-small') return null;
+
+	const painted = prepared.y ?? prepared.x;
+
+	return buildChart(chart, outcome.kind === 'crosstab' ? outcome.crosstab : outcome.distribution, {
+		question: prepared.x.label,
+		crossedWith: prepared.y?.label,
+		colorSlots: colorSlots(painted.modalities)
+	});
+}
 
 /**
  * De quoi citer, telecharger et rejouer le resultat affiche.

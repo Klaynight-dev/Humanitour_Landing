@@ -23,15 +23,42 @@
 		csvUrl: string;
 		apiUrl: string;
 		pageUrl: string;
+		/**
+		 * Compose l affiche PNG. Absent quand il n y a pas de graphique a
+		 * exporter : un tableau croise n est pas une image.
+		 */
+		downloadImage: (() => Promise<void>) | null;
 	}
 
-	let { shortCitation, longCitation, codeExamples, csvUrl, apiUrl, pageUrl }: Props = $props();
+	let { shortCitation, longCitation, codeExamples, csvUrl, apiUrl, pageUrl, downloadImage }: Props =
+		$props();
+
+	/** Vrai une fois la page reprise par le navigateur. */
+	let interactive = $state(false);
+	/** L affiche est en cours de composition : elle demande un rendu hors ecran. */
+	let composing = $state(false);
+	let imageError = $state('');
+
+	async function onImage(): Promise<void> {
+		if (!downloadImage || composing) return;
+
+		composing = true;
+		imageError = '';
+		try {
+			await downloadImage();
+		} catch {
+			imageError = "L'image n'a pas pu être composée. Le téléchargement en CSV reste disponible.";
+		} finally {
+			composing = false;
+		}
+	}
 
 	let canCopy = $state(false);
 	/** Ce qui vient d etre copie, pour le dire a l utilisateur. */
 	let copied = $state('');
 
 	onMount(() => {
+		interactive = true;
 		canCopy = typeof navigator !== 'undefined' && Boolean(navigator.clipboard);
 	});
 
@@ -50,12 +77,36 @@
 
 <div class="border-ink/12 mt-6 border-t pt-6">
 	<div class="flex flex-wrap items-center gap-3">
+		<!--
+			`data-sveltekit-reload` et `download` : sans eux, le routeur traite ce
+			lien comme une navigation, la page passe en « calcul en cours », puis
+			le navigateur telecharge le fichier au lieu de changer de page. La
+			navigation ne se terminait donc jamais et le graphique restait grise.
+		-->
 		<a
 			href={csvUrl}
+			data-sveltekit-reload
+			download
 			class="bg-ink text-paper press rounded-pill inline-flex min-h-11 items-center px-5 py-2.5 text-sm font-semibold"
 		>
 			Télécharger ce croisement
 		</a>
+		{#if interactive && downloadImage}
+			<!--
+				L affiche emporte la question exacte, la base, le terrain et la
+				licence : une image de graphique qui circule sans eux ne peut pas
+				etre verifiee. Elle est composee dans le navigateur, donc le bouton
+				n apparait qu une fois celui-ci aux commandes.
+			-->
+			<button
+				type="button"
+				onclick={onImage}
+				disabled={composing}
+				class="border-ink/25 press bg-paper rounded-pill inline-flex min-h-11 items-center border px-5 py-2.5 text-sm font-medium disabled:opacity-50"
+			>
+				{composing ? 'Composition…' : "Télécharger l'image"}
+			</button>
+		{/if}
 		{#if canCopy}
 			<button
 				type="button"
@@ -74,6 +125,7 @@
 		{/if}
 		<a
 			href={apiUrl}
+			data-sveltekit-reload
 			class="text-muted hover:text-ink inline-flex min-h-11 items-center text-sm underline decoration-2 underline-offset-2"
 		>
 			Voir la réponse de l'API
@@ -82,8 +134,9 @@
 
 	<!-- `role="status"` : le retour de copie est annonce aux lecteurs d ecran,
 	     qui ne voient pas le texte apparaitre. -->
-	<p class="text-muted mt-3 h-5 text-sm" role="status">
-		{#if copied === 'lien'}Lien copié.{:else if copied === 'citation'}Citation copiée.{/if}
+	<p class="text-muted mt-3 min-h-5 text-sm" role="status">
+		{#if imageError}{imageError}{:else if copied === 'lien'}Lien copié.{:else if copied === 'citation'}Citation
+			copiée.{/if}
 	</p>
 
 	<details class="border-ink/12 rounded-field mt-2 border">
