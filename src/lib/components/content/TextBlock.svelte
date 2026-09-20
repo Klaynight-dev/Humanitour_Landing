@@ -39,7 +39,7 @@
 
 {#snippet heading()}
 	{#if title}
-		<h2 {id}>
+		<h2 {id} data-field="title">
 			<Marked
 				text={title}
 				highlight={read.text('highlight')}
@@ -48,26 +48,33 @@
 		</h2>
 	{/if}
 	{#if intro}
-		<p class="measure mt-3 text-base leading-relaxed {mutedClass(surface)}">{intro}</p>
+		<p class="measure mt-3 text-base leading-relaxed {mutedClass(surface)}" data-field="intro">{intro}</p>
 	{/if}
 {/snippet}
 
 {#snippet content()}
-	<RichText doc={read.doc('body')} {surface} />
+	<div data-field="body" data-field-kind="doc">
+		<RichText doc={read.doc('body')} {surface} />
+	</div>
 
 	{#if items.length > 0}
 		<div class="mt-10 grid gap-8 sm:grid-cols-2">
 			{#each items as item, index (index)}
 				<div>
-					<h3 class="text-lg font-semibold">{read.itemText(item, 'term')}</h3>
-					<p class="mt-2 leading-relaxed {mutedClass(surface)}">{read.itemText(item, 'body')}</p>
+					<h3 class="text-lg font-semibold" data-field="items.{index}.term">
+						{read.itemText(item, 'term')}
+					</h3>
+					<p
+						class="mt-2 leading-relaxed {mutedClass(surface)}"
+						data-field="items.{index}.body"
+					>{read.itemText(item, 'body')}</p>
 				</div>
 			{/each}
 		</div>
 	{/if}
 
 	{#if note}
-		<p class="measure mt-8 text-sm leading-relaxed {mutedClass(surface)}">{note}</p>
+		<p class="measure mt-8 text-sm leading-relaxed {mutedClass(surface)}" data-field="note">{note}</p>
 	{/if}
 
 	<Buttons items={read.list('buttons')} {surface} />

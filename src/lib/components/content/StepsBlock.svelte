@@ -41,9 +41,9 @@
 <Section {surface} {spacing} labelledby={title ? id : undefined}>
 	<div class="grid gap-8 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-16">
 		<div>
-			{#if title}<h2 {id} class="text-2xl sm:text-3xl">{title}</h2>{/if}
+			{#if title}<h2 {id} class="text-2xl sm:text-3xl" data-field="title">{title}</h2>{/if}
 			{#if intro}
-				<p class="mt-3 text-base leading-relaxed {mutedClass(surface)}">{intro}</p>
+				<p class="mt-3 text-base leading-relaxed {mutedClass(surface)}" data-field="intro">{intro}</p>
 			{/if}
 		</div>
 
@@ -54,9 +54,10 @@
 						<span class="font-display shrink-0 text-xl leading-tight {numberClass}">
 							{index + 1}
 						</span>
-						<p class="min-w-0 text-lg leading-snug font-semibold sm:text-xl">
-							{read.itemText(item, 'text')}
-						</p>
+						<p
+							class="min-w-0 text-lg leading-snug font-semibold sm:text-xl"
+							data-field="items.{index}.text"
+						>{read.itemText(item, 'text')}</p>
 					</li>
 				{/each}
 			</ol>

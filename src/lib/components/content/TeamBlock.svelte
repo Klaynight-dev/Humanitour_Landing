@@ -58,12 +58,63 @@
 		};
 	});
 
-	/*
-	 * L'ordre vient du serveur, tire au sort a chaque chargement (voir
-	 * `context.ts`) : le tirer ici donnerait un ordre au rendu serveur et un
-	 * autre a l'hydratation.
+	/**
+	 * Les fiches affichees.
+	 *
+	 * Deux sources, dans cet ordre : la liste saisie dans la section si elle
+	 * existe, sinon l'equipe ecrite dans le code (`shared/site.ts`), dont l'ordre
+	 * vient du serveur — tire au sort a chaque chargement, voir `context.ts`. Le
+	 * tirer ici donnerait un ordre au rendu serveur et un autre a l'hydratation.
+	 *
+	 * Le repli n'est pas une commodite : c'est ce qui permet a l'accueil et a
+	 * « A propos » de montrer la meme equipe sans la saisir deux fois. Des qu'une
+	 * section porte sa propre liste, elle est seule maitre de ce qu'elle affiche.
 	 */
-	const members = $derived(page.team ?? []);
+	interface Card {
+		readonly key: string;
+		readonly name: string;
+		readonly role: string;
+		readonly bio: string;
+		readonly website: string | null;
+		readonly src: string;
+		readonly width: number;
+		readonly height: number;
+	}
+
+	/** Le portrait par defaut, pose par le depot sous le `slug` de la personne. */
+	const PORTRAIT_SIZE = 420;
+
+	const saved = $derived(read.list('members'));
+
+	const cards: Card[] = $derived(
+		saved.length > 0
+			? saved.map((member, index) => {
+					const portrait = read.itemImage(member, 'portrait');
+					return {
+						key: String(index),
+						name: read.itemText(member, 'name') ?? '',
+						role: read.itemText(member, 'role') ?? '',
+						bio: read.itemText(member, 'bio') ?? '',
+						website: read.itemText(member, 'website'),
+						src: portrait?.src ?? '',
+						width: portrait?.width ?? PORTRAIT_SIZE,
+						height: portrait?.height ?? PORTRAIT_SIZE
+					};
+				})
+			: (page.team ?? []).map((member) => ({
+					key: member.slug,
+					name: member.name,
+					role: member.role,
+					bio: member.bio,
+					website: member.website ?? null,
+					src: `/equipe/${member.slug}.jpg`,
+					width: PORTRAIT_SIZE,
+					height: PORTRAIT_SIZE
+				}))
+	);
+
+	/** Vrai quand la liste vient de la section : elle est alors modifiable. */
+	const editableList = $derived(saved.length > 0);
 
 	/* Le corail sombre ne passe pas sur l'aplat noir (3,3:1). */
 	const roleClass = $derived(surface === 'ink' ? 'text-coral' : 'text-coral-ink');
@@ -91,26 +142,37 @@
 -->
 <Section {surface} {spacing} labelledby={title ? id : undefined} label={title ? undefined : 'L’équipe'}>
 	{#if layout === 'grille'}
-		{#if title}<h2 {id} class="text-2xl sm:text-3xl">{title}</h2>{/if}
+		{#if title}<h2 {id} class="text-2xl sm:text-3xl" data-field="title">{title}</h2>{/if}
 		{#if intro}
-			<p class="measure mt-4 text-base leading-relaxed {mutedClass(surface)}">{intro}</p>
+			<p class="measure mt-4 text-base leading-relaxed {mutedClass(surface)}" data-field="intro">{intro}</p>
 		{/if}
 
 		<ul class="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4" class:mt-16={title || intro}>
-			{#each members as member, index (member.slug)}
+			{#each cards as member, index (member.key)}
 				<!-- MOTION : les portraits entrent l'un apres l'autre, une seule fois. -->
 				<li use:reveal={index * 110}>
-					<img
-						src="/equipe/{member.slug}.jpg"
-						alt=""
-						width="420"
-						height="420"
-						loading="lazy"
-						class="aspect-square w-40 rounded-full object-cover sm:w-44"
-					/>
-					<h3 class="mt-5 text-xl font-semibold">{member.name}</h3>
-					<p class="font-semibold {roleClass}">{member.role}</p>
-					<p class="mt-3 leading-relaxed {mutedClass(surface)}">{member.bio}</p>
+					{#if member.src}
+						<img
+							src={member.src}
+							alt=""
+							width={member.width}
+							height={member.height}
+							loading="lazy"
+							class="aspect-square w-40 rounded-full object-cover sm:w-44"
+						/>
+					{/if}
+					<h3
+						class="mt-5 text-xl font-semibold"
+						data-field={editableList ? `members.${index}.name` : undefined}
+					>{member.name}</h3>
+					<p
+						class="font-semibold {roleClass}"
+						data-field={editableList ? `members.${index}.role` : undefined}
+					>{member.role}</p>
+					<p
+						class="mt-3 leading-relaxed {mutedClass(surface)}"
+						data-field={editableList ? `members.${index}.bio` : undefined}
+					>{member.bio}</p>
 
 					{#if member.website}
 						<!-- Le libelle du lien est le domaine, pas « Site personnel » : c'est
@@ -134,9 +196,9 @@
 	{:else}
 		<div class="grid gap-12 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-16">
 			<div>
-				{#if title}<h2 {id} class="text-2xl sm:text-3xl">{title}</h2>{/if}
+				{#if title}<h2 {id} class="text-2xl sm:text-3xl" data-field="title">{title}</h2>{/if}
 				{#if intro}
-					<p class="mt-4 text-base leading-relaxed {mutedClass(surface)}">{intro}</p>
+					<p class="mt-4 text-base leading-relaxed {mutedClass(surface)}" data-field="intro">{intro}</p>
 				{/if}
 			</div>
 
@@ -166,19 +228,27 @@
 					bind:this={row}
 					class="team-row -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-x-6 overflow-x-auto px-4 pb-2"
 				>
-					{#each members as member, index (member.slug)}
+					{#each cards as member, index (member.key)}
 						<li use:reveal={index * 110} class="w-28 shrink-0 snap-start sm:w-36">
-							<img
-								src="/equipe/{member.slug}.jpg"
-								alt=""
-								width="420"
-								height="420"
-								loading="lazy"
-								decoding="async"
-								class="rounded-block aspect-square w-full object-cover"
-							/>
-							<p class="mt-4 text-base leading-tight font-semibold">{member.name}</p>
-							<p class="mt-1 text-sm opacity-70">{member.role}</p>
+							{#if member.src}
+								<img
+									src={member.src}
+									alt=""
+									width={member.width}
+									height={member.height}
+									loading="lazy"
+									decoding="async"
+									class="rounded-block aspect-square w-full object-cover"
+								/>
+							{/if}
+							<p
+								class="mt-4 text-base leading-tight font-semibold"
+								data-field={editableList ? `members.${index}.name` : undefined}
+							>{member.name}</p>
+							<p
+								class="mt-1 text-sm opacity-70"
+								data-field={editableList ? `members.${index}.role` : undefined}
+							>{member.role}</p>
 						</li>
 					{/each}
 

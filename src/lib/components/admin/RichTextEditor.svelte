@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { safeHref, toPlainText, type RichTextDoc } from '$lib/shared/content/richtext';
 	import {
-		safeHref,
-		toPlainText,
-		type RichTextBlock,
-		type RichTextDoc,
-		type RichTextInline,
-		type RichTextMark
-	} from '$lib/shared/content/richtext';
+		paintInto,
+		prepareCommands,
+		readDoc
+	} from '$components/admin/editor/richtext-dom';
 
 	interface Props {
 		name: string;
@@ -38,7 +36,9 @@
 	 *    `{#each}` garde des references vers ceux qu'il a crees. Au premier
 	 *    rafraichissement des donnees, Svelte ecrivait dans des noeuds qui
 	 *    n'existaient plus et la saisie partait en morceaux. Le contenu est donc
-	 *    peint a la main (`paint`), une fois, et relu a la main (`readBlocks`).
+	 *    peint et relu a la main, par `editor/richtext-dom.ts` — le meme moteur
+	 *    que l'edition dans le texte rendu, pour qu'un paragraphe se relise
+	 *    pareil des deux cotes.
 	 *
 	 * 2. Le champ cache porte sa valeur ET sa valeur d'origine (`commit`).
 	 *    `use:enhance` remet le formulaire a zero apres un enregistrement
@@ -61,189 +61,6 @@
 	/** Une adresse de lien refusee, affichee jusqu'a la tentative suivante. */
 	let notice: string | null = $state(null);
 
-	const BLOCK_TAGS: Record<string, RichTextBlock['type']> = {
-		P: 'paragraph',
-		DIV: 'paragraph',
-		BLOCKQUOTE: 'paragraph',
-		H1: 'heading',
-		H2: 'heading',
-		H3: 'heading',
-		H4: 'heading',
-		H5: 'heading',
-		H6: 'heading',
-		UL: 'bullet-list',
-		OL: 'ordered-list'
-	};
-
-	/* ------------------------------------------------------------------ */
-	/* La zone editable vers le modele                                     */
-	/* ------------------------------------------------------------------ */
-
-	/** Les marques d'un element, ajoutees a celles que portent ses parents. */
-	function marksWith(inherited: RichTextMark[], element: HTMLElement): RichTextMark[] {
-		const tag = element.tagName;
-		const weight = element.style.fontWeight;
-		const strong = tag === 'STRONG' || tag === 'B' || weight === 'bold' || weight === '700';
-		const em = tag === 'EM' || tag === 'I' || element.style.fontStyle === 'italic';
-
-		if (!strong && !em) return inherited;
-
-		const next = [...inherited];
-		if (strong && !next.includes('strong')) next.push('strong');
-		if (em && !next.includes('em')) next.push('em');
-		return next;
-	}
-
-	/**
-	 * Les fragments de texte d'une suite de noeuds, coupes a chaque `br`.
-	 *
-	 * Le modele n'a pas de saut de ligne : un `br` y devient une ligne de plus.
-	 * Perdre la coupure serait accoler deux phrases, la rendre comme un bloc a
-	 * part ne coute rien.
-	 */
-	function readRuns(nodes: Node[]): RichTextInline[][] {
-		const lines: RichTextInline[][] = [[]];
-
-		function walk(node: Node, held: RichTextMark[], href: string | undefined) {
-			if (node.nodeType === Node.TEXT_NODE) {
-				const text = node.textContent ?? '';
-				if (text === '') return;
-				lines[lines.length - 1]!.push({
-					text,
-					...(held.length > 0 ? { marks: [...held] } : {}),
-					...(href === undefined ? {} : { href })
-				});
-				return;
-			}
-
-			if (!(node instanceof HTMLElement)) return;
-			if (node.tagName === 'BR') {
-				lines.push([]);
-				return;
-			}
-
-			const link = node instanceof HTMLAnchorElement ? (node.getAttribute('href') ?? href) : href;
-			const nested = marksWith(held, node);
-			for (const child of Array.from(node.childNodes)) walk(child, nested, link);
-		}
-
-		for (const node of nodes) walk(node, [], undefined);
-		return lines.filter((line) => line.length > 0);
-	}
-
-	/** Un element de bloc vers le modele : une liste, un titre, des paragraphes. */
-	function blocksOf(element: HTMLElement, type: RichTextBlock['type']): RichTextBlock[] {
-		if (type === 'bullet-list' || type === 'ordered-list') {
-			const items = Array.from(element.children)
-				.filter((child) => child.tagName === 'LI')
-				.flatMap((li) => readRuns(Array.from(li.childNodes)));
-			return items.length === 0 ? [] : [{ type, items }];
-		}
-
-		// Un bloc qui en contient d'autres : `execCommand` imbrique volontiers une
-		// liste dans le paragraphe ou elle a ete demandee. On redescend, sinon la
-		// liste se lirait comme une phrase et ses puces disparaitraient.
-		if (Array.from(element.children).some((child) => BLOCK_TAGS[child.tagName] !== undefined)) {
-			return readBlocks(element);
-		}
-
-		return readRuns(Array.from(element.childNodes)).map((line) => ({ type, items: [line] }));
-	}
-
-	/**
-	 * Tout ce qui n'est pas un bloc reconnu devient un paragraphe : un collage
-	 * depuis un traitement de texte apporte des balises inattendues, et perdre
-	 * leur mise en forme est acceptable, perdre le texte ne l'est pas.
-	 */
-	function readBlocks(container: Element): RichTextBlock[] {
-		const blocks: RichTextBlock[] = [];
-		let loose: Node[] = [];
-
-		function flush() {
-			for (const line of readRuns(loose)) blocks.push({ type: 'paragraph', items: [line] });
-			loose = [];
-		}
-
-		for (const node of Array.from(container.childNodes)) {
-			const type = node instanceof HTMLElement ? BLOCK_TAGS[node.tagName] : undefined;
-			if (!(node instanceof HTMLElement) || type === undefined) {
-				loose.push(node);
-				continue;
-			}
-			flush();
-			blocks.push(...blocksOf(node, type));
-		}
-
-		flush();
-		return blocks;
-	}
-
-	/* ------------------------------------------------------------------ */
-	/* Le modele vers la zone editable                                     */
-	/* ------------------------------------------------------------------ */
-
-	function wrap(tag: 'strong' | 'em', node: Node): HTMLElement {
-		const element = document.createElement(tag);
-		element.append(node);
-		return element;
-	}
-
-	/**
-	 * Un fragment de texte vers ses noeuds.
-	 *
-	 * Rien n'est construit depuis une chaine de HTML : le texte reste un noeud
-	 * de texte, et l'adresse d'un lien repasse par `safeHref`. Une balise
-	 * arrivee de la base n'a donc aucun chemin jusqu'ici.
-	 */
-	function runNode(run: RichTextInline): Node {
-		let node: Node = document.createTextNode(run.text);
-		if (run.marks?.includes('em')) node = wrap('em', node);
-		if (run.marks?.includes('strong')) node = wrap('strong', node);
-
-		const href = run.href === undefined ? null : safeHref(run.href);
-		if (href === null) return node;
-
-		const link = document.createElement('a');
-		link.setAttribute('href', href);
-		link.append(node);
-		return link;
-	}
-
-	/** Une ligne vide garde un `br` : sans lui, le navigateur ne sait pas ou poser le curseur. */
-	function lineInto(element: HTMLElement, runs: RichTextInline[]): HTMLElement {
-		for (const run of runs) element.append(runNode(run));
-		if (element.childNodes.length === 0) element.append(document.createElement('br'));
-		return element;
-	}
-
-	function nodeOf(block: RichTextBlock): HTMLElement {
-		if (block.type === 'bullet-list' || block.type === 'ordered-list') {
-			const list = document.createElement(block.type === 'bullet-list' ? 'ul' : 'ol');
-			for (const item of block.items) list.append(lineInto(document.createElement('li'), item));
-			return list;
-		}
-
-		const element = document.createElement(block.type === 'heading' ? 'h3' : 'p');
-		return lineInto(element, block.items.at(0) ?? []);
-	}
-
-	function paint(source: RichTextDoc) {
-		if (!editor) return;
-		const nodes = source.blocks.map(nodeOf);
-		// Un paragraphe, toujours : dans une zone editable vide, la premiere
-		// frappe se poserait sinon en texte nu, hors de tout bloc.
-		if (nodes.length === 0) nodes.push(lineInto(document.createElement('p'), []));
-
-		// La regle interdit de toucher au DOM sous Svelte, parce que le runtime
-		// se perd entre ce qu'il attend et ce qu'il trouve. C'est exactement le
-		// bug repare ici, pris par l'autre bout : dans une zone editable, c'est le
-		// NAVIGATEUR qui remanie les noeuds a chaque frappe, et le runtime se
-		// perdait quoi qu'on fasse. On lui retire donc la zone entiere — elle n'a
-		// aucun enfant dans le gabarit — au lieu de la lui disputer.
-		// eslint-disable-next-line svelte/no-dom-manipulating
-		editor.replaceChildren(...nodes);
-	}
-
 	/* ------------------------------------------------------------------ */
 	/* Le champ soumis                                                     */
 	/* ------------------------------------------------------------------ */
@@ -257,7 +74,7 @@
 
 	function sync() {
 		if (!editor) return;
-		commit(JSON.stringify({ blocks: readBlocks(editor) }));
+		commit(JSON.stringify(readDoc(editor)));
 	}
 
 	/**
@@ -275,7 +92,7 @@
 		if (!editor || !hidden || incoming === painted) return;
 
 		painted = incoming;
-		paint(doc);
+		paintInto(editor, doc);
 		sync();
 	});
 
@@ -306,7 +123,7 @@
 	/**
 	 * `execCommand` est deprecie mais reste la seule facon courte d'appliquer une
 	 * mise en forme a la selection dans tous les navigateurs. La sortie n'est
-	 * jamais crue : elle repasse par `readBlocks`, puis par le serveur.
+	 * jamais crue : elle repasse par `readDoc`, puis par le serveur.
 	 */
 	function apply(command: string, value?: string) {
 		editor?.focus();
@@ -321,8 +138,7 @@
 	 * devrait deviner. On lui demande des paragraphes et de vraies balises.
 	 */
 	function prepare() {
-		document.execCommand('defaultParagraphSeparator', false, 'p');
-		document.execCommand('styleWithCSS', false, 'false');
+		prepareCommands();
 		readState();
 	}
 
@@ -443,7 +259,7 @@
 
 			<!--
 				Zone editable sans le moindre enfant dans le gabarit : voir la regle 1
-				en tete de fichier. `paint` la remplit, `readBlocks` la relit.
+				en tete de fichier. `paintInto` la remplit, `readDoc` la relit.
 			-->
 			<div
 				bind:this={editor}

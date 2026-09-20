@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readNested } from './form';
+import { readNested, setPath } from './form';
 
 function build(entries: Record<string, string>): FormData {
 	const form = new FormData();
@@ -61,5 +61,57 @@ describe('lecture d un formulaire de section', () => {
 
 	it('rend un objet vide quand rien n est prefixe', () => {
 		expect(readNested(build({ autre: 'x' }), 'data')).toEqual({});
+	});
+});
+
+describe('setPath', () => {
+	it('ecrit un champ simple', () => {
+		expect(setPath({ title: 'Avant' }, 'title', 'Apres')).toEqual({ title: 'Apres' });
+	});
+
+	it('ajoute un champ absent', () => {
+		expect(setPath({}, 'title', 'Neuf')).toEqual({ title: 'Neuf' });
+	});
+
+	it('descend dans un objet', () => {
+		expect(setPath({ image: { src: '/a.png', alt: 'A' } }, 'image.alt', 'B')).toEqual({
+			image: { src: '/a.png', alt: 'B' }
+		});
+	});
+
+	it('traite un segment numerique comme un rang de liste', () => {
+		const source = { items: [{ term: 'Un' }, { term: 'Deux' }] };
+		expect(setPath(source, 'items.1.term', 'Trois')).toEqual({
+			items: [{ term: 'Un' }, { term: 'Trois' }]
+		});
+	});
+
+	it('cree la liste manquante plutot qu un objet indexe', () => {
+		// `{ '0': … }` passerait la lecture mais pas la validation du registre :
+		// une liste doit etre un tableau.
+		expect(setPath({}, 'items.0.term', 'Un')).toEqual({ items: [{ term: 'Un' }] });
+	});
+
+	it('accepte une valeur qui n est pas une chaine', () => {
+		const doc = { blocks: [{ type: 'paragraph', items: [[{ text: 'Bonjour' }]] }] };
+		expect(setPath({}, 'body', doc)).toEqual({ body: doc });
+	});
+
+	it('ne touche pas la source', () => {
+		const source = { image: { alt: 'A' } };
+		const next = setPath(source, 'image.alt', 'B');
+
+		expect(source.image.alt).toBe('A');
+		expect(next).not.toBe(source);
+		expect(next['image']).not.toBe(source.image);
+	});
+
+	it('remplace une branche occupee par une valeur', () => {
+		expect(setPath({ image: 'texte' }, 'image.alt', 'B')).toEqual({ image: { alt: 'B' } });
+	});
+
+	it('rend la source telle quelle sur un chemin vide', () => {
+		const source = { title: 'Un' };
+		expect(setPath(source, '', 'Deux')).toBe(source);
 	});
 });

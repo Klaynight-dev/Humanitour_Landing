@@ -1,16 +1,31 @@
 import {
-	syncActivity,
-	mediaByStatus,
-	responseTrend,
+	mediaCounts,
+	responseCounts,
+	subscriberCounts,
 	surveysByStatus,
-	teamActivity
+	syncActivity,
+	teamActivity,
+	workCounts,
+	type PeriodCount
 } from '$lib/server/dashboard/queries';
 import { prisma } from '$lib/server/db';
+import { EMPTY_COUNTS } from '$lib/shared/admin/worklist';
 import { can } from '$lib/shared/permissions';
 import type { PageServerLoad } from './$types';
 
+/** Un bloc que le compte ne peut pas voir ne se lit pas en base non plus. */
+const NO_COUNT: PeriodCount = { total: 0, current: 0, previous: 0 };
+
 /**
  * Tableau de bord.
+ *
+ * Ecran dense : tout ce qui compte tient sans faire defiler. Un bandeau de
+ * compteurs, puis des listes serrees cote a cote.
+ *
+ * La courbe de collecte a ete retiree avec la mise en page dense, et sa lecture
+ * avec : `responseTrend` chargeait la date de CHAQUE reponse pour dessiner une
+ * dizaine de points. Elle vit toujours dans `dashboard/queries.ts` pour l'ecran
+ * de synchronisation d'un sondage, qui l'affiche pour de bon.
  *
  * Chaque bloc reste conditionne a la permission correspondante : un compte de la
  * redaction n'a pas a savoir combien de reponses ont ete synchronisees. Les chiffres
@@ -27,15 +42,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const readsSurveys = can(user, 'survey.read');
 	const readsMedia = can(user, 'media.read');
 	const readsAudit = can(user, 'audit.read');
+	const readsNewsletter = can(user, 'newsletter.read');
+
+	// Les comptages de la liste « a faire » sont filtres par permission a
+	// l'affichage (`buildWorklist`), mais les lire quand meme serait une requete
+	// pour rien : un compte de la redaction ne compte pas les sondages.
+	const work = canSeeWork(readsSurveys, readsMedia, can(user, 'content.read'))
+		? await workCounts()
+		: EMPTY_COUNTS;
 
 	const surveys = readsSurveys ? await prisma.survey.count() : 0;
-	const responses = readsSurveys ? await prisma.response.count() : 0;
 	const surveyStatuses = readsSurveys ? await surveysByStatus() : [];
-	const trend = readsSurveys ? await responseTrend() : null;
+	const responses = readsSurveys ? await responseCounts() : NO_COUNT;
 	const syncs = readsSurveys ? await syncActivity() : [];
 
-	const media = readsMedia ? await prisma.mediaItem.count() : 0;
-	const mediaStatuses = readsMedia ? await mediaByStatus() : [];
+	const media = readsMedia ? await mediaCounts() : NO_COUNT;
+
+	const subscribers = readsNewsletter ? await subscriberCounts() : NO_COUNT;
 
 	const team = readsAudit ? await teamActivity() : [];
 	const recentAudit = readsAudit
@@ -53,14 +76,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 		: [];
 
 	return {
+		work,
 		surveys,
-		responses,
 		surveyStatuses,
-		trend,
+		responses,
 		syncs,
 		media,
-		mediaStatuses,
+		subscribers,
 		team,
 		recentAudit
 	};
 };
+
+/** Vrai si au moins une des taches comptees peut concerner ce compte. */
+function canSeeWork(surveys: boolean, media: boolean, content: boolean): boolean {
+	return surveys || media || content;
+}

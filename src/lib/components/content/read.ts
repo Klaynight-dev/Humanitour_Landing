@@ -37,6 +37,8 @@ export interface SectionReader {
 	list(key: string): readonly Record<string, unknown>[];
 	/** Une valeur de liste, jetons appliques. */
 	itemText(item: unknown, key: string): string | null;
+	/** Une image portee par une ligne de liste : un portrait, un cliche du deck. */
+	itemImage(item: unknown, key: string): ContentImage | null;
 }
 
 export function sectionReader(
@@ -56,6 +58,7 @@ export function sectionReader(
 			return allowed.find((candidate) => candidate === value) ?? fallback;
 		},
 		list: (key) => readList(data, key),
-		itemText: (item, key) => withTokens(readString(item, key))
+		itemText: (item, key) => withTokens(readString(item, key)),
+		itemImage: (item, key) => readImage(item, key)
 	};
 }

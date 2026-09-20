@@ -1,6 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import { recordAudit } from '$lib/server/audit';
-import { readNested } from '$lib/server/content/form';
+import { readNested } from '$lib/shared/content/form';
 import { listLibrary, uploadImage } from '$lib/server/content/images';
 import { notify } from '$lib/server/notifications/emit';
 import { prisma } from '$lib/server/db';

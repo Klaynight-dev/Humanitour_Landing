@@ -1,132 +1,176 @@
 <script lang="ts">
+	import CounterStrip, { type Counter } from '$components/admin/CounterStrip.svelte';
+	import ListPanel from '$components/admin/ListPanel.svelte';
 	import PageHeader from '$components/admin/PageHeader.svelte';
-	import Panel from '$components/admin/Panel.svelte';
 	import StatusBadge from '$components/admin/StatusBadge.svelte';
-	import TrendChart from '$components/admin/TrendChart.svelte';
+	import { buildWorklist } from '$lib/shared/admin/worklist';
 	import { formatCount, formatDate } from '$lib/shared/format';
 	import { can } from '$lib/shared/permissions';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
+	/**
+	 * Tableau de bord dense.
+	 *
+	 * Tout ce qui compte tient sans faire defiler : un bandeau de compteurs, puis
+	 * des listes serrees cote a cote. Le parti pris vient de l'usage — on ouvre
+	 * cet ecran vingt fois par jour pour savoir ou en est le site, pas pour lire.
+	 * Les explications sont donc parties ; ce qui reste, ce sont des lignes qui
+	 * menent quelque part.
+	 *
+	 * Chaque carte reste conditionnee a sa permission : une carte vide vaut mieux
+	 * qu'une carte absente, mais une carte qu'on n'a pas le droit d'ouvrir ne
+	 * doit pas exister.
+	 */
+	const work = $derived(buildWorklist(data.work, data.user));
+	const urgent = $derived(work.filter((item) => item.tone === 'urgent').length);
+
 	const published = $derived(
 		data.surveyStatuses.find((row) => row.status === 'PUBLISHED')?.count ?? 0
 	);
-	const publishedMedia = $derived(
-		data.mediaStatuses.find((row) => row.status === 'PUBLISHED')?.count ?? 0
-	);
 	const rejectedRows = $derived(data.syncs.reduce((total, row) => total + row.rejected, 0));
+
+	const counters = $derived.by(() => {
+		const list: Counter[] = [];
+
+		if (can(data.user, 'survey.read')) {
+			list.push({
+				label: 'Sondages',
+				total: data.surveys,
+				href: '/admin/sondages'
+			});
+			list.push({
+				label: 'Réponses',
+				total: data.responses.total,
+				current: data.responses.current,
+				previous: data.responses.previous
+			});
+		}
+
+		if (can(data.user, 'media.read')) {
+			list.push({
+				label: 'Médiathèque',
+				total: data.media.total,
+				current: data.media.current,
+				previous: data.media.previous,
+				href: '/admin/medias'
+			});
+		}
+
+		if (can(data.user, 'newsletter.read')) {
+			list.push({
+				label: 'Abonnés',
+				total: data.subscribers.total,
+				current: data.subscribers.current,
+				previous: data.subscribers.previous,
+				href: '/admin/infolettre'
+			});
+		}
+
+		return list;
+	});
+
+	const ROW = 'flex items-baseline justify-between gap-3 px-4 py-2 text-sm';
 </script>
 
 <svelte:head><title>Back-office, Humanitour</title></svelte:head>
 
 <PageHeader
 	title="Bonjour {data.user.displayName}"
-	description="Vous êtes connecté avec le rôle « {data.user.role.name} »."
+	description="{data.user.role.name} · {formatCount(published)} sondage{published > 1
+		? 's'
+		: ''} publié{published > 1 ? 's' : ''} sur le site"
 />
 
-<div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+{#if counters.length > 0}
+	<CounterStrip {counters} />
+{/if}
+
+<div class="grid gap-5 lg:grid-cols-2">
+	<ListPanel
+		title="À faire"
+		badge={urgent > 0 ? `${urgent} en retard` : undefined}
+		rows={work.length}
+		empty="Aucun brouillon en souffrance, aucune publication en retard, aucune synchronisation tombée."
+	>
+		{#each work as item (item.key)}
+			<li>
+				<a href={item.href} class="hover:bg-cream flex items-baseline gap-2.5 px-4 py-2 text-sm">
+					<!-- Le point est decoratif et le dit : ce qui distingue une urgence
+					     d'une tache, c'est la mention « en retard » de l'entete et l'ordre
+					     de la liste, jamais la pastille seule. -->
+					<span
+						aria-hidden="true"
+						class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full {item.tone === 'urgent'
+							? 'bg-danger'
+							: 'bg-ink/30'}"
+					></span>
+					<span class="min-w-0 flex-1">
+						<span class="font-medium underline decoration-2 underline-offset-2">{item.label}</span>
+						<span class="text-muted block text-xs">{item.detail}</span>
+					</span>
+				</a>
+			</li>
+		{/each}
+	</ListPanel>
+
+	{#if can(data.user, 'audit.read')}
+		<ListPanel
+			title="Dernières actions"
+			rows={data.recentAudit.length}
+			empty="Aucune action journalisée."
+			href="/admin/journal"
+			linkLabel="Ouvrir le journal"
+		>
+			{#each data.recentAudit as event (event.id)}
+				<li class={ROW}>
+					<span class="min-w-0">
+						<code class="bg-cream rounded px-1.5 py-0.5 text-xs">{event.action}</code>
+						<span class="text-muted ml-1.5 text-xs">{event.entity}</span>
+					</span>
+					<span class="text-muted shrink-0 text-xs">
+						{event.actor?.displayName ?? 'Système'}, {formatDate(event.createdAt)}
+					</span>
+				</li>
+			{/each}
+		</ListPanel>
+	{/if}
+
 	{#if can(data.user, 'survey.read')}
-		<Panel title="Sondages">
-			<p class="tabular text-3xl font-semibold">{formatCount(data.surveys)}</p>
-			<p class="text-muted mt-1 text-sm">dont {formatCount(published)} publiés</p>
-			<a href="/admin/sondages" class="text-coral-ink mt-4 inline-block text-sm underline">
-				Gérer les sondages
-			</a>
-		</Panel>
-
-		<Panel title="Réponses collectées">
-			<p class="tabular text-3xl font-semibold">{formatCount(data.responses)}</p>
-			<p class="text-muted mt-1 text-sm">toutes enquêtes confondues</p>
-		</Panel>
-
-		<Panel title="Réponses rejetées">
-			<p class="tabular text-3xl font-semibold">{formatCount(rejectedRows)}</p>
-			<p class="text-muted mt-1 text-sm">jamais masquées, consultables passe par passe</p>
-		</Panel>
-	{/if}
-
-	{#if can(data.user, 'media.read')}
-		<Panel title="Médiathèque">
-			<p class="tabular text-3xl font-semibold">{formatCount(data.media)}</p>
-			<p class="text-muted mt-1 text-sm">dont {formatCount(publishedMedia)} en ligne</p>
-			<a href="/admin/medias" class="text-coral-ink mt-4 inline-block text-sm underline">
-				Gérer la médiathèque
-			</a>
-		</Panel>
-	{/if}
-</div>
-
-{#if data.trend}
-	<div class="mt-6">
-		<Panel
-			title="Collecte dans le temps"
-			description="Réponses par semaine, d'après la date d'entretien et non la date d'import."
-		>
-			<TrendChart points={data.trend.points} caption="Réponses collectées par semaine" />
-		</Panel>
-	</div>
-{/if}
-
-<div class="mt-6 grid gap-5 lg:grid-cols-2">
-	{#if can(data.user, 'survey.read') && data.syncs.length > 0}
-		<Panel
+		<ListPanel
 			title="Synchronisation Openforms"
-			description="Ce que les passes ont rapporté depuis forms.humanitour.fr."
+			badge={rejectedRows > 0 ? `${formatCount(rejectedRows)} rejetée${rejectedRows > 1 ? 's' : ''}` : undefined}
+			rows={data.syncs.length}
+			empty="Aucune passe enregistrée."
 		>
-			<ul class="flex flex-col gap-3">
-				{#each data.syncs as pass (pass.status)}
-					<li class="flex flex-wrap items-center justify-between gap-3">
-						<StatusBadge status={pass.status} />
-						<span class="tabular text-muted text-sm">
-							{formatCount(pass.passes)} passe{pass.passes > 1 ? 's' : ''},
-							{formatCount(pass.created)} réponse{pass.created > 1 ? 's' : ''} reprise{pass.created >
-							1
-								? 's'
-								: ''}
-							{#if pass.rejected > 0}, {formatCount(pass.rejected)} rejetée{pass.rejected > 1
-									? 's'
-									: ''}{/if}
-						</span>
-					</li>
-				{/each}
-			</ul>
-		</Panel>
+			{#each data.syncs as pass (pass.status)}
+				<li class={ROW}>
+					<StatusBadge status={pass.status} />
+					<span class="tabular text-muted text-xs">
+						{formatCount(pass.passes)} passe{pass.passes > 1 ? 's' : ''}, {formatCount(
+							pass.created
+						)} reprise{pass.created > 1 ? 's' : ''}{#if pass.rejected > 0}, {formatCount(
+								pass.rejected
+							)} rejetée{pass.rejected > 1 ? 's' : ''}{/if}
+					</span>
+				</li>
+			{/each}
+		</ListPanel>
 	{/if}
 
-	{#if can(data.user, 'audit.read') && data.team.length > 0}
-		<Panel title="Activité de l'équipe" description="Actions journalisées sur trente jours.">
-			<ul class="flex flex-col gap-2">
-				{#each data.team as member (member.actor)}
-					<li class="flex items-baseline justify-between gap-3 text-sm">
-						<span class="font-medium">{member.actor}</span>
-						<span class="tabular text-muted">{formatCount(member.actions)}</span>
-					</li>
-				{/each}
-			</ul>
-		</Panel>
+	{#if can(data.user, 'audit.read')}
+		<ListPanel
+			title="Équipe, 30 jours"
+			rows={data.team.length}
+			empty="Aucune action journalisée sur la période."
+		>
+			{#each data.team as member (member.actor)}
+				<li class={ROW}>
+					<span class="font-medium">{member.actor}</span>
+					<span class="tabular text-muted">{formatCount(member.actions)}</span>
+				</li>
+			{/each}
+		</ListPanel>
 	{/if}
 </div>
-
-{#if can(data.user, 'audit.read') && data.recentAudit.length > 0}
-	<div class="mt-6">
-		<Panel title="Dernières actions" description="Qui a publié quoi, et quand.">
-			<ul class="flex flex-col gap-2">
-				{#each data.recentAudit as event (event.id)}
-					<li class="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-						<span>
-							<code class="bg-cream rounded px-1.5 py-0.5 text-xs">{event.action}</code>
-							<span class="text-muted ml-2">{event.entity}</span>
-						</span>
-						<span class="text-muted text-xs">
-							{event.actor?.displayName ?? 'Système'}, {formatDate(event.createdAt)}
-						</span>
-					</li>
-				{/each}
-			</ul>
-			<a href="/admin/journal" class="text-coral-ink mt-4 inline-block text-sm underline">
-				Ouvrir le journal
-			</a>
-		</Panel>
-	</div>
-{/if}

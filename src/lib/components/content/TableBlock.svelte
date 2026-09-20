@@ -29,7 +29,7 @@
 
 <Section {surface} {spacing} labelledby={title ? id : undefined}>
 	{#if title}
-		<h2 {id} class="max-w-3xl">
+		<h2 {id} class="max-w-3xl" data-field="title">
 			<Marked
 				text={title}
 				highlight={read.text('highlight')}
@@ -63,12 +63,15 @@
 						scope="row"
 						class="py-4 text-left align-baseline text-base font-semibold sm:py-5 sm:text-lg"
 					>
-						{read.itemText(row, 'entry')}
-						{#if detail}<span class="block text-sm font-normal opacity-60">{detail}</span>{/if}
+						<span class="block" data-field="rows.{index}.entry">{read.itemText(row, 'entry')}</span>
+						{#if detail}<span
+								class="block text-sm font-normal opacity-60"
+								data-field="rows.{index}.detail">{detail}</span>{/if}
 					</th>
-					<td class="px-3 py-4 align-baseline text-sm opacity-70 sm:py-5 sm:text-base">
-						{read.itemText(row, 'value1')}
-					</td>
+					<td
+						class="px-3 py-4 align-baseline text-sm opacity-70 sm:py-5 sm:text-base"
+						data-field="rows.{index}.value1"
+					>{read.itemText(row, 'value1')}</td>
 					<td class="py-4 text-right align-baseline sm:py-5">
 						<!--
 								MOTION : un seul geste, joue une fois au chargement, les valeurs
@@ -79,9 +82,8 @@
 						<span
 							class="drop figure font-display block text-xl leading-none whitespace-nowrap sm:text-3xl lg:text-4xl"
 							style="animation-delay: {index * 90 + 120}ms"
-						>
-							{read.itemText(row, 'value2')}
-						</span>
+							data-field="rows.{index}.value2"
+						>{read.itemText(row, 'value2')}</span>
 					</td>
 				</tr>
 			{/each}
@@ -98,11 +100,11 @@
 		reste lisible, elle passe simplement apres la lecture.
 	-->
 	{#if comment}
-		<p class="mt-6 text-base leading-relaxed">{comment}</p>
+		<p class="mt-6 text-base leading-relaxed" data-field="comment">{comment}</p>
 	{/if}
 
 	{#if note}
-		<p class="mt-4 text-base leading-relaxed opacity-70">{note}</p>
+		<p class="mt-4 text-base leading-relaxed opacity-70" data-field="note">{note}</p>
 	{/if}
 </Section>
 

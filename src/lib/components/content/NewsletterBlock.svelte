@@ -58,7 +58,7 @@
 
 <Section {surface} {spacing} labelledby={id}>
 	<div class="measure">
-		<h2 {id} class="text-3xl sm:text-5xl">
+		<h2 {id} class="text-3xl sm:text-5xl" data-field="title">
 			<Marked
 				text={read.text('title') ?? ''}
 				highlight={read.text('highlight')}
@@ -67,7 +67,7 @@
 		</h2>
 
 		{#if intro}
-			<p class="mt-5 text-xl font-medium">{intro}</p>
+			<p class="mt-5 text-xl font-medium" data-field="intro">{intro}</p>
 		{/if}
 
 		{#if submitted}

@@ -46,7 +46,7 @@
 		Elle se joue une fois, ne boucle pas, ne se rejoue pas au defilement, et
 		`prefers-reduced-motion` la supprime entierement.
 	-->
-	<h1 id={id} class="enter {isHero ? 'hero-title' : 'max-w-3xl'}">
+	<h1 id={id} class="enter {isHero ? 'hero-title' : 'max-w-3xl'}" data-field="title">
 		<Marked
 			text={title}
 			highlight={read.text('highlight')}
@@ -66,9 +66,8 @@
 				? 'mt-5 sm:text-lg'
 				: 'mt-7 text-xl font-medium sm:text-2xl'}"
 			style="--enter-delay: 90ms"
-		>
-			{intro}
-		</p>
+			data-field="intro"
+		>{intro}</p>
 	{/if}
 
 	{#if figures.length > 0}
@@ -83,14 +82,16 @@
 					impose aux lecteurs d'ecran.
 				-->
 				<div class="flex flex-col-reverse gap-1">
-					<dt class="text-xs leading-snug opacity-75 sm:text-sm">
-						{read.itemText(figure, 'label')}
-					</dt>
+					<dt
+						class="text-xs leading-snug opacity-75 sm:text-sm"
+						data-field="figures.{index}.label"
+					>{read.itemText(figure, 'label')}</dt>
 					<!-- `nowrap` : Bowlby One est large, « 4 000 km » se cassait en deux
 					     lignes dans une demi-colonne. -->
-					<dd class="font-display text-lg leading-none whitespace-nowrap sm:text-2xl">
-						{read.itemText(figure, 'value')}
-					</dd>
+					<dd
+						class="font-display text-lg leading-none whitespace-nowrap sm:text-2xl"
+						data-field="figures.{index}.value"
+					>{read.itemText(figure, 'value')}</dd>
 				</div>
 			{/each}
 		</dl>

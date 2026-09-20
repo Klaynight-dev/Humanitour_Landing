@@ -41,6 +41,36 @@
 	const figures = $derived(read.list('figures'));
 	const items = $derived(read.list('items'));
 	const image = $derived(read.image('image'));
+
+	/**
+	 * Les trois cliches mis en avant.
+	 *
+	 * La section les porte si on les y a poses, sinon ce sont les trois premieres
+	 * photographies du tour, ecrites dans le code (`shared/photos.ts`). Le repli
+	 * garde l'accueil et `/galerie` d'accord tant que personne n'a choisi
+	 * autrement : les recopier page par page, c'est garantir qu'elles finiront
+	 * par diverger.
+	 */
+	const deck = $derived.by(() => {
+		const chosen = read
+			.list('deckPhotos')
+			.map((row) => read.itemImage(row, 'photo'))
+			.filter((photo): photo is NonNullable<typeof photo> => photo !== null);
+
+		return chosen.length > 0
+			? chosen.map((photo) => ({
+					src: photo.src,
+					alt: photo.alt,
+					width: photo.width ?? 1200,
+					height: photo.height ?? 1600
+				}))
+			: DECK_PHOTOS.map((photo) => ({
+					src: photo.src,
+					alt: '',
+					width: photo.width,
+					height: photo.height
+				}));
+	});
 	const note = $derived(read.text('asideNote'));
 	const deckHref = $derived(read.raw('asideLink'));
 
@@ -62,7 +92,7 @@
 {#snippet main()}
 	<div class="flex flex-col">
 		{#if title}
-			<h2 {id}>
+			<h2 {id} data-field="title">
 				<Marked
 					text={title}
 					highlight={read.text('highlight')}
@@ -72,7 +102,7 @@
 		{/if}
 
 		{#if intro}
-			<p class="measure mt-6 text-lg leading-relaxed">{intro}</p>
+			<p class="measure mt-6 text-lg leading-relaxed" data-field="intro">{intro}</p>
 		{/if}
 
 		{#if figures.length > 0}
@@ -84,16 +114,19 @@
 			<dl class="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2">
 				{#each figures as figure, index (index)}
 					<div class="flex flex-col-reverse gap-2">
-						<dt class="text-base leading-snug">{read.itemText(figure, 'label')}</dt>
-						<dd class="font-display text-4xl leading-none whitespace-nowrap">
-							{read.itemText(figure, 'value')}
-						</dd>
+						<dt class="text-base leading-snug" data-field="figures.{index}.label">
+							{read.itemText(figure, 'label')}
+						</dt>
+						<dd
+							class="font-display text-4xl leading-none whitespace-nowrap"
+							data-field="figures.{index}.value"
+						>{read.itemText(figure, 'value')}</dd>
 					</div>
 				{/each}
 			</dl>
 		{/if}
 
-		<div class="mt-6 text-lg">
+		<div class="mt-6 text-lg" data-field="body" data-field-kind="doc">
 			<RichText doc={read.doc('body')} {surface} />
 		</div>
 
@@ -118,7 +151,7 @@
 				class="photo-deck-link rounded-block focus-visible:outline-ink flex h-full focus-visible:outline-2 focus-visible:outline-offset-8"
 			>
 				<span class="photo-deck">
-					{#each DECK_PHOTOS as photo (photo.src)}
+					{#each deck as photo (photo.src)}
 						<img
 							src={photo.src}
 							alt=""
@@ -168,19 +201,25 @@
 				{#each items as item, index (index)}
 					{#if itemsLayout === 'bord-a-bord'}
 						<div class="flex justify-between gap-4 py-3">
-							<dt>{read.itemText(item, 'term')}</dt>
-							<dd class="tabular font-semibold">{read.itemText(item, 'value')}</dd>
+							<dt data-field="items.{index}.term">{read.itemText(item, 'term')}</dt>
+							<dd class="tabular font-semibold" data-field="items.{index}.value">
+								{read.itemText(item, 'value')}
+							</dd>
 						</div>
 					{:else}
 						<div class="grid gap-1 py-4 sm:grid-cols-[13rem_minmax(0,1fr)] sm:gap-6">
-							<dt class="font-semibold {mutedClass(surface)}">{read.itemText(item, 'term')}</dt>
-							<dd class="leading-snug">{read.itemText(item, 'value')}</dd>
+							<dt class="font-semibold {mutedClass(surface)}" data-field="items.{index}.term">
+								{read.itemText(item, 'term')}
+							</dt>
+							<dd class="leading-snug" data-field="items.{index}.value">
+								{read.itemText(item, 'value')}
+							</dd>
 						</div>
 					{/if}
 				{/each}
 			</dl>
 
-			<div class="mt-6 leading-relaxed {mutedClass(surface)}">
+			<div class="mt-6 leading-relaxed {mutedClass(surface)}" data-field="itemsNote" data-field-kind="doc">
 				<RichText doc={read.doc('itemsNote')} {surface} />
 			</div>
 		</div>

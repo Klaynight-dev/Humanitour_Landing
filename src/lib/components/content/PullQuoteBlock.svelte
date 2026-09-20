@@ -32,28 +32,30 @@
 <Section {surface} {spacing} labelledby={title ? id : undefined}>
 	<div class="grid gap-10 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-16">
 		<div>
-			{#if title}<h2 {id} class="text-2xl sm:text-3xl">{title}</h2>{/if}
+			{#if title}<h2 {id} class="text-2xl sm:text-3xl" data-field="title">{title}</h2>{/if}
 			{#if subtitle}
-				<p class="mt-3 text-base {mutedClass(surface)}">{subtitle}</p>
+				<p class="mt-3 text-base {mutedClass(surface)}" data-field="subtitle">{subtitle}</p>
 			{/if}
 		</div>
 
 		<div>
 			<blockquote class="measure text-2xl leading-snug font-medium sm:text-3xl">
-				« {read.text('quote')} »
+				<!-- Les guillemets sont du gabarit, pas du champ : la zone modifiable ne
+				     porte que la citation, sinon on les effacerait en tapant. -->
+				« <span data-field="quote">{read.text('quote')}</span> »
 			</blockquote>
 
 			<!-- Une citation sans source ne se publie pas : l'auteur est obligatoire
 			     a la saisie, il ne peut donc pas manquer ici. -->
 			<p class="mt-4 text-base {mutedClass(surface)}">
-				{read.text('author')}
+				<span data-field="author">{read.text('author')}</span>
 				{#if sourceUrl}
 					—
 					<a href={sourceUrl} class="underline decoration-2 underline-offset-2">la source</a>
 				{/if}
 			</p>
 
-			<div class="mt-12 text-lg">
+			<div class="mt-12 text-lg" data-field="body" data-field-kind="doc">
 				<RichText doc={read.doc('body')} {surface} />
 			</div>
 
@@ -61,10 +63,13 @@
 				<dl class="mt-10 flex flex-col gap-8">
 					{#each items as item, index (index)}
 						<div class="measure">
-							<dt class="text-xl font-semibold">{read.itemText(item, 'term')}</dt>
-							<dd class="mt-2 leading-relaxed {mutedClass(surface)}">
-								{read.itemText(item, 'body')}
-							</dd>
+							<dt class="text-xl font-semibold" data-field="items.{index}.term">
+								{read.itemText(item, 'term')}
+							</dt>
+							<dd
+								class="mt-2 leading-relaxed {mutedClass(surface)}"
+								data-field="items.{index}.body"
+							>{read.itemText(item, 'body')}</dd>
 						</div>
 					{/each}
 				</dl>

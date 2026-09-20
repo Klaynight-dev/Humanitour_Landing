@@ -37,7 +37,7 @@
 
 <Section {surface} {spacing} labelledby={title ? id : undefined}>
 	{#if title}
-		<h2 {id} class="max-w-3xl">
+		<h2 {id} class="max-w-3xl" data-field="title">
 			<Marked
 				text={title}
 				highlight={read.text('highlight')}
@@ -47,16 +47,20 @@
 	{/if}
 
 	{#if intro}
-		<p class="measure mt-6 text-lg leading-relaxed">{intro}</p>
+		<p class="measure mt-6 text-lg leading-relaxed" data-field="intro">{intro}</p>
 	{/if}
 
 	<div class="mt-14 grid gap-10 {GRID[items.length] ?? GRID[3]}">
 		{#each items as item, index (index)}
 			<div>
-				<p class="font-display text-3xl leading-none sm:text-4xl {figureClass}">
-					{read.itemText(item, 'figure')}
-				</p>
-				<p class="mt-3 leading-relaxed {mutedClass(surface)}">{read.itemText(item, 'body')}</p>
+				<p
+					class="font-display text-3xl leading-none sm:text-4xl {figureClass}"
+					data-field="items.{index}.figure"
+				>{read.itemText(item, 'figure')}</p>
+				<p
+					class="mt-3 leading-relaxed {mutedClass(surface)}"
+					data-field="items.{index}.body"
+				>{read.itemText(item, 'body')}</p>
 			</div>
 		{/each}
 	</div>
@@ -64,6 +68,6 @@
 	{#if note}
 		<!-- Un gris fige tombe a 2,6:1 sur l'aplat noir : la note y baisse
 		     l'opacite de la couleur heritee au lieu de changer de couleur. -->
-		<p class="mt-10 text-sm {surface === 'ink' ? 'opacity-75' : 'text-muted'}">{note}</p>
+		<p class="mt-10 text-sm {surface === 'ink' ? 'opacity-75' : 'text-muted'}" data-field="note">{note}</p>
 	{/if}
 </Section>

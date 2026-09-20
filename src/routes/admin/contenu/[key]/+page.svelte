@@ -30,12 +30,20 @@
 
 <PageHeader
 	title={data.page.label}
-	breadcrumb={[{ label: 'Contenu du site', href: '/admin/contenu' }]}
+	breadcrumb={[{ label: 'Pages du site', href: '/admin/contenu' }]}
 	description="Page publique : {data.page.href}"
 >
 	{#snippet actions()}
 		{#if data.status}
 			<StatusBadge status={data.status} />
+		{/if}
+		{#if editable}
+			<a
+				href="/admin/contenu/{data.page.key.toLowerCase()}/edition"
+				class="border-ink/25 press bg-paper rounded-pill inline-flex min-h-11 items-center justify-center border px-4 py-2 text-sm font-medium"
+			>
+				Modifier sur la page
+			</a>
 		{/if}
 		{#if publishable}
 			{#if data.status === 'PUBLISHED'}
