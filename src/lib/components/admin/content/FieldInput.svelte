@@ -26,7 +26,7 @@
 	 * quand il en ajoute un.
 	 *
 	 * Le nom porte le chemin (`data.items.0.term`) : le formulaire reste plat,
-	 * comme HTML l'impose, et le serveur lui rend sa forme (`server/content/form.ts`).
+	 * comme HTML l'impose, et le serveur lui rend sa forme (`shared/content/form.ts`).
 	 */
 	const record = $derived(
 		typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {}

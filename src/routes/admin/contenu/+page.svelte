@@ -11,16 +11,17 @@
 <svelte:head><title>Contenu du site, back-office</title></svelte:head>
 
 <PageHeader
-	title="Contenu du site"
+	title="Pages du site"
 	description="Les pages publiques éditables ici. Tant qu'une page n'est pas publiée, le site affiche son modèle d'origine."
 />
 
-<Table empty={false} emptyTitle="" minWidth="44rem">
+<Table empty={false} emptyTitle="" minWidth="48rem">
 	{#snippet head()}
 		<th scope="col" class="px-5 py-3 font-semibold">Page</th>
 		<th scope="col" class="px-3 py-3 font-semibold">État</th>
 		<th scope="col" class="px-3 py-3 text-right font-semibold">Sections</th>
 		<th scope="col" class="px-5 py-3 text-right font-semibold">Dernière modification</th>
+		<th scope="col" class="px-5 py-3 text-right font-semibold">Modifier</th>
 	{/snippet}
 	{#snippet body()}
 		{#each data.pages as page (page.key)}
@@ -45,6 +46,25 @@
 					{:else}
 						—
 					{/if}
+				</td>
+				<!--
+					Deux voies vers la meme page, et le choix n'est pas cosmetique :
+					l'edition sur la page montre ce qu'on fait, le formulaire reste la
+					voie sans JavaScript et celle des champs structures.
+				-->
+				<td class="px-5 py-3 text-right">
+					<a
+						href="/admin/contenu/{page.key.toLowerCase()}/edition"
+						class="bg-ink text-paper press rounded-pill inline-flex min-h-11 items-center px-4 py-2 text-sm font-semibold"
+					>
+						Sur la page
+					</a>
+					<a
+						href="/admin/contenu/{page.key.toLowerCase()}"
+						class="text-muted ml-2 inline-flex min-h-11 items-center text-sm underline"
+					>
+						Formulaire
+					</a>
 				</td>
 			</tr>
 		{/each}
