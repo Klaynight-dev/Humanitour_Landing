@@ -62,7 +62,7 @@
 {#snippet main()}
 	<div class="flex flex-col">
 		{#if title}
-			<h2 {id}>
+			<h2 {id} data-field="title">
 				<Marked
 					text={title}
 					highlight={read.text('highlight')}
@@ -72,7 +72,7 @@
 		{/if}
 
 		{#if intro}
-			<p class="measure mt-6 text-lg leading-relaxed">{intro}</p>
+			<p class="measure mt-6 text-lg leading-relaxed" data-field="intro">{intro}</p>
 		{/if}
 
 		{#if figures.length > 0}
@@ -93,7 +93,7 @@
 			</dl>
 		{/if}
 
-		<div class="mt-6 text-lg">
+		<div class="mt-6 text-lg" data-field="body" data-field-kind="doc">
 			<RichText doc={read.doc('body')} {surface} />
 		</div>
 
@@ -180,7 +180,7 @@
 				{/each}
 			</dl>
 
-			<div class="mt-6 leading-relaxed {mutedClass(surface)}">
+			<div class="mt-6 leading-relaxed {mutedClass(surface)}" data-field="itemsNote" data-field-kind="doc">
 				<RichText doc={read.doc('itemsNote')} {surface} />
 			</div>
 		</div>

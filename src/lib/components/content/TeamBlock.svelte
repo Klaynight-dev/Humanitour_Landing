@@ -91,9 +91,9 @@
 -->
 <Section {surface} {spacing} labelledby={title ? id : undefined} label={title ? undefined : 'L’équipe'}>
 	{#if layout === 'grille'}
-		{#if title}<h2 {id} class="text-2xl sm:text-3xl">{title}</h2>{/if}
+		{#if title}<h2 {id} class="text-2xl sm:text-3xl" data-field="title">{title}</h2>{/if}
 		{#if intro}
-			<p class="measure mt-4 text-base leading-relaxed {mutedClass(surface)}">{intro}</p>
+			<p class="measure mt-4 text-base leading-relaxed {mutedClass(surface)}" data-field="intro">{intro}</p>
 		{/if}
 
 		<ul class="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4" class:mt-16={title || intro}>
@@ -134,9 +134,9 @@
 	{:else}
 		<div class="grid gap-12 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-16">
 			<div>
-				{#if title}<h2 {id} class="text-2xl sm:text-3xl">{title}</h2>{/if}
+				{#if title}<h2 {id} class="text-2xl sm:text-3xl" data-field="title">{title}</h2>{/if}
 				{#if intro}
-					<p class="mt-4 text-base leading-relaxed {mutedClass(surface)}">{intro}</p>
+					<p class="mt-4 text-base leading-relaxed {mutedClass(surface)}" data-field="intro">{intro}</p>
 				{/if}
 			</div>
 

@@ -29,7 +29,7 @@
 
 <Section {surface} {spacing} labelledby={title ? id : undefined}>
 	{#if title}
-		<h2 {id} class="max-w-3xl">
+		<h2 {id} class="max-w-3xl" data-field="title">
 			<Marked
 				text={title}
 				highlight={read.text('highlight')}
@@ -98,11 +98,11 @@
 		reste lisible, elle passe simplement apres la lecture.
 	-->
 	{#if comment}
-		<p class="mt-6 text-base leading-relaxed">{comment}</p>
+		<p class="mt-6 text-base leading-relaxed" data-field="comment">{comment}</p>
 	{/if}
 
 	{#if note}
-		<p class="mt-4 text-base leading-relaxed opacity-70">{note}</p>
+		<p class="mt-4 text-base leading-relaxed opacity-70" data-field="note">{note}</p>
 	{/if}
 </Section>
 

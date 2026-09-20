@@ -41,9 +41,9 @@
 <Section {surface} {spacing} labelledby={title ? id : undefined}>
 	<div class="grid gap-8 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-16">
 		<div>
-			{#if title}<h2 {id} class="text-2xl sm:text-3xl">{title}</h2>{/if}
+			{#if title}<h2 {id} class="text-2xl sm:text-3xl" data-field="title">{title}</h2>{/if}
 			{#if intro}
-				<p class="mt-3 text-base leading-relaxed {mutedClass(surface)}">{intro}</p>
+				<p class="mt-3 text-base leading-relaxed {mutedClass(surface)}" data-field="intro">{intro}</p>
 			{/if}
 		</div>
 

@@ -46,9 +46,9 @@
 </script>
 
 <Section {surface} {spacing} labelledby={title ? id : undefined} label={title ? undefined : 'Galerie'}>
-	{#if title}<h2 {id} class="text-2xl sm:text-3xl">{title}</h2>{/if}
+	{#if title}<h2 {id} class="text-2xl sm:text-3xl" data-field="title">{title}</h2>{/if}
 	{#if intro}
-		<p class="measure mt-4 text-lg leading-relaxed {mutedClass(surface)}">{intro}</p>
+		<p class="measure mt-4 text-lg leading-relaxed {mutedClass(surface)}" data-field="intro">{intro}</p>
 	{/if}
 
 	<!--

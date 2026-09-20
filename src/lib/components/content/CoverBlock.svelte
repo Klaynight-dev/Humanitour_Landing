@@ -46,7 +46,7 @@
 		Elle se joue une fois, ne boucle pas, ne se rejoue pas au defilement, et
 		`prefers-reduced-motion` la supprime entierement.
 	-->
-	<h1 id={id} class="enter {isHero ? 'hero-title' : 'max-w-3xl'}">
+	<h1 id={id} class="enter {isHero ? 'hero-title' : 'max-w-3xl'}" data-field="title">
 		<Marked
 			text={title}
 			highlight={read.text('highlight')}
@@ -66,9 +66,8 @@
 				? 'mt-5 sm:text-lg'
 				: 'mt-7 text-xl font-medium sm:text-2xl'}"
 			style="--enter-delay: 90ms"
-		>
-			{intro}
-		</p>
+			data-field="intro"
+		>{intro}</p>
 	{/if}
 
 	{#if figures.length > 0}

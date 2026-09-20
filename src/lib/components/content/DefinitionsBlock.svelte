@@ -43,7 +43,7 @@
 
 <Section {surface} {spacing} shapes={read.raw('shapes') === 'oui'} labelledby={title ? id : undefined}>
 	{#if title}
-		<h2 {id} class="max-w-3xl">
+		<h2 {id} class="max-w-3xl" data-field="title">
 			<Marked
 				text={title}
 				highlight={read.text('highlight')}
@@ -53,7 +53,7 @@
 	{/if}
 
 	{#if intro}
-		<p class="measure mt-4 text-base leading-relaxed {mutedClass(surface)}">{intro}</p>
+		<p class="measure mt-4 text-base leading-relaxed {mutedClass(surface)}" data-field="intro">{intro}</p>
 	{/if}
 
 	<!--

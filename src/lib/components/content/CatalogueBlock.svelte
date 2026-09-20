@@ -49,7 +49,7 @@
 		{@render catalogue.body()}
 	{/if}
 
-	<div class="measure mt-10 text-sm {mutedClass(surface)}">
+	<div class="measure mt-10 text-sm {mutedClass(surface)}" data-field="note" data-field-kind="doc">
 		<RichText doc={read.doc('note')} {surface} />
 	</div>
 </Section>

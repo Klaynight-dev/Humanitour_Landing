@@ -27,7 +27,7 @@
 	texte vient de la surface elle-meme (`app.css`), il n'y a rien a regler ici.
 -->
 <Section {surface} {spacing} labelledby={id}>
-	<h2 {id} class="max-w-4xl text-3xl sm:text-5xl">
+	<h2 {id} class="max-w-4xl text-3xl sm:text-5xl" data-field="title">
 		<Marked
 			text={read.text('title') ?? ''}
 			highlight={read.text('highlight')}
@@ -36,7 +36,7 @@
 	</h2>
 
 	{#if intro}
-		<p class="measure mt-7 text-xl font-medium">{intro}</p>
+		<p class="measure mt-7 text-xl font-medium" data-field="intro">{intro}</p>
 	{/if}
 
 	<Buttons items={read.list('buttons')} {surface} class="mt-10" />

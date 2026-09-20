@@ -53,9 +53,9 @@
 {/snippet}
 
 <Section {surface} {spacing} labelledby={title ? id : undefined}>
-	{#if title}<h2 {id} class="max-w-3xl">{title}</h2>{/if}
+	{#if title}<h2 {id} class="max-w-3xl" data-field="title">{title}</h2>{/if}
 	{#if intro}
-		<p class="measure mt-6 text-lg leading-relaxed {mutedClass(surface)}">{intro}</p>
+		<p class="measure mt-6 text-lg leading-relaxed {mutedClass(surface)}" data-field="intro">{intro}</p>
 	{/if}
 
 	{@render piece(content)}

@@ -4,8 +4,11 @@
 	import { setContentContext } from '$components/content/context';
 	import BlockFields from '$components/admin/editor/BlockFields.svelte';
 	import BlockFrame from '$components/admin/editor/BlockFrame.svelte';
+	import InlineToolbar from '$components/admin/editor/InlineToolbar.svelte';
+	import { applyCommand, type FieldChange, type FieldKind } from '$components/admin/editor/inline';
 	import StatusBadge from '$components/admin/StatusBadge.svelte';
 	import { insertAfter, move, removeAt, type ArrangedBlock } from '$lib/shared/content/arrange';
+	import { setPath } from '$lib/shared/content/form';
 	import { getContentBlockType } from '$lib/shared/content';
 	import { can } from '$lib/shared/permissions';
 	import type { ActionData, PageData } from './$types';
@@ -15,11 +18,15 @@
 	/**
 	 * L'editeur de page.
 	 *
-	 * Il rend les vrais composants du site, avec les vraies donnees, et le
-	 * panneau de droite modifie ce qui s'affiche a gauche pendant la frappe. La
-	 * page entiere tient en memoire : deplacer, dupliquer ou retirer une section
-	 * ne demande aucune requete, et rien ne part en base tant qu'on n'enregistre
-	 * pas.
+	 * Il rend les vrais composants du site, avec les vraies donnees, et le texte
+	 * se tape DANS la page : les composants publics marquent les elements qui
+	 * portent un champ, et l'editeur les rend modifiables. Le panneau de droite
+	 * ne garde que ce qui ne se tape pas — images, variantes de mise en page,
+	 * boutons, listes.
+	 *
+	 * La page entiere tient en memoire : deplacer, dupliquer ou retirer une
+	 * section ne demande aucune requete, et rien ne part en base tant qu'on
+	 * n'enregistre pas.
 	 *
 	 * `+page@.svelte` : la page sort du gabarit du back-office pour occuper
 	 * l'ecran entier. La garde de permission ne repose donc pas dessus, elle est
@@ -58,15 +65,28 @@
 	let dirty = $state(false);
 	/** Sur petit ecran, le canevas et le panneau ne tiennent pas cote a cote. */
 	let panelOpen = $state(false);
+	/** Le champ enrichi qui a le curseur : la barre de mise en forme s'y pose. */
+	let focused: { kind: FieldKind; element: HTMLElement } | null = $state(null);
+	/** Confirmation de la remise a zero : elle jette un travail en cours. */
+	let resetting = $state(false);
+
+	/** Les chemins modifiables dans le rendu, par section. */
+	let inlinePaths: Record<number, readonly string[]> = $state({});
+
+	/**
+	 * Ce qui est tape dans le rendu, en attente.
+	 *
+	 * Volontairement HORS de l'etat reactif : retenir chaque frappe ferait
+	 * reconstruire a Svelte les noeuds qu'on est en train de remplir, et le
+	 * curseur sauterait. La saisie est retenue quand le curseur quitte le champ,
+	 * et de toute facon avant l'enregistrement.
+	 */
+	let pending: Record<number, Record<string, unknown>> = {};
 
 	const current = $derived(blocks.find((block) => block.key === selected) ?? null);
 	const currentIndex = $derived(blocks.findIndex((block) => block.key === selected));
 	const broken = $derived(blocks.filter((block) => block.invalid !== null));
 
-	/** Le document soumis : le type et les donnees, dans l'ordre de la page. */
-	const document = $derived(
-		JSON.stringify(blocks.map((block) => ({ type: block.type, data: block.data })))
-	);
 
 	function labelOf(type: string): string {
 		return getContentBlockType(type)?.label ?? type;
@@ -141,6 +161,81 @@
 		touch();
 	}
 
+	/* ------------------------------------------------------------------ */
+	/* L'edition dans le texte rendu                                       */
+	/* ------------------------------------------------------------------ */
+
+	/** Une frappe dans la page : retenue en attente, pas encore dans l'etat. */
+	function onEdit(key: number, change: FieldChange) {
+		pending[key] = { ...(pending[key] ?? {}), [change.path]: change.value };
+		touch();
+	}
+
+	/**
+	 * Verse dans une section ce qui a ete tape dedans, et valide le tout.
+	 *
+	 * Appele quand le curseur quitte un champ, et avant tout enregistrement.
+	 * C'est le seul moment ou Svelte a le droit de refaire le rendu d'un champ
+	 * qu'on vient de remplir — a ce moment-la, le curseur en est deja sorti.
+	 */
+	function commit(key: number): EditorBlock | null {
+		const index = blocks.findIndex((block) => block.key === key);
+		const block = blocks[index];
+		if (!block) return null;
+
+		const held = pending[key];
+		if (!held) return block;
+		delete pending[key];
+
+		let next = block.data;
+		for (const [path, value] of Object.entries(held)) next = setPath(next, path, value);
+
+		const definition = getContentBlockType(block.type);
+		const parsed = definition?.parseData(next);
+
+		const updated: EditorBlock =
+			parsed && parsed.ok
+				? { ...block, data: parsed.data, invalid: null }
+				: { ...block, data: next, invalid: parsed ? parsed.reason : null };
+
+		blocks[index] = updated;
+		return updated;
+	}
+
+	/**
+	 * Toutes les sections, saisies en attente versees.
+	 *
+	 * Rend le tableau plutot que de compter sur l'etat : le document part dans la
+	 * foulee, et attendre que la reactivite ait circule serait exactement le
+	 * genre de course qui enregistre la version d'avant.
+	 */
+	function commitAll(): EditorBlock[] {
+		for (const key of Object.keys(pending)) commit(Number(key));
+		return blocks;
+	}
+
+	function buildDocument(): string {
+		return JSON.stringify(
+			commitAll().map((block) => ({ type: block.type, data: block.data }))
+		);
+	}
+
+	/** La barre flottante agit sur le champ qui a le curseur, et relit son document. */
+	function onCommand(command: string, value?: string) {
+		const field = focused;
+		if (!field || selected === null) return;
+
+		const doc = applyCommand(field.element, command, value);
+		const path = field.element.dataset['field'];
+		if (path === undefined) return;
+
+		onEdit(selected, { path, kind: 'doc', value: doc });
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Le panneau                                                          */
+	/* ------------------------------------------------------------------ */
+
 	function onFields(
 		key: number,
 		result: { ok: true; data: Record<string, unknown> } | { ok: false; reason: string }
@@ -156,6 +251,32 @@
 			? { ...block, data: result.data, invalid: null }
 			: { ...block, invalid: result.reason };
 		touch();
+	}
+
+	/**
+	 * Remet la page telle qu'elle a ete chargee.
+	 *
+	 * Jette tout ce qui n'est pas enregistre, y compris ce qui est encore en
+	 * attente dans les champs. Les cles de travail sont refaites, donc chaque
+	 * section est remontee : c'est ce qui ramene le texte tape dans la page a sa
+	 * valeur d'origine, puisque le rendu en repart de zero.
+	 */
+	function reset() {
+		pending = {};
+		inlinePaths = {};
+		blocks = data.blocks.map((block, index) => ({
+			key: nextKey + index,
+			type: block.type,
+			data: block.data,
+			invalid: null
+		}));
+		nextKey += data.blocks.length;
+
+		selected = null;
+		adding = null;
+		focused = null;
+		resetting = false;
+		dirty = false;
 	}
 
 	/** Une navigation accidentelle ne doit pas emporter une page non enregistree. */
@@ -208,15 +329,47 @@
 				</button>
 
 				{#if editable}
+					{#if resetting}
+						<button type="button" class="{BUTTON} bg-danger text-paper font-semibold" onclick={reset}>
+							Confirmer la remise à zéro
+						</button>
+						<button type="button" class="{BUTTON} border-ink/25 border" onclick={() => (resetting = false)}>
+							Annuler
+						</button>
+					{:else}
+						<!--
+							Reinitialiser jette le travail en cours : deux clics, comme la
+							suppression d'une section. Desactive quand il n'y a rien a jeter,
+							pour que le bouton ne promette pas une action sans effet.
+						-->
+						<button
+							type="button"
+							class="{BUTTON} border-ink/25 border disabled:opacity-40"
+							disabled={!dirty}
+							onclick={() => (resetting = true)}
+							title="Annuler les modifications non enregistrées"
+						>
+							Réinitialiser
+						</button>
+					{/if}
+
+					<!--
+						Le document est pose dans le `FormData` au moment de l'envoi, et non
+						tenu dans un champ cache : il faut d'abord verser ce qui est encore
+						en attente dans les champs de la page, et un champ derive aurait
+						enregistre la version d'avant.
+					-->
 					<form
 						method="POST"
 						action="?/save"
-						use:enhance={() => async ({ update, result }) => {
-							if (result.type === 'success') dirty = false;
-							await update({ reset: false });
+						use:enhance={({ formData }) => {
+							formData.set('document', buildDocument());
+							return async ({ update, result }) => {
+								if (result.type === 'success') dirty = false;
+								await update({ reset: false });
+							};
 						}}
 					>
-						<input type="hidden" name="document" value={document} />
 						<button
 							type="submit"
 							disabled={broken.length > 0}
@@ -236,12 +389,14 @@
 					<form
 						method="POST"
 						action="?/publish"
-						use:enhance={() => async ({ update, result }) => {
-							if (result.type === 'success') dirty = false;
-							await update({ reset: false });
+						use:enhance={({ formData }) => {
+							formData.set('document', buildDocument());
+							return async ({ update, result }) => {
+								if (result.type === 'success') dirty = false;
+								await update({ reset: false });
+							};
 						}}
 					>
-						<input type="hidden" name="document" value={document} />
 						<button
 							type="submit"
 							disabled={broken.length > 0}
@@ -273,13 +428,15 @@
 		{/if}
 	</header>
 
+	<InlineToolbar element={focused?.element ?? null} onapply={onCommand} />
+
 	<div class="flex min-h-0 flex-1">
 		<!--
 			Le canevas. Fond blanc et largeur entiere : c'est la page telle qu'elle
 			sera, pas une maquette dans une carte.
 		-->
 		<main
-			class="bg-paper min-w-0 flex-1 overflow-y-auto lg:block"
+			class="canvas bg-paper min-w-0 flex-1 overflow-y-auto lg:block"
 			class:hidden={panelOpen}
 			aria-label="Aperçu de la page"
 		>
@@ -324,6 +481,7 @@
 
 				<BlockFrame
 					{index}
+					{editable}
 					total={blocks.length}
 					type={block.type}
 					label={labelOf(block.type)}
@@ -334,6 +492,10 @@
 					onmove={(direction) => onMove(index, direction)}
 					onduplicate={() => onDuplicate(index)}
 					onremove={() => onRemove(index)}
+					onedit={(change) => onEdit(block.key, change)}
+					onfield={(field) => (focused = field && field.kind === 'doc' ? field : null)}
+					oninline={(paths) => (inlinePaths[block.key] = paths)}
+					oncommit={() => commit(block.key)}
 				/>
 			{/each}
 
@@ -425,15 +587,21 @@
 							data={current.data}
 							library={data.library}
 							disabled={!editable}
+							inline={inlinePaths[current.key] ?? []}
 							onchange={(result) => onFields(current.key, result)}
 						/>
 					{/key}
 				</div>
 			{:else}
 				<div class="p-6">
-					<h2 class="font-semibold">Cliquez une section</h2>
+					<h2 class="font-semibold">Tapez dans la page</h2>
 					<p class="text-muted mt-2 text-sm">
-						Ses réglages s'ouvrent ici, et la page à gauche se met à jour pendant que vous tapez.
+						Les titres et les textes se modifient directement à gauche : cliquez dedans et
+						écrivez. Une barre de mise en forme apparaît au-dessus des textes qui acceptent le
+						gras, les listes et les liens.
+					</p>
+					<p class="text-muted mt-3 text-sm">
+						Ce panneau garde le reste : images, variantes de mise en page, boutons, listes.
 						Survolez une section pour la monter, la dupliquer ou la retirer.
 					</p>
 
@@ -464,3 +632,31 @@
 		</aside>
 	</div>
 </div>
+
+<style>
+	/*
+	 * Ce qui se tape dans la page se signale au survol, jamais au repos.
+	 *
+	 * Un lisere permanent sur chaque texte modifiable ferait mentir l'apercu :
+	 * on ne verrait plus la page telle qu'elle sera. Au survol, en revanche, il
+	 * faut savoir avant de cliquer ou l'on peut ecrire.
+	 *
+	 * `:global` parce que ces elements ne sont pas ecrits ici : ce sont les
+	 * composants publics qui les rendent, et `inline.ts` qui pose l'attribut.
+	 */
+	:global(.canvas [contenteditable]) {
+		cursor: text;
+	}
+
+	:global(.canvas [contenteditable]:hover) {
+		outline: 1px dashed color-mix(in oklab, var(--color-ink) 45%, transparent);
+		outline-offset: 4px;
+	}
+
+	/* Le contour de saisie l'emporte sur le contour global de `:focus-visible` :
+	   dans le canevas, il doit se distinguer du survol sans le recopier. */
+	:global(.canvas [contenteditable]:focus) {
+		outline: 2px solid var(--color-ink);
+		outline-offset: 4px;
+	}
+</style>

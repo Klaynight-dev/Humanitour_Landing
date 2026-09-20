@@ -84,3 +84,49 @@ export function readNested(form: FormData, prefix: string): Record<string, unkno
 
 	return normalise(root) as Record<string, unknown>;
 }
+
+/**
+ * Ecrit une valeur au bout d'un chemin, sans toucher a l'original.
+ *
+ * Le pendant de `readNested` pour l'edition sur la page : la ou le formulaire
+ * envoie `data.items.0.term`, le texte modifie dans le rendu porte le meme
+ * chemin, `items.0.term`. Les deux cotes designent donc un champ de la meme
+ * facon, et c'est ce qui permet au panneau et au texte rendu de modifier la
+ * meme section sans se contredire.
+ *
+ * Une copie a chaque niveau traverse : muter en place ne reveillerait pas la
+ * reactivite de Svelte, et l'apercu resterait sur la valeur precedente.
+ */
+export function setPath(
+	source: Record<string, unknown>,
+	path: string,
+	value: unknown
+): Record<string, unknown> {
+	const segments = path.split('.').filter((segment) => segment !== '');
+	if (segments.length === 0) return source;
+
+	return writeInto(source, segments, value) as Record<string, unknown>;
+}
+
+function writeInto(node: unknown, segments: string[], value: unknown): unknown {
+	const [head, ...rest] = segments;
+	if (head === undefined) return value;
+
+	// Un segment numerique designe un rang : la branche doit etre un tableau,
+	// sinon `items.0.term` creerait un objet `{ '0': … }` que la validation du
+	// registre refuserait.
+	if (isIndex(head)) {
+		const list = Array.isArray(node) ? [...node] : [];
+		const at = Number(head);
+		list[at] = writeInto(list[at], rest, value);
+		return list;
+	}
+
+	const record: Node =
+		typeof node === 'object' && node !== null && !Array.isArray(node)
+			? { ...(node as Node) }
+			: {};
+
+	record[head] = writeInto(record[head], rest, value);
+	return record;
+}
