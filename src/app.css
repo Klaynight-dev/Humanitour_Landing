@@ -352,6 +352,14 @@ body {
  * c'est le recoupement par le bord qui donne l'aplat decoupe, et le contexte
  * d'empilement qui empeche le `z-index` negatif de passer sous le fond.
  *
+ * Le debord est LATERAL, jamais vertical. Une forme qui depassait aussi en haut
+ * ou en bas etait tranchee net par la limite de sa section, et cette limite
+ * n'est un bord que si la section suivante change de fond. Sur `/a-propos`, une
+ * couverture creme suivie d'une equipe creme donnait donc un aplat scie en
+ * pleine page, a l'horizontale, sans rien pour expliquer la coupe. Le bord
+ * gauche et le bord droit de la page, eux, sont des bords en toute
+ * circonstance : ce sont les seuls qui recoupent les formes.
+ *
  * Contraste : elles ne portent que du texte noir, qui passe AA sur le corail
  * (6,75:1) comme sur le rose (9,46:1) et sur le creme. Aucune zone de la
  * composition ne peut donc casser la lisibilite.
@@ -371,7 +379,7 @@ body {
 }
 
 @utility shape-coral {
-	top: clamp(-9rem, -13vw, -5rem);
+	top: 0;
 	right: clamp(-9rem, -13vw, -5rem);
 	width: clamp(9rem, 16vw, 16rem);
 	height: clamp(8rem, 13vw, 13rem);
@@ -380,10 +388,17 @@ body {
 }
 
 @utility shape-pink {
-	bottom: clamp(-7rem, -11vw, -4rem);
+	bottom: 0;
 	left: clamp(-8rem, -12vw, -4.5rem);
 	width: clamp(8rem, 14vw, 14rem);
-	height: clamp(7rem, 12vw, 12rem);
+	/*
+	 * Le plancher de hauteur est celui du TELEPHONE, et il est bas a dessein : la
+	 * forme doit tenir dans la respiration basse de la section (`py-16` sur une
+	 * couverture, soit 4 rem) pour ne pas remonter sous la derniere ligne de
+	 * texte. Sur un ecran etroit la colonne de texte occupe toute la largeur : il
+	 * n'y a plus de marge laterale ou se ranger, seule la marge basse reste.
+	 */
+	height: clamp(4rem, 12vw, 12rem);
 	border-radius: 36% 64% 68% 32% / 63% 39% 61% 37%;
 	background-color: var(--color-pink);
 }

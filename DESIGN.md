@@ -242,6 +242,15 @@ faite de formes rondes et pleines, son logo est un globe enlacé, et l'affiche
 imprimée travaille par aplats découpés : c'est la même grammaire, à l'échelle de
 la page.
 
+**Le débord est latéral, jamais vertical**, et c'est une correction du
+20 septembre 2026. Une forme qui dépassait aussi en haut ou en bas se faisait
+trancher net par la limite de sa section, et cette limite n'est un bord visible
+que si la section suivante change de fond. Sur `/a-propos`, une couverture crème
+suivie d'une équipe crème donnait donc un aplat scié à l'horizontale en pleine
+page, sans rien pour expliquer la coupe. Les bords gauche et droit de la page,
+eux, sont des bords en toute circonstance : ce sont les seuls qui recoupent les
+formes.
+
 Trois règles les tiennent, et ce sont elles qui les séparent de l'orbe floue
 générique : elles sont **plates** (aucun dégradé, aucun flou, aucune lueur),
 **immobiles**, et **sans teinte hors charte**.
@@ -254,7 +263,14 @@ reconnu d'une page à l'autre plutôt que deux taches posées au hasard.
 | --- | --- |
 | Dose | **une section par page**, et toujours une section crème |
 | Placement | dans les marges, jamais sous un bloc de texte dense |
+| Débord | latéral seulement : la forme tient dans la hauteur de sa section |
 | Section hôte | doit porter `relative isolate overflow-hidden` |
+
+Sur téléphone, la colonne de texte prend toute la largeur : il ne reste pas de
+marge latérale où ranger une forme, seulement la respiration basse de la
+section. C'est ce qui fixe le plancher de hauteur du rose (4 rem) — assez court
+pour tenir sous la dernière ligne, mesuré sur la couverture d'`/a-propos`, la
+plus serrée des trois pages qui portent des aplats.
 
 Une première version les faisait énormes et centrées : la section devenait une
 affiche colorée où le propos ne passait plus, et elle a été retirée. **La dose
