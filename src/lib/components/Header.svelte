@@ -4,6 +4,7 @@
 
 	let open = $state(false);
 	let toggleEl: HTMLButtonElement | undefined = $state();
+	let headerEl: HTMLElement | undefined = $state();
 	let scrolled = $state(false);
 
 	// La navigation au clavier et le lecteur d ecran ont besoin de savoir quelle
@@ -21,6 +22,21 @@
 		toggleEl?.focus();
 	}
 
+	// Toucher la page referme le menu. Echap est le geste du clavier, celui du
+	// doigt est de taper a cote : sans lui, le menu ouvert ne se refermait qu en
+	// revenant sur son bouton, tout en haut de l ecran.
+	//
+	// `pointerdown` et non `click` : sur iOS, un `click` ne remonte pas depuis un
+	// element sans gestionnaire ni `cursor: pointer`, et taper sur un paragraphe
+	// n aurait rien referme. Le test porte sur l en-tete entiere, le bouton
+	// compris, donc son propre `onclick` bascule sans etre annule ici.
+	function onPointerDown(event: PointerEvent) {
+		if (!open) return;
+		const target = event.target;
+		if (target instanceof Node && headerEl?.contains(target)) return;
+		open = false;
+	}
+
 	// Seuil au-dela du premier ecran : sur mobile, le rebond elastique
 	// (overscroll) produit de petites valeurs de `scrollY` au repos, un seuil
 	// bas ferait entrer et sortir l en-tete de son etat flottant sans que le
@@ -35,7 +51,7 @@
 	});
 </script>
 
-<svelte:window onkeydown={onKeydown} />
+<svelte:window onkeydown={onKeydown} onpointerdown={onPointerDown} />
 
 <!--
 	En-tete colle. Au repos elle occupe toute la largeur, sur `--header-h`
@@ -47,7 +63,7 @@
 	autour de la barre (transparent, le fond de la section defilee y apparait) ;
 	`header-surface` porte le fond, l ombre et la forme qui changent.
 -->
-<header class="header-shell sticky top-0 z-50" class:is-scrolled={scrolled}>
+<header bind:this={headerEl} class="header-shell sticky top-0 z-50" class:is-scrolled={scrolled}>
 	<div class="header-surface bg-cream mx-auto" style="box-shadow: var(--shadow-lift)">
 		<div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
 			<a href="/" class="flex items-center py-1" aria-label="{SITE.name}, accueil">

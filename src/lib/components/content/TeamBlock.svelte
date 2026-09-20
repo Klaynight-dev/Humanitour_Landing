@@ -140,7 +140,17 @@
 				{/if}
 			</div>
 
-			<div class="relative">
+			<!--
+				`min-w-0` n'est pas decoratif : sans lui, la colonne implicite de la
+				grille (celle du telephone, avant `lg`) se dimensionne sur la largeur
+				NATURELLE de la rangee, soit les cinq portraits mis bout a bout —
+				792 px mesures. Tout le bloc, titre et texte compris, est alors mis en
+				page sur cette largeur et rogne par l'`overflow-hidden` de la section :
+				le paragraphe se coupait en plein milieu d'une phrase. La colonne large
+				a deja sa protection (`minmax(0,1fr)`), la colonne etroite ne l'avait
+				pas.
+			-->
+			<div class="relative min-w-0">
 				<!--
 					`overflow-x-auto` + `snap-x` : sur un ecran etroit, cinq portraits a
 					taille lisible ne tiennent pas dans la largeur, et les reduire
