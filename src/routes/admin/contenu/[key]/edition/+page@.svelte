@@ -10,6 +10,7 @@
 	import { insertAfter, move, removeAt, type ArrangedBlock } from '$lib/shared/content/arrange';
 	import { setPath } from '$lib/shared/content/form';
 	import { getContentBlockType } from '$lib/shared/content';
+	import { getContentTemplate, prepareTemplate } from '$lib/shared/content/templates';
 	import { can } from '$lib/shared/permissions';
 	import type { ActionData, PageData } from './$types';
 
@@ -67,8 +68,10 @@
 	let panelOpen = $state(false);
 	/** Le champ enrichi qui a le curseur : la barre de mise en forme s'y pose. */
 	let focused: { kind: FieldKind; element: HTMLElement } | null = $state(null);
-	/** Confirmation de la remise a zero : elle jette un travail en cours. */
+	/** Confirmation de la remise a zero : elle remplace la page entiere. */
 	let resetting = $state(false);
+	/** Motif d'un modele d'origine illisible, affiche plutot que tu. */
+	let resetError: string | null = $state(null);
 
 	/** Les chemins modifiables dans le rendu, par section. */
 	let inlinePaths: Record<number, readonly string[]> = $state({});
@@ -254,29 +257,53 @@
 	}
 
 	/**
-	 * Remet la page telle qu'elle a ete chargee.
+	 * Remet la page a sa version d'origine, celle qui vit dans le code du site.
 	 *
-	 * Jette tout ce qui n'est pas enregistre, y compris ce qui est encore en
-	 * attente dans les champs. Les cles de travail sont refaites, donc chaque
-	 * section est remontee : c'est ce qui ramene le texte tape dans la page a sa
-	 * valeur d'origine, puisque le rendu en repart de zero.
+	 * C'est le modele de `shared/content/templates/` : la version ecrite et
+	 * relue, celle que le site sert tant qu'une page n'a jamais ete publiee. Elle
+	 * REMPLACE les sections a l'ecran, d'ou la confirmation.
+	 *
+	 * Le remplacement a lieu ici et pas sur le serveur, volontairement : la page
+	 * d'origine s'affiche, on la regarde, et rien n'est ecrit en base tant qu'on
+	 * n'a pas enregistre. Une remise a zero qui ecrirait d'abord et montrerait
+	 * ensuite ne laisserait pas le droit de changer d'avis.
+	 *
+	 * Les cles de travail sont toutes neuves, donc chaque section est remontee :
+	 * c'est ce qui ramene le texte tape dans la page a sa valeur d'origine,
+	 * puisque le rendu en repart de zero.
 	 */
 	function reset() {
+		const template = getContentTemplate(data.page.key);
+		if (!template) return;
+
+		const prepared = prepareTemplate(template);
+		if (!prepared.ok) {
+			// Un modele qui ne passe pas sa propre validation est un bogue du depot,
+			// pas une faute de saisie : on le dit tel quel plutot que de vider la
+			// page a moitie.
+			resetError = `Modèle d'origine illisible : ${prepared.reason}`;
+			resetting = false;
+			return;
+		}
+
 		pending = {};
 		inlinePaths = {};
-		blocks = data.blocks.map((block, index) => ({
+		blocks = prepared.blocks.map((block, index) => ({
 			key: nextKey + index,
 			type: block.type,
 			data: block.data,
 			invalid: null
 		}));
-		nextKey += data.blocks.length;
+		nextKey += prepared.blocks.length;
 
 		selected = null;
 		adding = null;
 		focused = null;
 		resetting = false;
-		dirty = false;
+		resetError = null;
+		// Rien n'est encore en base : la page d'origine est a l'ecran, elle attend
+		// un enregistrement comme n'importe quelle modification.
+		dirty = true;
 	}
 
 	/** Une navigation accidentelle ne doit pas emporter une page non enregistree. */
@@ -331,23 +358,25 @@
 				{#if editable}
 					{#if resetting}
 						<button type="button" class="{BUTTON} bg-danger text-paper font-semibold" onclick={reset}>
-							Confirmer la remise à zéro
+							Confirmer, remplacer la page
 						</button>
 						<button type="button" class="{BUTTON} border-ink/25 border" onclick={() => (resetting = false)}>
 							Annuler
 						</button>
 					{:else}
 						<!--
-							Reinitialiser jette le travail en cours : deux clics, comme la
-							suppression d'une section. Desactive quand il n'y a rien a jeter,
-							pour que le bouton ne promette pas une action sans effet.
+							Reinitialiser remplace la page entiere : deux clics, comme la
+							suppression d'une section. Desactive quand cette page n'a pas de
+							modele, pour que le bouton ne promette pas une action sans effet.
 						-->
 						<button
 							type="button"
 							class="{BUTTON} border-ink/25 border disabled:opacity-40"
-							disabled={!dirty}
+							disabled={!data.hasTemplate}
 							onclick={() => (resetting = true)}
-							title="Annuler les modifications non enregistrées"
+							title={data.hasTemplate
+								? "Remplacer la page par sa version d'origine, celle qui vit dans le code du site"
+								: "Cette page n'a pas de version d'origine dans le code"}
 						>
 							Réinitialiser
 						</button>
@@ -408,6 +437,18 @@
 				{/if}
 			</div>
 		</div>
+
+		{#if resetting}
+			<p class="border-ink/12 bg-cream border-t px-4 py-2 text-sm" role="status">
+				« Réinitialiser » remplace les {blocks.length} section{blocks.length > 1 ? 's' : ''} à l'écran
+				par la version d'origine de la page, celle qui est écrite dans le code du site. Rien ne part
+				en base avant que vous enregistriez.
+			</p>
+		{/if}
+
+		{#if resetError}
+			<p class="bg-danger text-paper px-4 py-2 text-sm font-medium" role="status">{resetError}</p>
+		{/if}
 
 		{#if form?.message}
 			<p class="border-ink/12 bg-cream border-t px-4 py-2 text-sm" role="status">{form.message}</p>
