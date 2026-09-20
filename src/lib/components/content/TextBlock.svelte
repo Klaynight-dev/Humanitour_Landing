@@ -53,7 +53,7 @@
 {/snippet}
 
 {#snippet content()}
-	<RichText doc={read.doc('body')} />
+	<RichText doc={read.doc('body')} {surface} />
 
 	{#if items.length > 0}
 		<div class="mt-10 grid gap-8 sm:grid-cols-2">

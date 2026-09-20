@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
+	import Dialog from '$components/admin/Dialog.svelte';
 	import EmptyState from '$components/admin/EmptyState.svelte';
 	import Flash from '$components/admin/Flash.svelte';
 	import PageHeader from '$components/admin/PageHeader.svelte';
@@ -34,6 +36,26 @@
 
 	const mapped = $derived(data.questions.filter((question) => question.openformsKey).length);
 
+	/**
+	 * Suivi de la synchronisation, dans une fenetre.
+	 *
+	 * Une passe lit le formulaire distant, le compare a la base et ecrit par
+	 * lots : sur mille repondants, cela prend plusieurs secondes pendant
+	 * lesquelles un bouton muet laisse croire a une page figee — et invite a
+	 * cliquer une seconde fois. La fenetre dit ce qui se passe, puis ce qui
+	 * s'est passe.
+	 */
+	interface SyncReport {
+		readonly ok: boolean;
+		readonly message: string;
+		readonly fetched?: number;
+		readonly created?: number;
+		readonly rejected?: number;
+	}
+
+	let syncing = $state(false);
+	let syncReport = $state<SyncReport | null>(null);
+
 	/** Intitules des declencheurs. Le journal dit « par quoi », pas « MANUAL ». */
 	const TRIGGERS: Record<string, string> = {
 		MANUAL: 'à la main',
@@ -54,7 +76,17 @@
 	description="Openforms est le seul canal de collecte. Ce site en publie le miroir."
 />
 
-<Flash message={form?.message} />
+<Flash message={form?.message}>
+	{#if form?.skipped?.length}
+		<!-- Les champs distants qu'aucune question ne recevra. Un ecart tu est un
+		     ecart qui dure. -->
+		<ul class="mt-2 flex list-disc flex-col gap-1 pl-5">
+			{#each form.skipped as line (line)}
+				<li class="text-muted text-sm">{line}</li>
+			{/each}
+		</ul>
+	{/if}
+</Flash>
 
 {#if !data.configured}
 	<EmptyState
@@ -155,7 +187,10 @@
 
 	{#if data.live?.summary && data.live.summary.activity.length > 0}
 		<div class="mt-6">
-			<Panel title="Activité" description="Soumissions par jour, trente derniers jours, chez Openforms.">
+			<Panel
+				title="Activité"
+				description="Soumissions par jour, trente derniers jours, chez Openforms."
+			>
 				<TrendChart
 					points={data.live.summary.activity.map((point) => ({
 						key: point.date,
@@ -215,10 +250,23 @@
 			description="Quelle question de l’enquête reçoit quel champ du formulaire. Une question sans champ n’est jamais alimentée."
 		>
 			{#if data.questions.length === 0}
+				<!--
+					Le cas de l'enquete vide n'est plus un cul-de-sac : le formulaire
+					distant porte deja le questionnaire, autant le reprendre d'un
+					bouton plutot que de le ressaisir champ par champ.
+				-->
 				<p class="text-muted text-sm">
-					Cette enquête n’a aucune question. Ajoutez-en depuis la fiche du sondage avant
-					d’établir la correspondance.
+					Cette enquête n’a aucune question. Reprenez celles du formulaire, ou ajoutez-les à la main
+					depuis la fiche du sondage.
 				</p>
+				<form method="POST" action="?/importQuestions" class="mt-4">
+					<button
+						type="submit"
+						class="bg-ink text-paper press rounded-pill inline-flex min-h-11 items-center px-4 py-2 text-sm font-semibold"
+					>
+						Reprendre le questionnaire d’Openforms
+					</button>
+				</form>
 			{:else}
 				<form method="POST" action="?/map" class="flex flex-col gap-4">
 					<!--
@@ -295,8 +343,16 @@
 						>
 							Proposer une correspondance
 						</button>
+						<button
+							type="submit"
+							formaction="?/importQuestions"
+							class="border-ink/25 press bg-paper rounded-pill inline-flex min-h-11 items-center border px-4 py-2 text-sm font-medium"
+						>
+							Reprendre les champs manquants
+						</button>
 						<span class="text-muted text-xs">
-							La proposition compare les libellés et ne touche pas aux champs déjà associés.
+							La proposition compare les libellés et ne touche pas aux champs déjà associés. La
+							reprise crée les questions absentes, avec leurs modalités.
 						</span>
 					</div>
 				</form>
@@ -306,12 +362,48 @@
 
 	<!-- ÉTAPE 4 : synchroniser -->
 	<div class="mt-6 flex flex-wrap gap-3">
-		<form method="POST" action="?/sync">
+		<form
+			method="POST"
+			action="?/sync"
+			use:enhance={() => {
+				syncing = true;
+				syncReport = null;
+
+				return async ({ result, update }) => {
+					if (result.type === 'success') {
+						const data = (result.data ?? {}) as {
+							message?: string;
+							outcome?: { fetched: number; created: number; rejected: number };
+						};
+						syncReport = {
+							ok: true,
+							message: data.message ?? 'Passe terminée.',
+							...data.outcome
+						};
+					} else if (result.type === 'failure') {
+						syncReport = {
+							ok: false,
+							message:
+								((result.data ?? {}) as { message?: string }).message ??
+								'La synchronisation a échoué.'
+						};
+					} else {
+						syncReport = { ok: false, message: 'La synchronisation n’a pas abouti.' };
+					}
+
+					syncing = false;
+					// `update` rafraichit les compteurs de la page : sans lui, l'ecart
+					// affiche resterait celui d'avant la passe.
+					await update({ reset: false });
+				};
+			}}
+		>
 			<button
 				type="submit"
-				class="bg-ink text-paper press rounded-pill inline-flex min-h-11 items-center px-4 py-2 text-sm font-semibold"
+				disabled={syncing}
+				class="bg-ink text-paper press rounded-pill inline-flex min-h-11 items-center px-4 py-2 text-sm font-semibold disabled:opacity-60"
 			>
-				Synchroniser maintenant
+				{syncing ? 'Synchronisation en cours…' : 'Synchroniser maintenant'}
 			</button>
 		</form>
 		<form method="POST" action="?/unlink">
@@ -330,52 +422,54 @@
 			emptyTitle="Aucune synchronisation"
 			emptyDescription="Lancez une première passe pour reprendre les réponses déjà collectées."
 		>
+			<!-- Pas de `<tr>` ici : `Table` pose deja la ligne d'entete autour de ce
+			     snippet. En imbriquer une seconde donnait un `<tr>` dans un `<tr>`,
+			     que le navigateur defait a sa facon — et l'hydratation ne retombait
+			     plus sur ses pieds. -->
 			{#snippet head()}
-				<tr>
-					<th class="px-5 py-3 text-left">Quand</th>
-					<th class="px-3 py-3 text-left">Déclenchée</th>
-					<th class="px-3 py-3 text-left">Issue</th>
-					<th class="px-3 py-3 text-right">Lues</th>
-					<th class="px-3 py-3 text-right">Reprises</th>
-					<th class="px-5 py-3 text-right">Refusées</th>
-				</tr>
+				<th class="px-5 py-3 text-left">Quand</th>
+				<th class="px-3 py-3 text-left">Déclenchée</th>
+				<th class="px-3 py-3 text-left">Issue</th>
+				<th class="px-3 py-3 text-right">Lues</th>
+				<th class="px-3 py-3 text-right">Reprises</th>
+				<th class="px-5 py-3 text-right">Refusées</th>
 			{/snippet}
 
 			{#snippet body()}
 				{#each data.syncs as pass (pass.id)}
-				<tr class="border-ink/12 border-t align-top">
-					<td class="px-5 py-3 text-sm">{formatDate(pass.startedAt)}</td>
-					<td class="px-3 py-3 text-sm">
-						{TRIGGERS[pass.trigger] ?? pass.trigger}
-						{#if pass.author}<span class="text-muted block text-xs">{pass.author}</span>{/if}
-					</td>
-					<td class="px-3 py-3">
-						<StatusBadge status={pass.status} />
-						{#if pass.message}
-							<p class="text-muted mt-1 max-w-md text-xs">{pass.message}</p>
-						{/if}
-					</td>
-					<td class="tabular px-3 py-3 text-right text-sm">{formatCount(pass.fetched)}</td>
-					<td class="tabular px-3 py-3 text-right text-sm">{formatCount(pass.created)}</td>
-					<td class="tabular px-5 py-3 text-right text-sm">
-						{formatCount(pass.rejected)}
-						{#if pass.errors.length > 0}
-							<!--
+					<tr class="border-ink/12 border-t align-top">
+						<td class="px-5 py-3 text-sm">{formatDate(pass.startedAt)}</td>
+						<td class="px-3 py-3 text-sm">
+							{TRIGGERS[pass.trigger] ?? pass.trigger}
+							{#if pass.author}<span class="text-muted block text-xs">{pass.author}</span>{/if}
+						</td>
+						<td class="px-3 py-3">
+							<StatusBadge status={pass.status} />
+							{#if pass.message}
+								<p class="text-muted mt-1 max-w-md text-xs">{pass.message}</p>
+							{/if}
+						</td>
+						<td class="tabular px-3 py-3 text-right text-sm">{formatCount(pass.fetched)}</td>
+						<td class="tabular px-3 py-3 text-right text-sm">{formatCount(pass.created)}</td>
+						<td class="tabular px-5 py-3 text-right text-sm">
+							{formatCount(pass.rejected)}
+							{#if pass.errors.length > 0}
+								<!--
 								Les rejets sont replies mais presents : une synchronisation ne
 								masque jamais un refus, elle evite seulement d'en noyer la liste.
 							-->
-							<details class="mt-2 text-left">
-								<summary class="cursor-pointer text-xs font-semibold">Voir les motifs</summary>
-								<ul class="mt-2 flex flex-col gap-1">
-									{#each pass.errors as rejection (rejection.submission + rejection.field)}
-										<li class="text-muted text-xs">
-											<span class="font-semibold">{rejection.field}</span>
-											= « {rejection.value} » — {rejection.reason}
-										</li>
-									{/each}
-								</ul>
-							</details>
-						{/if}
+								<details class="mt-2 text-left">
+									<summary class="cursor-pointer text-xs font-semibold">Voir les motifs</summary>
+									<ul class="mt-2 flex flex-col gap-1">
+										{#each pass.errors as rejection (rejection.submission + rejection.field)}
+											<li class="text-muted text-xs">
+												<span class="font-semibold">{rejection.field}</span>
+												= « {rejection.value} » — {rejection.reason}
+											</li>
+										{/each}
+									</ul>
+								</details>
+							{/if}
 						</td>
 					</tr>
 				{/each}
@@ -383,3 +477,69 @@
 		</Table>
 	</div>
 {/if}
+
+<!--
+	Le suivi de la passe.
+
+	Elle s'ouvre au clic et reste ouverte jusqu'au verdict : c'est le seul
+	moment ou le back-office fait attendre plusieurs secondes, et un ecran qui
+	ne dit rien pendant ce temps se fait cliquer deux fois.
+
+	Pas d'animation d'attente : la charte n'admet aucune boucle (DESIGN.md,
+	MOTION 2). L'etat se lit, il ne tourne pas — et `aria-live` le dit aussi a
+	qui ne voit pas l'ecran.
+-->
+<Dialog
+	open={syncing || syncReport !== null}
+	title={syncing ? 'Synchronisation en cours' : 'Synchronisation terminée'}
+	onClose={() => (syncReport = null)}
+>
+	<div aria-live="polite" aria-busy={syncing}>
+		{#if syncing}
+			<p>Cette passe lit le formulaire chez Openforms, le compare à la base, puis écrit.</p>
+			<p class="text-muted mt-2">
+				Sur un millier de répondants, comptez quelques secondes. Les réponses déjà reprises ne le
+				sont pas deux fois : vous pouvez fermer cette fenêtre, la passe continue.
+			</p>
+		{:else if syncReport}
+			<p class={syncReport.ok ? '' : 'text-danger'}>{syncReport.message}</p>
+
+			{#if syncReport.fetched !== undefined}
+				<dl class="border-ink/12 mt-4 grid grid-cols-3 gap-3 border-t pt-4">
+					<div>
+						<dt class="text-muted text-xs">Lues chez Openforms</dt>
+						<dd class="font-display text-2xl">{formatCount(syncReport.fetched)}</dd>
+					</div>
+					<div>
+						<dt class="text-muted text-xs">Reprises ici</dt>
+						<dd class="font-display text-2xl">{formatCount(syncReport.created ?? 0)}</dd>
+					</div>
+					<div>
+						<dt class="text-muted text-xs">Refusées</dt>
+						<dd class="font-display text-2xl">{formatCount(syncReport.rejected ?? 0)}</dd>
+					</div>
+				</dl>
+
+				{#if (syncReport.rejected ?? 0) > 0}
+					<!-- Un rejet ne se tait pas : le journal en donne la soumission, le
+					     champ et la valeur fautive, juste sous cette fenetre. -->
+					<p class="text-muted mt-3 text-xs">
+						Le motif de chaque refus est détaillé dans le journal des synchronisations, en bas de
+						cette page.
+					</p>
+				{/if}
+			{/if}
+		{/if}
+	</div>
+
+	{#snippet footer()}
+		<button
+			type="button"
+			disabled={syncing}
+			onclick={() => (syncReport = null)}
+			class="border-ink/25 press bg-paper rounded-pill inline-flex min-h-11 items-center border px-4 py-2 text-sm font-medium disabled:opacity-60"
+		>
+			Fermer
+		</button>
+	{/snippet}
+</Dialog>

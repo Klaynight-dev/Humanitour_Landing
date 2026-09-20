@@ -94,7 +94,7 @@
 		{/if}
 
 		<div class="mt-6 text-lg">
-			<RichText doc={read.doc('body')} />
+			<RichText doc={read.doc('body')} {surface} />
 		</div>
 
 		<Buttons items={read.list('buttons')} {surface} />
@@ -181,7 +181,7 @@
 			</dl>
 
 			<div class="mt-6 leading-relaxed {mutedClass(surface)}">
-				<RichText doc={read.doc('itemsNote')} />
+				<RichText doc={read.doc('itemsNote')} {surface} />
 			</div>
 		</div>
 	{:else if aside === 'carte'}

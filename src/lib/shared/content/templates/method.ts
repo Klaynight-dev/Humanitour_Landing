@@ -143,7 +143,6 @@ export const methodTemplate: ContentTemplate = {
 			data: {
 				title: 'La collecte',
 				body: COLLECTE_BODY,
-				layout: 'encadre',
 				surface: 'cream',
 				spacing: 'compact'
 			}
@@ -164,7 +163,6 @@ export const methodTemplate: ContentTemplate = {
 					}
 				],
 				note: 'Les exports bruts suivent la même logique : ils contiennent les tranches et non les valeurs exactes, et les réponses en texte libre en sont exclues, parce qu’un verbatim identifie son auteur par son contenu.',
-				layout: 'encadre',
 				surface: 'ink',
 				spacing: 'compact'
 			}

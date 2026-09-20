@@ -11,7 +11,7 @@
 
 export const SITE = {
 	name: 'Humanitour',
-	tagline: "L'institut de sondage citoyen",
+	tagline: 'le sondage sans détour',
 	description:
 		'Un institut de sondage citoyen : 4 000 kilomètres à vélo, 1 000 personnes rencontrées en face-à-face, et la totalité des données brutes publiées.',
 	email: 'contact@humanitour.fr',
@@ -131,37 +131,31 @@ export const INCUBATOR = {
 } as const;
 
 /**
- * Les cinq engagements de l association, repris de sa plaquette.
+ * Les quatre piliers de l association, tels que reformules par Côme Moudenner
+ * (référent des sondages) le 20 septembre 2026 pour la section d accueil
+ * « Le premier vrai institut de sondage ».
  *
- * C est sa propre definition d elle-meme, pas une liste d arguments ecrite pour
- * le site.
- *
- * Une divergence assumee avec la source : la plaquette ecrit « ponderer et
- * contextualiser les resultats ». La ponderation est explicitement exclue par
- * AGENTS.md § 6, et c est le reproche central adresse aux autres instituts.
- * Le mot est donc retire ici plutot qu affiche puis dementi par le produit.
- * A trancher avec l association avant mise en production.
+ * Remplace l ancienne liste a cinq entrees, reprise mot pour mot de la
+ * plaquette : celle-ci ecrivait « ponderer et contextualiser les resultats »,
+ * explicitement exclu par AGENTS.md § 6. La formulation courte, validee par
+ * l association elle-meme, n a plus ce probleme.
  */
 export const PILLARS = [
 	{
 		title: 'Citoyen',
-		body: "Un institut qui appartient aux citoyennes et citoyens adhérents. Humanitour est une association à but non lucratif, incubée par l'ESS."
+		body: 'Humanitour vous appartient. Adhérez ! Nous sommes une association à but non lucratif.'
 	},
 	{
-		title: 'Local',
-		body: "Des sondages humains, sur le terrain, au plus près de chacun, pour arrêter d'invisibiliser une partie de la population."
+		title: 'Humain',
+		body: 'Nos sondages se font aussi sur le terrain, pour inclure toute la population.'
 	},
 	{
 		title: 'Indépendant',
-		body: "Des questions choisies par les citoyens, qui s'imposent aux médias et aux politiques publiques."
+		body: 'Les questions sont choisies par les citoyens, et non par les médias ou les politiques.'
 	},
 	{
 		title: 'Transparent',
-		body: 'Les méthodes, les données et les témoignages partagés en toute transparence, pour faire progresser le débat public.'
-	},
-	{
-		title: 'Sociologique',
-		body: 'Informer, considérer les non-réponses, poser des questions ouvertes et non binaires, contextualiser les résultats.'
+		body: 'Les méthodes, données et témoignages partagés en toute transparence.'
 	}
 ] as const;
 
@@ -205,6 +199,11 @@ export const LINKS = {
 		label: 'Discord',
 		href: 'https://discord.gg/qdFMQFUZ5M',
 		description: 'Rejoins la communauté et suis le tour en direct.'
+	},
+	instagram: {
+		label: 'Instagram',
+		href: 'https://www.instagram.com/humanitour.france/',
+		description: 'Suis le tour et les coulisses en photos.'
 	},
 	// TODO confirmer l URL exacte de la campagne avant mise en production.
 	helloasso: {

@@ -247,3 +247,81 @@ describe('cas limites d agregation', () => {
 		expect(result.cells.get('bretagne')?.get('sante')?.count).toBe(1);
 	});
 });
+
+describe('redressement', () => {
+	/** Poids : les « oui » comptent double, les « non » pour un. */
+	function doubleTheYes(rows: readonly AnswerRow[]): Map<string, number> {
+		return new Map(rows.map((row) => [row.responseId, row.modalityKey === 'oui' ? 2 : 1]));
+	}
+
+	it('ne rend aucun chiffre redresse quand aucun poids n est fourni', () => {
+		const rows = [...answers('oui', 6), ...answers('non', 6)];
+		const result = distribution(rows, YES_NO);
+
+		expect(result.weightedRespondents).toBeNull();
+		expect(result.bars.every((bar) => bar.weightedCount === null)).toBe(true);
+	});
+
+	it('laisse le comptage brut intact quand un redressement est actif', () => {
+		const rows = [...answers('oui', 6), ...answers('non', 6)];
+		const result = distribution(rows, YES_NO, { weights: doubleTheYes(rows) });
+
+		const oui = result.bars.find((bar) => bar.key === 'oui');
+		expect(oui?.count).toBe(6);
+		expect(oui?.share).toBeCloseTo(0.5, 6);
+		expect(oui?.weightedCount).toBe(12);
+		expect(oui?.weightedShare).toBeCloseTo(12 / 18, 6);
+	});
+
+	it('UNE CASE MASQUEE EN BRUT RESTE MASQUEE EN REDRESSE', () => {
+		// Le point de surete du fichier : trois repondants peses 2,0 font 6,0, et
+		// un seuil compare a 6,0 publierait une case qui ne repose que sur trois
+		// personnes.
+		const rows = [...answers('oui', 3), ...answers('non', 40)];
+		const result = distribution(rows, YES_NO, { threshold: 5, weights: doubleTheYes(rows) });
+
+		const oui = result.bars.find((bar) => bar.key === 'oui');
+		expect(oui?.suppressed).toBe(true);
+		expect(oui?.count).toBeNull();
+		expect(oui?.weightedCount).toBeNull();
+		expect(oui?.weightedShare).toBeNull();
+	});
+
+	it('pese aussi les cases d un tableau croise, sans deplacer le masquage', () => {
+		const rows: AnswerRow[] = [
+			{ responseId: 'a', modalityKey: 'oui' },
+			{ responseId: 'b', modalityKey: 'oui' },
+			{ responseId: 'c', modalityKey: 'non' }
+		];
+		const region: AnswerRow[] = [
+			{ responseId: 'a', modalityKey: 'bretagne' },
+			{ responseId: 'b', modalityKey: 'bretagne' },
+			{ responseId: 'c', modalityKey: 'bretagne' }
+		];
+		const weights = new Map([
+			['a', 3],
+			['b', 3],
+			['c', 1]
+		]);
+
+		const table = crosstab(rows, region, YES_NO, [modality('bretagne')], {
+			threshold: 1,
+			weights
+		});
+
+		const cell = table.cells.get('oui')?.get('bretagne');
+		expect(cell?.count).toBe(2);
+		expect(cell?.weightedCount).toBe(6);
+		// Part au sein de la ligne « oui » : la base redressee est celle de la ligne.
+		expect(cell?.weightedShare).toBeCloseTo(1, 6);
+	});
+
+	it('compte le repondant sans poids connu pour 1, jamais pour 0', () => {
+		// Un repondant arrive apres le calcul des poids ne doit pas disparaitre du
+		// total : il pese 1, comme avant tout redressement.
+		const rows = [...answers('oui', 2)];
+		const result = distribution(rows, YES_NO, { weights: new Map() });
+
+		expect(result.weightedRespondents).toBe(2);
+	});
+});

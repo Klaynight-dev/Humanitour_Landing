@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { closeAfter } from '$components/admin/enhance';
 	import Dialog from '$components/admin/Dialog.svelte';
 	import FilterBar from '$components/admin/FilterBar.svelte';
 	import Flash from '$components/admin/Flash.svelte';
@@ -204,7 +205,16 @@
 	{/snippet}
 </Table>
 
-<form bind:this={deleteForm} method="POST" action="?/delete" use:enhance class="hidden">
+<form
+	bind:this={deleteForm}
+	method="POST"
+	action="?/delete"
+	use:enhance={closeAfter(() => {
+		deleteTarget = null;
+		confirmation = '';
+	})}
+	class="hidden"
+>
 	<input type="hidden" name="id" value={deleteTarget?.id ?? ''} />
 	<input type="hidden" name="confirmation" value={confirmation} />
 </form>

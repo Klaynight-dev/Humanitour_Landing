@@ -170,6 +170,18 @@ synchronisation va relire les données avec la clé `ofk_`, qui fait autorité.
 Conséquence heureuse : rien à modifier dans Openforms, son champ `webhookUrl`
 par formulaire suffit.
 
+**Le questionnaire se reprend, il ne se ressaisit pas.** Openforms porte déjà
+les champs, leurs libellés et leurs modalités : le back-office les reprend en un
+bouton (« Reprendre le questionnaire d'Openforms »), et à la liaison d'un
+formulaire c'est fait automatiquement. La reprise ne comble que les trous —
+relancer deux fois ne crée rien la seconde. Elle **écarte** ce qu'elle ne sait
+pas recevoir et le dit : un type sans question équivalente (date, grille), un
+champ identifiant par son type (courriel, adresse, signature), et un champ dont
+le **libellé** annonce une donnée identifiante. Ce dernier contrôle n'est pas un
+doublon de `normalize/identifying` : celui-ci ne voit que les clés, et le
+builder d'Openforms en engendre d'opaques (`champ_mrkpxig1_2`), où aucun motif
+ne peut reconnaître « Nom et prénom ».
+
 **Répondre depuis `humanitour.fr`.** `/repondre` liste les enquêtes ouvertes,
 `/repondre/<slug>` rend le questionnaire **nativement** — ni iframe, ni script
 tiers, ni cookie supplémentaire — à partir de sa définition lue chez Openforms,

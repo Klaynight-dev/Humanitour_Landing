@@ -12,9 +12,11 @@ import {
 import { isConfigured, OpenformsError } from '$lib/server/openforms/client';
 import { syncSurvey } from '$lib/server/openforms/sync';
 import { suggestMapping, type MappableField } from '$lib/server/normalize/mapper';
+import { planQuestionsFromForm, type ImportPlan } from '$lib/server/openforms/schema-import';
 import { requirePermission } from '$lib/server/rbac/guard';
 import { inspectForm, type UsabilityReport } from '$lib/shared/openforms/usability';
 import { getFieldType } from '$lib/shared/openforms/fields';
+import { QUESTION_TYPES } from '$lib/shared/questions';
 import type { OpenformsForm } from '$lib/shared/openforms/types';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -211,6 +213,121 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 /**
+ * Les champs ecartes, en une ligne chacun.
+ *
+ * Ils se lisent, ils ne se taisent pas : un champ distant sans question est un
+ * ecart entre ce qu'Openforms recueille et ce que ce site publie, et c'est
+ * exactement le genre d'ecart que l'institut reproche aux autres de laisser
+ * dans l'ombre.
+ */
+function describeSkipped(plan: ImportPlan): string[] {
+	return plan.skipped.map((entry) => `« ${entry.label} » — ${entry.reason}`);
+}
+
+/**
+ * Cree les questions manquantes a partir du formulaire distant.
+ *
+ * Openforms porte deja le questionnaire ; le ressaisir ici a la main est un
+ * travail de copie, et une occasion de se tromper. La regle de composition est
+ * la meme que pour la proposition de correspondance : on ne comble que les
+ * trous, on ne retouche rien.
+ *
+ * Le plan est calcule a part (`openforms/schema-import`), sans base ni reseau.
+ * Cette fonction ne fait que l'ecrire.
+ */
+async function importQuestions(surveyId: string, formId: string): Promise<ImportPlan> {
+	const [form, existing] = await Promise.all([
+		fetchForm(formId),
+		prisma.question.findMany({
+			where: { surveyId },
+			orderBy: { position: 'asc' },
+			select: {
+				id: true,
+				code: true,
+				label: true,
+				openformsKey: true,
+				position: true,
+				options: { select: { code: true, position: true } }
+			}
+		})
+	]);
+
+	const plan = planQuestionsFromForm(
+		form.fields,
+		existing.map((question) => ({
+			code: question.code,
+			label: question.label,
+			openformsKey: question.openformsKey,
+			optionCodes: question.options.map((option) => option.code)
+		}))
+	);
+
+	// Les modalites apparues depuis la derniere reprise, posees a la suite des
+	// existantes : renumeroter celles d'avant deplacerait un ordre d'affichage
+	// que quelqu'un a peut-etre regle a la main.
+	const byCode = new Map(existing.map((question) => [question.code, question]));
+
+	for (const addition of plan.additions) {
+		const question = byCode.get(addition.questionCode);
+		if (!question) continue;
+
+		let position = question.options.reduce((max, option) => Math.max(max, option.position), -1);
+
+		await prisma.questionOption.createMany({
+			data: addition.options.map((option) => {
+				position += 1;
+				return {
+					questionId: question.id,
+					code: option.code,
+					label: option.label,
+					position,
+					isNonResponse: option.isNonResponse,
+					color: option.color
+				};
+			})
+		});
+	}
+
+	if (plan.drafts.length === 0) return plan;
+
+	let position = existing.reduce((max, question) => Math.max(max, question.position), -1);
+
+	// Une seule transaction : une enquete a moitie peuplee, avec une question sur
+	// deux reliee, serait plus penible a rattraper qu'un echec franc.
+	await prisma.$transaction(
+		plan.drafts.map((draft) => {
+			position += 1;
+			const definition = QUESTION_TYPES.find((candidate) => candidate.key === draft.type);
+			const config = definition?.parseConfig({});
+
+			return prisma.question.create({
+				data: {
+					surveyId,
+					code: draft.code,
+					label: draft.label,
+					type: draft.type,
+					position,
+					openformsKey: draft.openformsKey,
+					config: config?.ok ? (config.config as never) : {},
+					isCrossable: definition?.crossable ?? true,
+					options: {
+						create: draft.options.map((option) => ({
+							code: option.code,
+							label: option.label,
+							position: option.position,
+							isNonResponse: option.isNonResponse,
+							color: option.color
+						}))
+					}
+				}
+			});
+		})
+	);
+
+	return plan;
+}
+
+/**
  * Propose une correspondance et l'enregistre.
  *
  * Ne comble QUE les trous : une question deja reliee n'est pas touchee, et un
@@ -268,7 +385,8 @@ export const actions: Actions = {
 		const remote = (await availableForms(params.id)).find((entry) => entry.id === formId);
 		if (!remote) {
 			return fail(400, {
-				message: "Ce formulaire n'est pas disponible : il est peut-être déjà relié à une autre enquête."
+				message:
+					"Ce formulaire n'est pas disponible : il est peut-être déjà relié à une autre enquête."
 			});
 		}
 
@@ -284,6 +402,21 @@ export const actions: Actions = {
 			}
 		});
 
+		// Les questions d'abord : une enquete vide reliee a un formulaire rempli
+		// n'a rien a quoi faire correspondre, et la minuterie echouerait a chaque
+		// tour sans que personne ne comprenne pourquoi.
+		let created = 0;
+		let skipped: string[] = [];
+		try {
+			const plan = await importQuestions(params.id, remote.id);
+			created = plan.drafts.length;
+			skipped = describeSkipped(plan);
+		} catch (cause) {
+			// La liaison vaut mieux que la reprise du questionnaire : l'operateur
+			// pourra la relancer d'un bouton.
+			console.error('[openforms] reprise du questionnaire impossible :', cause);
+		}
+
 		let suggested = 0;
 		try {
 			suggested = await proposeMapping(params.id, remote.id);
@@ -298,11 +431,72 @@ export const actions: Actions = {
 			action: 'openforms.link',
 			entity: 'Survey',
 			entityId: params.id,
-			metadata: { formId: remote.id, slug: remote.slug, suggested }
+			metadata: { formId: remote.id, slug: remote.slug, created, suggested }
 		});
 
 		return {
-			message: `Formulaire « ${remote.title} » relié. ${suggested} correspondance(s) proposée(s), vérifiez-les avant de synchroniser.`
+			message: `Formulaire « ${remote.title} » relié. ${created} question(s) reprise(s) du formulaire, ${suggested} correspondance(s) proposée(s) sur les autres. Vérifiez-les avant de synchroniser.`,
+			skipped
+		};
+	},
+
+	/**
+	 * Reprend le questionnaire distant sur une enquete deja reliee.
+	 *
+	 * Le pendant de « proposer la correspondance » : celle-ci relie des questions
+	 * existantes, celle-la les cree. Separees, parce qu'une enquete peut avoir
+	 * ete ecrite a la main ici avant d'etre reliee la-bas, et que l'operateur
+	 * doit pouvoir choisir.
+	 */
+	importQuestions: async ({ params, locals }) => {
+		const user = requirePermission(locals.user, 'survey.write');
+
+		const survey = await prisma.survey.findUnique({
+			where: { id: params.id },
+			select: { openformsFormId: true }
+		});
+		if (!survey?.openformsFormId) {
+			return fail(400, { message: "Reliez d'abord un formulaire à cette enquête." });
+		}
+
+		let plan: ImportPlan;
+		try {
+			plan = await importQuestions(params.id, survey.openformsFormId);
+		} catch (cause) {
+			const message =
+				cause instanceof OpenformsError
+					? cause.message
+					: 'Openforms est injoignable pour une raison inattendue.';
+			return fail(400, { message });
+		}
+
+		await recordAudit({
+			actorId: user.id,
+			action: 'openforms.import',
+			entity: 'Survey',
+			entityId: params.id,
+			metadata: { formId: survey.openformsFormId, created: plan.drafts.length }
+		});
+
+		const skipped = describeSkipped(plan);
+		const added = plan.additions.reduce((total, entry) => total + entry.options.length, 0);
+		const reconciled =
+			added > 0
+				? ` ${added} modalité(s) ajoutée(s) à des questions existantes, apparues dans le formulaire depuis la dernière reprise.`
+				: '';
+
+		if (plan.drafts.length === 0) {
+			const nothing =
+				skipped.length > 0
+					? 'Aucune question à reprendre : tout le reste du formulaire est déjà relié ou écarté.'
+					: 'Aucune question à reprendre : le formulaire est déjà entièrement relié.';
+
+			return { message: added > 0 ? reconciled.trim() : nothing, skipped };
+		}
+
+		return {
+			message: `${plan.drafts.length} question(s) reprise(s) du formulaire, avec leurs modalités. Relisez-les : les libellés sont ceux d'Openforms.${reconciled}`,
+			skipped
 		};
 	},
 
@@ -428,7 +622,15 @@ export const actions: Actions = {
 			outcome.rejected > 0 ? `, ${outcome.rejected} refusée(s) — voir le détail ci-dessous` : '';
 
 		return {
-			message: `${outcome.fetched} soumission(s) lue(s), ${outcome.created} reprise(s)${rejected}.`
+			message: `${outcome.fetched} soumission(s) lue(s), ${outcome.created} reprise(s)${rejected}.`,
+			// Les trois compteurs a part, et pas seulement dans la phrase : la
+			// fenetre de suivi les affiche un par un, et redecouper une phrase
+			// pour les retrouver serait une invitation a ce qu'ils divergent.
+			outcome: {
+				fetched: outcome.fetched,
+				created: outcome.created,
+				rejected: outcome.rejected
+			}
 		};
 	},
 

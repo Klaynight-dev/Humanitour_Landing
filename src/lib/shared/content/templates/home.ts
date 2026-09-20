@@ -6,12 +6,13 @@ import type { ContentTemplate } from './types';
 /**
  * L'accueil, tel qu'il a ete compose.
  *
- * Dix sections, dans l'ordre de lecture : la couverture pose la scene, le
+ * Onze sections, dans l'ordre de lecture : la couverture pose la scene, le
  * tableau oppose le plateau au terrain, les questions disent ce qui a ete
  * demande, la methode dit pourquoi c'etait a velo, le reportage montre ce que
- * ca a produit, Bourdieu donne le cadre, le cout dit qui paie les sondages des
- * autres, l'equipe repond a la question que cette section pose, les
- * engagements repondent de l'institut, et la cloture propose d'y adherer.
+ * ca a produit, l'infolettre propose de suivre la suite, Bourdieu donne le
+ * cadre, le cout dit qui paie les sondages des autres, l'equipe repond a la
+ * question que cette section pose, les piliers repondent de l'institut, et la
+ * cloture propose d'y adherer.
  *
  * Les valeurs chiffrees viennent de `shared/site.ts`, source unique reprise de
  * la plaquette : recopier « 4 000 km » ici en ferait une seconde verite.
@@ -160,12 +161,19 @@ export const homeTemplate: ContentTemplate = {
 				highlightStyle: 'brand',
 				figures: FIGURES,
 				body: "Pour rompre avec l'opacité des sondages, nous allons tout vous partager dans une série documentaire. La quasi-totalité des personnes rencontrées ont accepté de partager leur vote et chaque soir nous avons été hébergés chez les français·es.",
-				buttons: [
-					{ label: 'S’abonner pour être informé·e', href: '/infolettre', variant: 'outline' }
-				],
 				aside: 'photos',
 				asideLink: '/galerie',
 				surface: 'mesh',
+				spacing: 'ample'
+			}
+		},
+		{
+			type: 'newsletter',
+			data: {
+				title: 'Être prévenu·e à la sortie',
+				intro:
+					"Les résultats de l'enquête et la série documentaire seront publiés ici. Laissez votre adresse : nous n'écrivons que lorsqu'il y a quelque chose à lire.",
+				surface: 'paper',
 				spacing: 'ample'
 			}
 		},
@@ -210,7 +218,7 @@ export const homeTemplate: ContentTemplate = {
 		{
 			type: 'definitions',
 			data: {
-				title: 'Ce que veut dire « institut de sondage citoyen »',
+				title: 'Le premier vrai institut de sondage',
 				items: PILLARS.map((pillar) => ({ term: pillar.title, body: pillar.body })),
 				layout: 'etroite',
 				buttons: [
@@ -226,11 +234,11 @@ export const homeTemplate: ContentTemplate = {
 			type: 'cta',
 			data: {
 				title: "L'opinion publique n'est pas une marchandise",
-				intro:
-					'Le projet est associatif, sans publicité, sans revente de données et sans actionnaire à satisfaire. Il appartient à ses adhérents.',
+				intro: "Soutenez Humanitour, pour redonner la parole à chacun·e et le pouvoir aux citoyens.",
 				buttons: [
 					{ label: 'Adhérer sur HelloAsso', href: LINKS.helloasso.href, variant: 'primary' },
-					{ label: 'Rejoindre le Discord', href: LINKS.discord.href, variant: 'outline' }
+					{ label: 'Rejoindre le Discord', href: LINKS.discord.href, variant: 'outline' },
+					{ label: 'S’abonner aux réseaux', href: LINKS.instagram.href, variant: 'ghost' }
 				],
 				surface: 'brand',
 				spacing: 'ample'

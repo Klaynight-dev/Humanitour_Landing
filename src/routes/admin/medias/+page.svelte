@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { closeAfter } from '$components/admin/enhance';
 	import Dialog from '$components/admin/Dialog.svelte';
 	import FilterBar from '$components/admin/FilterBar.svelte';
 	import Flash from '$components/admin/Flash.svelte';
@@ -49,11 +50,19 @@
 			<form method="POST" action="?/create" use:enhance class="flex flex-wrap items-end gap-3">
 				<label class="flex min-w-56 flex-1 flex-col gap-1.5">
 					<span class="text-sm font-semibold">Titre</span>
-					<input name="title" required minlength="3" class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11" />
+					<input
+						name="title"
+						required
+						minlength="3"
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
+					/>
 				</label>
 				<label class="flex flex-col gap-1.5">
 					<span class="text-sm font-semibold">Nature</span>
-					<select name="kind" class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">
+					<select
+						name="kind"
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
+					>
 						{#each data.kinds as kind (kind.key)}
 							<option value={kind.key}>{kind.label}</option>
 						{/each}
@@ -154,7 +163,13 @@
 	{/snippet}
 </Table>
 
-<form bind:this={deleteForm} method="POST" action="?/delete" use:enhance class="hidden">
+<form
+	bind:this={deleteForm}
+	method="POST"
+	action="?/delete"
+	use:enhance={closeAfter(() => (deleteTarget = null))}
+	class="hidden"
+>
 	<input type="hidden" name="id" value={deleteTarget?.id ?? ''} />
 </form>
 

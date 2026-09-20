@@ -1,6 +1,6 @@
+import { collapseOther } from '../other';
 import {
 	asText,
-	flattenCell,
 	readSingle,
 	type FieldTypeDefinition,
 	type FieldValue,
@@ -36,14 +36,16 @@ function singleChoice(key: string, label: string): FieldTypeDefinition {
 			if (field.allowOther) return null;
 
 			const known = field.options.some((option) => option.value === chosen);
-			return known ? null : "Ce choix ne fait pas partie des réponses proposées.";
+			return known ? null : 'Ce choix ne fait pas partie des réponses proposées.';
 		},
 
 		toSubmission: (_field: OpenformsField, value: FieldValue) => asText(value).trim(),
 
 		readForm: readSingle,
 
-		toCell: flattenCell
+		// « Autre » se range dans sa modalite, le texte libre reste dehors
+		// (`shared/openforms/other`).
+		toCell: (value: unknown) => (typeof value === 'string' ? collapseOther(value) : value)
 	};
 }
 

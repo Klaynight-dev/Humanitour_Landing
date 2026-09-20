@@ -1,11 +1,15 @@
 <script lang="ts">
+	import type { SurfaceKey } from '$lib/shared/content/blocks/common';
 	import type { RichTextDoc, RichTextInline } from '$lib/shared/content/richtext';
+	import { mutedClass } from './content/surfaces';
 
 	interface Props {
 		doc: RichTextDoc;
+		/** Le fond sur lequel ce texte est pose : sur l'aplat noir, le gris fige devient illisible. */
+		surface?: SurfaceKey;
 	}
 
-	let { doc }: Props = $props();
+	let { doc, surface = 'paper' }: Props = $props();
 
 	function isStrong(run: RichTextInline): boolean {
 		return run.marks?.includes('strong') ?? false;
@@ -60,7 +64,7 @@
 		</ol>
 	{:else}
 		{#each block.items as item, itemIndex (itemIndex)}
-			<p class="measure text-ink-soft mt-4">{@render runs(item)}</p>
+			<p class="measure mt-4 {mutedClass(surface)}">{@render runs(item)}</p>
 		{/each}
 	{/if}
 {/each}

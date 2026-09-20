@@ -6,11 +6,21 @@ import { protectDistribution, protectTable, type ProtectedTable } from './anonym
  *
  * Deux invariants, qui sont la difference revendiquee avec les instituts prives :
  *
- *   - On compte, on ne pondere pas. Aucun redressement, meme « pour corriger
- *     l echantillon » (AGENTS.md section 6).
+ *   - Le comptage brut existe TOUJOURS. Depuis le 20 septembre 2026 un
+ *     redressement peut s ajouter, mais il s ajoute : il ne remplace rien. Les
+ *     champs `count` et `share` restent le comptage reel, `weightedCount` et
+ *     `weightedShare` viennent a cote, et c est l affichage qui choisit. Un
+ *     redressement qui ecraserait le brut serait exactement le redressement
+ *     opaque que l institut reproche aux autres.
  *   - La base des pourcentages est toujours le nombre de REPONDANTS, jamais le
  *     nombre de reponses. Pour une question a choix multiple, la somme des parts
  *     depasse donc 100 %, et c est la lecture honnete.
+ *
+ * LE POINT DE SURETE, a ne jamais defaire : le masquage se decide sur les
+ * effectifs BRUTS. Trois repondants peses 2,0 font 6,0, et un seuil compare a
+ * 6,0 publierait une case qui ne repose que sur trois personnes. Le
+ * redressement ne doit pas pouvoir relever une case sous le seuil : une case
+ * masquee en brut l est aussi en redresse, et `aggregate.test.ts` le verifie.
  *
  * L agregation ne lit que `modalityKey`. Elle n a aucun cas particulier a traiter
  * pour la non-reponse, qui arrive ici comme une modalite ordinaire.
@@ -25,6 +35,14 @@ export interface AggregateOptions {
 	readonly threshold?: number;
 	/** Inclure la modalite de non-reponse dans le resultat. Vrai par defaut. */
 	readonly includeNonResponses?: boolean;
+	/**
+	 * Poids par repondant, quand un redressement est actif.
+	 *
+	 * Absent, le resultat ne porte aucun chiffre redresse — et non des chiffres
+	 * redresses egaux aux bruts : « pas de redressement » et « un redressement
+	 * qui ne change rien » ne se disent pas de la meme facon a l ecran.
+	 */
+	readonly weights?: ReadonlyMap<string, number>;
 }
 
 export interface DistributionBar {
@@ -36,13 +54,21 @@ export interface DistributionBar {
 	readonly count: number | null;
 	/** Part des repondants, entre 0 et 1. `null` quand la case est masquee. */
 	readonly share: number | null;
+	/**
+	 * Effectif redresse. `null` sans redressement, et `null` des que la case est
+	 * masquee : le masquage se decide en brut et s applique aux deux lectures.
+	 */
+	readonly weightedCount: number | null;
+	readonly weightedShare: number | null;
 	readonly suppressed: boolean;
 }
 
 export interface DistributionResult {
 	readonly bars: readonly DistributionBar[];
-	/** Repondants distincts. Base de tous les pourcentages. */
+	/** Repondants distincts. Base de tous les pourcentages bruts. */
 	readonly respondents: number;
+	/** Somme des poids des repondants. `null` sans redressement. */
+	readonly weightedRespondents: number | null;
 	readonly threshold: number;
 	readonly suppressedCount: number;
 }
@@ -88,20 +114,51 @@ function countRespondents(answers: readonly AnswerRow[]): number {
 	return new Set(answers.map((answer) => answer.responseId)).size;
 }
 
-/** Effectifs par modalite, en repondants distincts. */
-function countByModality(answers: readonly AnswerRow[]): Map<string, number> {
+/** Somme des poids des repondants distincts. `null` sans redressement. */
+function weighRespondents(
+	answers: readonly AnswerRow[],
+	weights: ReadonlyMap<string, number> | undefined
+): number | null {
+	if (!weights) return null;
+
+	let total = 0;
+	for (const id of new Set(answers.map((answer) => answer.responseId))) {
+		total += weights.get(id) ?? 1;
+	}
+
+	return total;
+}
+
+/**
+ * Effectifs par modalite : bruts toujours, redresses si des poids sont fournis.
+ *
+ * Les deux se calculent dans la MEME passe, sur la meme deduplication. Deux
+ * parcours separes finiraient par diverger sur le jour ou la regle de
+ * deduplication change, et le redresse ne correspondrait plus au brut qu il est
+ * cense eclairer.
+ */
+function countByModality(
+	answers: readonly AnswerRow[],
+	weights: ReadonlyMap<string, number> | undefined
+): { raw: Map<string, number>; weighted: Map<string, number> | null } {
 	const seen = new Set<string>();
-	const counts = new Map<string, number>();
+	const raw = new Map<string, number>();
+	const weighted = weights ? new Map<string, number>() : null;
 
 	for (const answer of answers) {
 		const signature = `${answer.responseId}\u0000${answer.modalityKey}`;
 		if (seen.has(signature)) continue;
 
 		seen.add(signature);
-		counts.set(answer.modalityKey, (counts.get(answer.modalityKey) ?? 0) + 1);
+		raw.set(answer.modalityKey, (raw.get(answer.modalityKey) ?? 0) + 1);
+
+		if (weighted && weights) {
+			const weight = weights.get(answer.responseId) ?? 1;
+			weighted.set(answer.modalityKey, (weighted.get(answer.modalityKey) ?? 0) + weight);
+		}
 	}
 
-	return counts;
+	return { raw, weighted };
 }
 
 function share(count: number | null, base: number): number | null {
@@ -115,15 +172,17 @@ export function distribution(
 	declared: readonly ModalityDescriptor[],
 	options: AggregateOptions = {}
 ): DistributionResult {
-	const counts = countByModality(answers);
+	const { raw, weighted } = countByModality(answers, options.weights);
 	const respondents = countRespondents(answers);
+	const weightedRespondents = weighRespondents(answers, options.weights);
 
-	const modalities = orderModalities(declared, counts.keys()).filter(
+	const modalities = orderModalities(declared, raw.keys()).filter(
 		(modality) => options.includeNonResponses !== false || !modality.isNonResponse
 	);
 
+	// Sur les effectifs BRUTS : voir l avertissement en tete de fichier.
 	const protectedTable = protectDistribution(
-		counts,
+		raw,
 		modalities.map((modality) => modality.key),
 		options.threshold
 	);
@@ -133,6 +192,9 @@ export function distribution(
 	const bars = modalities.map((modality) => {
 		const cell = byKey.get(modality.key);
 		const count = cell?.count ?? null;
+		// La case masquee l est dans les deux lectures : sans cela, le chiffre
+		// redresse trahirait l effectif que le seuil vient de cacher.
+		const weightedCount = count === null || !weighted ? null : (weighted.get(modality.key) ?? 0);
 
 		return {
 			key: modality.key,
@@ -141,6 +203,9 @@ export function distribution(
 			color: modality.color ?? null,
 			count,
 			share: share(count, respondents),
+			weightedCount,
+			weightedShare:
+				weightedRespondents === null ? null : share(weightedCount, weightedRespondents),
 			suppressed: cell?.suppressed ?? false
 		};
 	});
@@ -148,6 +213,7 @@ export function distribution(
 	return {
 		bars,
 		respondents,
+		weightedRespondents,
 		threshold: protectedTable.threshold,
 		suppressedCount: protectedTable.suppressedCount
 	};
@@ -157,6 +223,9 @@ export interface CrosstabCell {
 	readonly count: number | null;
 	/** Part au sein de la ligne, entre 0 et 1. Lecture usuelle d un tri croise. */
 	readonly share: number | null;
+	/** Meme regle que pour une distribution : `null` sans poids, `null` si masquee. */
+	readonly weightedCount: number | null;
+	readonly weightedShare: number | null;
 	readonly suppressed: boolean;
 }
 
@@ -181,8 +250,9 @@ export interface CrosstabResult {
  */
 function pairs(
 	xAnswers: readonly AnswerRow[],
-	yAnswers: readonly AnswerRow[]
-): Map<string, number> {
+	yAnswers: readonly AnswerRow[],
+	weights: ReadonlyMap<string, number> | undefined
+): { raw: Map<string, number>; weighted: Map<string, number> | null } {
 	const yByResponse = new Map<string, string[]>();
 
 	for (const answer of yAnswers) {
@@ -195,22 +265,25 @@ function pairs(
 	}
 
 	const seen = new Set<string>();
-	const counts = new Map<string, number>();
+	const raw = new Map<string, number>();
+	const weighted = weights ? new Map<string, number>() : null;
 
 	for (const answer of xAnswers) {
 		const yKeys = yByResponse.get(answer.responseId);
 		if (!yKeys) continue;
-		collectPairs(answer, yKeys, seen, counts);
+		collectPairs(answer, yKeys, seen, raw, weighted, weights?.get(answer.responseId) ?? 1);
 	}
 
-	return counts;
+	return { raw, weighted };
 }
 
 function collectPairs(
 	answer: AnswerRow,
 	yKeys: readonly string[],
 	seen: Set<string>,
-	counts: Map<string, number>
+	raw: Map<string, number>,
+	weighted: Map<string, number> | null,
+	weight: number
 ): void {
 	for (const yKey of yKeys) {
 		const signature = `${answer.responseId}\u0000${answer.modalityKey}\u0000${yKey}`;
@@ -218,12 +291,60 @@ function collectPairs(
 
 		seen.add(signature);
 		const cellKey = `${answer.modalityKey}\u0000${yKey}`;
-		counts.set(cellKey, (counts.get(cellKey) ?? 0) + 1);
+		raw.set(cellKey, (raw.get(cellKey) ?? 0) + 1);
+		weighted?.set(cellKey, (weighted.get(cellKey) ?? 0) + weight);
 	}
 }
 
-function indexCells(table: ProtectedTable): Map<string, Map<string, CrosstabCell>> {
+/**
+ * Totaux de ligne redresses.
+ *
+ * Recalcules ici plutot que rendus par la protection : celle-ci raisonne en
+ * effectifs bruts, c est son role. La part redressee se lit donc sur une base
+ * redressee — melanger les deux donnerait des pourcentages qui ne somment a
+ * rien.
+ */
+function weightedRowTotals(weighted: Map<string, number>): Map<string, number> {
+	const totals = new Map<string, number>();
+
+	for (const [key, value] of weighted) {
+		const xKey = key.split('\u0000')[0] ?? '';
+		totals.set(xKey, (totals.get(xKey) ?? 0) + value);
+	}
+
+	return totals;
+}
+
+/**
+ * La lecture redressee d une case, si redressement il y a.
+ *
+ * Masquee en brut, masquee en redresse : le seuil se decide une fois, sur les
+ * effectifs reels, et la seconde lecture ne peut pas rouvrir ce que la premiere
+ * a ferme.
+ */
+function weighCell(
+	cell: { xKey: string; yKey: string; count: number | null },
+	rowTotal: number | null,
+	weighted: Map<string, number> | null,
+	weightedTotal: number | null
+): { weightedCount: number | null; weightedShare: number | null } {
+	if (cell.count === null || !weighted) return { weightedCount: null, weightedShare: null };
+
+	const weightedCount = weighted.get(`${cell.xKey}\u0000${cell.yKey}`) ?? 0;
+
+	return {
+		weightedCount,
+		weightedShare:
+			weightedTotal === null || rowTotal === null ? null : share(weightedCount, weightedTotal)
+	};
+}
+
+function indexCells(
+	table: ProtectedTable,
+	weighted: Map<string, number> | null
+): Map<string, Map<string, CrosstabCell>> {
 	const rows = new Map<string, Map<string, CrosstabCell>>();
+	const weightedTotals = weighted ? weightedRowTotals(weighted) : null;
 
 	for (const cell of table.cells) {
 		const row = rows.get(cell.xKey) ?? new Map<string, CrosstabCell>();
@@ -232,6 +353,7 @@ function indexCells(table: ProtectedTable): Map<string, Map<string, CrosstabCell
 		row.set(cell.yKey, {
 			count: cell.count,
 			share: rowTotal === null ? null : share(cell.count, rowTotal),
+			...weighCell(cell, rowTotal, weighted, weightedTotals?.get(cell.xKey) ?? null),
 			suppressed: cell.suppressed
 		});
 
@@ -249,7 +371,7 @@ export function crosstab(
 	yDeclared: readonly ModalityDescriptor[],
 	options: AggregateOptions = {}
 ): CrosstabResult {
-	const counted = pairs(xAnswers, yAnswers);
+	const { raw: counted, weighted } = pairs(xAnswers, yAnswers, options.weights);
 
 	const observedX = [...counted.keys()].map((key) => key.split('\u0000')[0] ?? '');
 	const observedY = [...counted.keys()].map((key) => key.split('\u0000')[1] ?? '');
@@ -280,7 +402,7 @@ export function crosstab(
 	return {
 		xModalities,
 		yModalities,
-		cells: indexCells(table),
+		cells: indexCells(table, weighted),
 		rowTotals: table.rowTotals,
 		columnTotals: table.columnTotals,
 		respondents,

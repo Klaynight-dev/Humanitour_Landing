@@ -113,9 +113,9 @@ export const aboutTemplate: ContentTemplate = {
 		{
 			type: 'cta',
 			data: {
-				title: "Le collectif s'agrandit",
+				title: 'Co-fondez le projet à nos côtés',
 				intro:
-					"L'institut appartient à ses adhérents. Adhère, ou viens simplement voir comment ça se fabrique, sur le Discord.",
+					"L'institut est ouvert à toutes celles et ceux souhaitant démocratiser l'information.",
 				buttons: [
 					{ label: "Adhérer à l'association", href: LINKS.helloasso.href, variant: 'primary' },
 					{ label: 'Rejoindre le Discord', href: LINKS.discord.href, variant: 'outline' },

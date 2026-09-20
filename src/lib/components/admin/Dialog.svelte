@@ -15,6 +15,11 @@
 	/**
 	 * `<dialog>` natif plutot qu un overlay maison : focus-trap, fermeture sur
 	 * Echap et `::backdrop` viennent du navigateur, sans une ligne de JS.
+	 *
+	 * `m-auto` n est pas decoratif et ne s enleve pas : c est LUI qui centre la
+	 * boite. La feuille du navigateur centre un dialogue modal par `margin:
+	 * auto`, et la reinitialisation de Tailwind remet la marge de tout element a
+	 * zero — le dialogue se collait donc en haut a gauche de l ecran.
 	 */
 	$effect(() => {
 		if (!dialogEl) return;
@@ -29,7 +34,7 @@
 	onclick={(event) => {
 		if (event.target === dialogEl) onClose();
 	}}
-	class="rounded-panel border-ink/12 bg-paper w-full max-w-md border p-0 backdrop:bg-black/40"
+	class="rounded-panel border-ink/12 bg-paper m-auto w-full max-w-md border p-0 backdrop:bg-black/40"
 >
 	<div class="p-5">
 		<h2 class="text-base font-semibold">{title}</h2>

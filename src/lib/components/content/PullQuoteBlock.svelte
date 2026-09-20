@@ -54,7 +54,7 @@
 			</p>
 
 			<div class="mt-12 text-lg">
-				<RichText doc={read.doc('body')} />
+				<RichText doc={read.doc('body')} {surface} />
 			</div>
 
 			{#if items.length > 0}

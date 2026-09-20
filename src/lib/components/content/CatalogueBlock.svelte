@@ -50,6 +50,6 @@
 	{/if}
 
 	<div class="measure mt-10 text-sm {mutedClass(surface)}">
-		<RichText doc={read.doc('note')} />
+		<RichText doc={read.doc('note')} {surface} />
 	</div>
 </Section>

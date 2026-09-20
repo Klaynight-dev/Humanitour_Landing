@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { closeAfter } from '$components/admin/enhance';
 	import Dialog from '$components/admin/Dialog.svelte';
 	import Flash from '$components/admin/Flash.svelte';
 	import PageHeader from '$components/admin/PageHeader.svelte';
@@ -48,7 +49,10 @@
 				</label>
 				<label class="flex min-w-56 flex-1 flex-col gap-1.5">
 					<span class="text-sm font-semibold">Description</span>
-					<input name="description" class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11" />
+					<input
+						name="description"
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
+					/>
 				</label>
 				<button
 					type="submit"
@@ -75,7 +79,11 @@
 				<div class="grid gap-4 sm:grid-cols-2">
 					<label class="flex flex-col gap-1.5">
 						<span class="text-sm font-semibold">Nom</span>
-						<input name="name" value={role.name} class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11" />
+						<input
+							name="name"
+							value={role.name}
+							class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
+						/>
 					</label>
 					<label class="flex flex-col gap-1.5">
 						<span class="text-sm font-semibold">Description</span>
@@ -136,7 +144,13 @@
 	{/each}
 </div>
 
-<form bind:this={deleteForm} method="POST" action="?/delete" use:enhance class="hidden">
+<form
+	bind:this={deleteForm}
+	method="POST"
+	action="?/delete"
+	use:enhance={closeAfter(() => (deleteTarget = null))}
+	class="hidden"
+>
 	<input type="hidden" name="id" value={deleteTarget?.id ?? ''} />
 </form>
 
@@ -146,8 +160,8 @@
 	onClose={() => (deleteTarget = null)}
 >
 	<p>
-		« {deleteTarget?.name} » sera supprimé. Les comptes qui le portent doivent d'abord recevoir un
-		autre rôle.
+		« {deleteTarget?.name} » sera supprimé. Les comptes qui le portent doivent d'abord recevoir un autre
+		rôle.
 	</p>
 	{#snippet footer()}
 		<button

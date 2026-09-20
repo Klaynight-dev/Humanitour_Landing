@@ -1,3 +1,4 @@
+import { collapseOther } from '../other';
 import { asList, type FieldTypeDefinition, type FieldValue, type OpenformsField } from '../types';
 
 /**
@@ -24,7 +25,7 @@ export const checkbox: FieldTypeDefinition = {
 
 		const declared = new Set(field.options.map((option) => option.value));
 		const unknown = chosen.find((entry) => !declared.has(entry));
-		return unknown === undefined ? null : "Ce choix ne fait pas partie des réponses proposées.";
+		return unknown === undefined ? null : 'Ce choix ne fait pas partie des réponses proposées.';
 	},
 
 	toSubmission: (_field: OpenformsField, value: FieldValue) => asList(value),
@@ -34,7 +35,11 @@ export const checkbox: FieldTypeDefinition = {
 		form.getAll(field.key).filter((entry): entry is string => typeof entry === 'string'),
 
 	toCell(value: unknown): unknown {
-		if (Array.isArray(value)) return value.map((entry) => String(entry)).join('; ');
-		return value;
+		// Chaque entree passe par la traduction du « Autre » : une liste peut en
+		// porter une au milieu de modalites declarees.
+		if (Array.isArray(value)) {
+			return value.map((entry) => collapseOther(String(entry))).join('; ');
+		}
+		return typeof value === 'string' ? collapseOther(value) : value;
 	}
 };

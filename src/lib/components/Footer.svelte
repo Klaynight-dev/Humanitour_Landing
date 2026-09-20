@@ -4,7 +4,7 @@
 	const year = new Date().getFullYear();
 
 	/* Les liens sortants, dans l ordre ou ils servent : agir, suivre, verifier. */
-	const OUTBOUND = [LINKS.helloasso, LINKS.discord, LINKS.forms, LINKS.repository];
+	const OUTBOUND = [LINKS.helloasso, LINKS.discord, LINKS.instagram, LINKS.forms, LINKS.repository];
 
 	/*
 	 * TODO (decision 13) : les pages `/legal/*` doivent etre recuperees depuis
