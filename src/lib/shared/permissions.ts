@@ -31,10 +31,11 @@ export const PERMISSIONS = {
 		label: 'Creer et modifier les sondages',
 		description: 'Creer une enquete, editer son questionnaire et sa methodologie.'
 	},
-	'survey.import': {
+	'survey.sync': {
 		group: 'Sondages',
-		label: 'Importer des reponses',
-		description: 'Deposer un fichier, definir la correspondance des colonnes et valider un lot.'
+		label: 'Relier et synchroniser Openforms',
+		description:
+			'Relier une enquete a un formulaire de forms.humanitour.fr, etablir la correspondance des champs et declencher une synchronisation.'
 	},
 	'survey.publish': {
 		group: 'Sondages',

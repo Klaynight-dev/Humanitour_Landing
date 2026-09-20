@@ -76,23 +76,37 @@
 			<!-- `min-w-0` : sans lui, une cellule de grille garde une largeur minimale
 			     egale a son contenu le plus long et peut faire deborder toute la
 			     grille sur un ecran etroit. -->
-			<nav aria-labelledby="footer-nav" class="flex min-w-0 flex-col items-start gap-1">
+			<nav aria-labelledby="footer-nav" class="min-w-0">
 				<h2 id="footer-nav" class="mb-1 text-base font-semibold">Le site</h2>
-				{#each NAV as item (item.href)}
-					<a href={item.href} class="py-1.5 text-sm text-white/75 hover:text-white">
-						{item.label}
-					</a>
-				{/each}
-				{#each OUTBOUND as link (link.href)}
-					<a
-						href={link.href}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="py-1.5 text-sm text-white/75 hover:text-white"
-					>
-						{link.label}
-					</a>
-				{/each}
+				<!--
+					Dix liens dans une seule colonne faisaient une liste trop haute pour
+					se lire d un coup d oeil. `columns-2`, et non `grid-cols-2` : le flux
+					en colonnes CSS remplit la premiere colonne avant la seconde, donc
+					l ordre de lecture reste haut en bas puis colonne suivante, pas une
+					grille ligne par ligne. Reserve au grand ecran, ou la colonne nav a
+					la place pour deux ; sur mobile elle est deja cote a cote avec le
+					bloc association et une seule liste y reste plus lisible.
+				-->
+				<div class="md:columns-2 md:gap-x-6">
+					{#each NAV as item (item.href)}
+						<a
+							href={item.href}
+							class="block py-1.5 text-sm break-inside-avoid text-white/75 hover:text-white"
+						>
+							{item.label}
+						</a>
+					{/each}
+					{#each OUTBOUND as link (link.href)}
+						<a
+							href={link.href}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="block py-1.5 text-sm break-inside-avoid text-white/75 hover:text-white"
+						>
+							{link.label}
+						</a>
+					{/each}
+				</div>
 			</nav>
 
 			<div class="flex min-w-0 flex-col items-start gap-1">

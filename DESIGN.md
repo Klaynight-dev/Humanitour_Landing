@@ -169,22 +169,34 @@ l'aplat tant qu'elle ne porte pas d'ombre.
 
 ### Le verre
 
-**Une seule surface translucide sur le site : l'étiquette du deck de l'accueil**
-(`.photo-deck-label`). Elle flotte sur les photographies, donc elle prend ce qui
-passe derrière : `backdrop-filter: blur(20px) saturate(180%)`, un voile blanc à
-0,72, un liseré clair pour l'épaisseur, et `--shadow-lift` — le token des
-surfaces qui passent réellement au-dessus du contenu, pas une troisième
-élévation.
+**Un seul ingrédient, la classe `.glass-chip`** (`src/app.css`) : `backdrop-filter:
+blur(24px) saturate(180%)`, un voile blanc à 0,62, un liseré clair pour
+l'épaisseur, et `--shadow-lift` — le token des surfaces qui passent réellement
+au-dessus du contenu, pas une troisième élévation.
 
-Le texte y est **noir**, comme partout sur les surfaces claires. Mesuré au pixel
-sur le rendu et dans la bande où les glyphes vivent réellement, pas estimé :
-**4,95:1 au pire cas**, 6,72:1 au premier centile, 13,96:1 en médiane. Le
-plancher passe donc AA.
+Elle flotte sur des photographies dans ses trois emplois : l'étiquette du deck
+de l'accueil (`.photo-deck-label`, qui compose `.glass-chip`), et les deux
+boutons fléchés qui font défiler la ligne de l'équipe (`/`, section « Qui a posé
+les questions »). La case « Voir plus » qui clôt cette même ligne la reprend
+aussi, cette fois sur l'aplat noir de la section plutôt que sur une photo — le
+verre y reste lisible, seul le fond derrière change.
 
-**C'est ce plancher qui fixe l'opacité du voile**, pas le goût : à 0,62 il tient,
-en dessous il passerait sous AA sur les clichés sombres. Rendre le verre plus
-transparent demande donc de remesurer sur le rendu, et les photographies de
-`DECK_PHOTOS` sont ce qui décide.
+Le texte et les icônes y sont **noirs**, comme partout sur les surfaces claires.
+Mesuré au pixel sur le rendu de l'étiquette du deck et dans la bande où les
+glyphes vivent réellement, pas estimé : **4,95:1 au pire cas**, 6,72:1 au
+premier centile, 13,96:1 en médiane. Le plancher passe donc AA.
+
+**C'est ce plancher qui fixe l'opacité du voile**, pas le goût : à 0,62 il tient
+sur `DECK_PHOTOS`, en dessous il passerait sous AA sur les clichés sombres.
+Rendre le verre plus transparent demande donc de remesurer sur le rendu, et les
+photographies de `DECK_PHOTOS` sont ce qui décide.
+
+Les portraits de `/equipe/` n'ont pas été remesurés pixel par pixel de la même
+façon : les deux boutons fléchés n'y affichent qu'une icône, pas du texte de
+lecture, et le seuil qui s'applique est donc le contraste non textuel de la
+WCAG (3:1, critère 1.4.11), largement sous le plancher AA déjà tenu sur
+`DECK_PHOTOS`. Y poser un jour un texte de corps demanderait de remesurer comme
+pour le deck.
 
 Deux replis, parce qu'un fond translucide n'est pas toujours souhaitable ni
 disponible : sans `backdrop-filter`, le blanc monte à 0,94 (la photographie
@@ -258,7 +270,7 @@ les aplats et le mouvement s'arrêtent à la porte des pages de données.**
 | Page | Registre | Mot marqué | Aplats | Entrée `enter` | `reveal` |
 | --- | --- | --- | --- | --- | --- |
 | `/` | argument | `vérité`, `l'urne` | engagements | oui | deck de photos, portraits |
-| `/le-tour` | argument | `France` (`mark-ink`) | méthode | oui | schéma du parcours |
+| `/le-tour` | argument | `France` (`mark-ink`) | méthode | oui | carte du parcours |
 | `/a-propos` | argument | `engagé` | couverture | oui | portraits |
 | `/medias` | éditorial | `voix` | non | oui | cartes, par rangée |
 | `/galerie` | éditorial | `visages` | non | oui | vignettes, par rangée |
@@ -371,6 +383,12 @@ Trois règles, et elles ne sont pas négociables :
 1. **Aucune image sous droits, aucune banque d'images, aucune image générée.**
    Les photographies viennent de l'association. Un institut qui publie ses
    données brutes ne met pas une photo d'illustration achetée sur sa couverture.
+   Une exception à vérifier, versée le 20 septembre 2026 :
+   `static/carte-du-tour.jpg` porte le tracé de l'association sur un **fond de
+   carte de la DILA**, dont la mention « © DILA 2026 » est incrustée dans le
+   fichier. La légende sous l'image crédite les deux. La licence exacte de ce
+   fond reste à confirmer auprès de la DILA avant mise en production ; si elle
+   n'est pas compatible, c'est le fond qu'il faut remplacer, pas le tracé.
 2. **Le texte ne passe jamais sur la photo sans voile mesuré.** Sous du texte,
    le voile noir ne descend pas sous 0,93 d'opacité, ce qui ramène même un blanc
    pur à une luminance de 0,06 et garantit plus de 9:1. Quand un écran est trop

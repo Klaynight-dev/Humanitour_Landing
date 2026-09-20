@@ -42,7 +42,6 @@
     "@sveltejs/kit": "^2.70.3",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@tailwindcss/vite": "^4.3.3",
-    "@types/papaparse": "^5.5.2",
     "@types/pg": "^8.23.1",
     "@vitest/coverage-v8": "^5.0.0",
     "eslint": "^10.10.0",
@@ -68,10 +67,8 @@
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "echarts": "^6.1.0",
-    "papaparse": "^5.7.0",
     "pg": "^8.23.0",
     "prisma": "^7.10.0",
-    "xlsx": "^0.18.5",
     "zod": "^4.6.4"
   }
 }

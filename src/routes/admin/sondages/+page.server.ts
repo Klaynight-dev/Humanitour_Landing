@@ -3,9 +3,7 @@ import { recordAudit } from '$lib/server/audit';
 import { notify } from '$lib/server/notifications/emit';
 import { prisma } from '$lib/server/db';
 import { readText } from '$lib/server/forms';
-import { importFileKey } from '$lib/server/import';
 import { requirePermission } from '$lib/server/rbac/guard';
-import { storage } from '$lib/server/storage';
 import { toSlug, uniqueSlug } from '$lib/shared/slug';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -202,10 +200,7 @@ export const actions: Actions = {
 
 		const survey = await prisma.survey.findUnique({
 			where: { id },
-			include: {
-				importBatches: { select: { id: true, filename: true } },
-				_count: { select: { responses: true, questions: true } }
-			}
+			include: { _count: { select: { responses: true, questions: true } } }
 		});
 		if (!survey) return fail(404, { message: 'Sondage introuvable.' });
 
@@ -225,17 +220,10 @@ export const actions: Actions = {
 			});
 		}
 
+		// La suppression n'emporte que le miroir : le formulaire et ses
+		// soumissions restent chez Openforms, qui fait foi. Relier a nouveau le
+		// meme formulaire a une nouvelle enquete reconstitue les reponses.
 		await prisma.survey.delete({ where: { id } });
-
-		// Apres la base : un fichier orphelin est un desagrement, une enquete a
-		// moitie supprimee serait une incoherence.
-		await Promise.all(
-			survey.importBatches.map((batch) =>
-				storage()
-					.remove(importFileKey(id, batch.id, batch.filename))
-					.catch(() => undefined)
-			)
-		);
 
 		await recordAudit({
 			actorId: user.id,

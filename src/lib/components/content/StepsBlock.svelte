@@ -1,0 +1,67 @@
+<script lang="ts">
+	import { SPACING_KEYS, SURFACE_KEYS } from '$lib/shared/content/blocks/common';
+	import Buttons from './Buttons.svelte';
+	import { getContentContext } from './context';
+	import { sectionReader } from './read';
+	import Section from './Section.svelte';
+	import { divideClass, mutedClass } from './surfaces';
+
+	interface Props {
+		id: string;
+		data: Readonly<Record<string, unknown>>;
+	}
+
+	let { id, data }: Props = $props();
+
+	const page = getContentContext();
+	const read = $derived(sectionReader(data, page.tokens));
+
+	const surface = $derived(read.choice('surface', SURFACE_KEYS, 'paper'));
+	const spacing = $derived(read.choice('spacing', SPACING_KEYS, 'normal'));
+
+	const title = $derived(read.text('title'));
+	const intro = $derived(read.text('intro'));
+	const items = $derived(read.list('items'));
+
+	/*
+	 * Le corail sombre est le corail lisible SUR FOND CLAIR (6,1:1 sur blanc) ;
+	 * sur l'aplat noir il tombe a 3,3:1. C'est le corail de la charte qui y tient
+	 * la lisibilite, avec 6,75:1.
+	 */
+	const numberClass = $derived(surface === 'ink' ? 'text-coral' : 'text-coral-ink');
+</script>
+
+<!--
+	Colonne etroite a gauche, liste numerotee a droite.
+
+	La numerotation dit que l'ordre compte. Pour les questions de terrain, cet
+	ordre EST une donnee : le libelle et le rang de passation font partie du
+	resultat.
+-->
+<Section {surface} {spacing} labelledby={title ? id : undefined}>
+	<div class="grid gap-8 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-16">
+		<div>
+			{#if title}<h2 {id} class="text-2xl sm:text-3xl">{title}</h2>{/if}
+			{#if intro}
+				<p class="mt-3 text-base leading-relaxed {mutedClass(surface)}">{intro}</p>
+			{/if}
+		</div>
+
+		<div>
+			<ol class="divide-y {divideClass(surface)}">
+				{#each items as item, index (index)}
+					<li class="flex gap-5 py-5 first:pt-0">
+						<span class="font-display shrink-0 text-xl leading-tight {numberClass}">
+							{index + 1}
+						</span>
+						<p class="min-w-0 text-lg leading-snug font-semibold sm:text-xl">
+							{read.itemText(item, 'text')}
+						</p>
+					</li>
+				{/each}
+			</ol>
+
+			<Buttons items={read.list('buttons')} {surface} />
+		</div>
+	</div>
+</Section>

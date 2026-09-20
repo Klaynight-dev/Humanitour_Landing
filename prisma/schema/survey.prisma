@@ -8,6 +8,12 @@
 // au moment de l'ecriture. L'agregation ne groupe que par cette cle et n'a donc
 // aucun cas particulier a traiter : c'est le « pointeur indirect » de Torvalds
 // applique a la non-reponse (AGENTS.md section 1.2).
+//
+// CANAL UNIQUE : depuis la revision de la decision 3, les reponses n'entrent que
+// par Openforms (`forms.humanitour.fr`). Plus de depot de fichier, plus de saisie
+// manuelle, plus d'API d'ingestion — donc plus de colonne disant par quel tuyau
+// une reponse est arrivee : il n'y en a qu'un. Supprimer ce cas particulier
+// plutot que de le brancher, c'est la regle du bon gout appliquee a la collecte.
 
 enum SurveyStatus {
   DRAFT
@@ -15,24 +21,26 @@ enum SurveyStatus {
   ARCHIVED
 }
 
-enum ResponseSource {
-  UPLOAD // fichier CSV ou XLSX depose au back-office
-  FORMS // connecteur forms.humanitour.fr
-  MANUAL // saisie terrain dans le back-office
-  API // ingestion authentifiee par un tiers
+/// Ce qui a declenche une synchronisation. Sert au journal, pas au calcul : une
+/// reponse arrivee par le webhook vaut exactement une reponse arrivee par la
+/// minuterie.
+enum SyncTrigger {
+  MANUAL // bouton du back-office
+  SCHEDULED // minuterie interne
+  WEBHOOK // notification envoyee par Openforms a chaque soumission
+  SUBMISSION // reponse deposee depuis /repondre, reprise dans la foulee
 }
 
-enum ImportStatus {
-  PENDING
-  VALIDATED // previsualise, en attente de confirmation
-  COMMITTED
-  REJECTED
+enum SyncStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
 }
 
 model Survey {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   /// Segment d'URL publique. Fait partie du contrat de permalien : jamais renomme.
-  slug     String @unique
+  slug     String  @unique
   title    String
   subtitle String?
 
@@ -54,6 +62,42 @@ model Survey {
   /// (AppSetting `anonymity.k`, defaut 5).
   kAnonymityThreshold Int?
 
+  // --- Liaison Openforms --------------------------------------------------
+  //
+  // Le formulaire distant est la SOURCE de la collecte ; cette base en est le
+  // miroir publie. Un sondage sans liaison n'a aucun moyen de recevoir des
+  // reponses : c'est voulu, et la fiche du back-office le dit.
+
+  /// Identifiant du formulaire chez Openforms. Unique : deux enquetes ne peuvent
+  /// pas se disputer le meme formulaire, ce qui dupliquerait chaque reponse a la
+  /// synchronisation.
+  openformsFormId String? @unique
+
+  /// Slug public du formulaire distant. Sert a servir le questionnaire sur
+  /// `/repondre/<slug de l'enquete>` sans rappeler Openforms pour resoudre
+  /// l'identifiant a chaque visite.
+  openformsSlug String?
+
+  /// Fin de la derniere synchronisation reussie. `null` = jamais synchronise.
+  openformsSyncedAt DateTime?
+
+  // Etat de collecte, recopie d'Openforms a chaque synchronisation. Il est
+  // MIROIR et non source : c'est Openforms qui accepte ou refuse une reponse.
+  // Ces colonnes ne servent qu'a afficher « en cours » ou « clos » sans
+  // dependre de sa disponibilite.
+
+  /// `Form.isPublished` chez Openforms : le formulaire accepte-t-il des reponses.
+  openformsOpen Boolean @default(false)
+
+  /// `Form.startsAt` et `Form.endsAt` chez Openforms. Distincts de la periode de
+  /// terrain, qui est une declaration editoriale, la ou celles-ci sont une regle
+  /// appliquee par le serveur distant.
+  opensAt  DateTime?
+  closesAt DateTime?
+
+  /// `Form.maxResponses` chez Openforms. `null` = pas de quota.
+  maxResponses Int?
+
   // --- Fiche du jeu de donnees -------------------------------------------
   //
   // Ce qu'un reutilisateur doit savoir AVANT de telecharger : sur qui porte
@@ -66,9 +110,9 @@ model Survey {
   /// Perimetre couvert : « France metropolitaine, treize regions ».
   geographicCoverage String?
 
-  /// Mode de collecte declare : « face-a-face sur le terrain ».
-  /// Distinct de `Response.source`, qui dit par quel TUYAU la reponse est
-  /// entree en base ; celui-ci dit comment elle a ete recueillie.
+  /// Mode de collecte declare : « face-a-face sur le terrain ». Dit comment
+  /// l'entretien a ete mene, pas par quel tuyau la reponse est entree en base —
+  /// il n'y en a plus qu'un.
   collectionMode String?
 
   /// Frequence de mise a jour annoncee, ou son absence assumee.
@@ -82,15 +126,16 @@ model Survey {
   /// Description de referencement et de partage. A defaut, le sous-titre sert.
   metaDescription String?
 
-  questions     Question[]
-  responses     Response[]
-  importBatches ImportBatch[]
-  cards         SurveyCard[]
+  questions Question[]
+  responses Response[]
+  syncs     OpenformsSync[]
+  cards     SurveyCard[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status, publishedAt])
+  @@index([openformsOpen, status])
 }
 
 model Question {
@@ -112,18 +157,27 @@ model Question {
   /// n'ajoute pas de colonne ici.
   type String
 
+  /// Cle du champ correspondant dans le schema Openforms.
+  ///
+  /// La correspondance vit ICI, sur la question, et non dans un lot d'import :
+  /// elle est etablie une fois a la liaison du formulaire, puis toute
+  /// synchronisation ulterieure la reutilise. Une question sans cle n'est
+  /// simplement jamais alimentee, et le back-office le signale.
+  openformsKey String?
+
   /// Parametres propres au type : bornes d'une echelle, unite, tranches de
   /// regroupement d'un nombre. Valide par le registre.
   config Json @default("{}")
 
-  /// Les questions en texte libre ne sont pas croisables : trop de modalites,
-  /// et risque de reidentification.
+  /// Les questions en texte libre ne sont pas croisables : trop de modalites, et
+  /// risque de reidentification.
   isCrossable Boolean @default(true)
 
   options QuestionOption[]
   answers Answer[]
 
   @@unique([surveyId, code])
+  @@unique([surveyId, openformsKey])
   @@index([surveyId, position])
 }
 
@@ -157,16 +211,22 @@ model Response {
   surveyId String
   survey   Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
-  /// Date de l'entretien, pas de l'import : c'est elle qui porte les courbes.
+  /// Date de la soumission chez Openforms, pas de la synchronisation : c'est
+  /// elle qui porte les courbes.
   collectedAt DateTime
 
-  source        ResponseSource
-  importBatchId String?
-  importBatch   ImportBatch?   @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  /// Identifiant de la soumission chez Openforms.
+  ///
+  /// OBLIGATOIRE, parce que toute reponse vient desormais de la. C'est lui qui
+  /// rend la synchronisation idempotente : la rejouer n'ajoute rien, et un
+  /// webhook envoye deux fois n'insere pas deux fois le meme repondant. Jamais
+  /// affiche.
+  externalRef String
 
-  /// Reference opaque de la source (identifiant de soumission cote
-  /// forms.humanitour.fr). Rend les reimports idempotents. Jamais affichee.
-  externalRef String?
+  /// Synchronisation qui a insere cette reponse. `SetNull` : purger le journal
+  /// des synchronisations ne doit pas emporter les reponses publiees.
+  syncId String?
+  sync   OpenformsSync? @relation(fields: [syncId], references: [id], onDelete: SetNull)
 
   answers Answer[]
 
@@ -200,38 +260,46 @@ model Answer {
   @@index([responseId])
 }
 
-model ImportBatch {
+/// Journal d'une synchronisation Openforms.
+///
+/// Remplace l'ancien `ImportBatch` : il n'y a plus de fichier depose, donc plus
+/// de nom de fichier, de format ni de correspondance de colonnes a conserver. Ce
+/// qui reste utile est ce qui permet de repondre a « pourquoi ce chiffre a
+/// bouge » : quand, declenche par quoi, combien de soumissions lues, combien
+/// inserees, combien refusees et pour quelle raison.
+model OpenformsSync {
   id       String @id @default(cuid())
   surveyId String
   survey   Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
-  filename String
-  /// Cle du registre `src/lib/server/import/` : csv, xlsx, json.
-  format   String
-  source   ResponseSource
+  trigger SyncTrigger
+  status  SyncStatus  @default(RUNNING)
 
-  status ImportStatus @default(PENDING)
+  /// Soumissions renvoyees par Openforms, avant tout filtrage.
+  fetchedCount Int @default(0)
 
-  rowCount      Int @default(0)
-  acceptedCount Int @default(0)
+  /// Reponses reellement inserees. Les soumissions deja connues n'y sont pas.
+  createdCount Int @default(0)
+
+  /// Soumissions refusees par la normalisation, avec leur motif dans `errors`.
   rejectedCount Int @default(0)
 
-  /// Correspondance colonne du fichier vers code de question, telle que validee
-  /// par l'operateur. Conservee pour rejouer ou auditer un import.
-  mapping Json @default("{}")
-
-  /// Lignes refusees, avec leur motif. Un import ne masque jamais un rejet.
+  /// Motifs de refus, soumission par soumission. Une synchronisation ne masque
+  /// jamais un rejet, exactement comme l'import de fichiers ne le faisait pas.
   errors Json @default("[]")
+
+  /// Message d'echec, lisible par un operateur. `null` si la passe a reussi.
+  message String?
+
+  triggeredById String?
+  triggeredBy   User?   @relation(fields: [triggeredById], references: [id], onDelete: SetNull)
 
   responses Response[]
 
-  createdById String?
-  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
 
-  createdAt   DateTime  @default(now())
-  committedAt DateTime?
-
-  @@index([surveyId, createdAt])
+  @@index([surveyId, startedAt])
 }
 
 /// Carte de visualisation publiee par le back-office : un croisement fige,

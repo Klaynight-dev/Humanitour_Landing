@@ -147,12 +147,12 @@
 				<td class="tabular px-3 py-3 text-right">{formatCount(survey.responseCount)}</td>
 				<td class="px-5 py-3">
 					<div class="flex flex-wrap justify-end gap-2">
-						{#if can(data.user, 'survey.import')}
+						{#if can(data.user, 'survey.sync')}
 							<a
-								href="/admin/sondages/{survey.id}/import"
+								href="/admin/sondages/{survey.id}/openforms"
 								class="border-ink/25 press bg-paper rounded-pill border px-3 py-1.5 text-xs font-medium min-h-11 inline-flex items-center justify-center"
 							>
-								Importer
+								Openforms
 							</a>
 						{/if}
 

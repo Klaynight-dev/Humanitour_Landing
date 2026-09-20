@@ -1,16 +1,23 @@
 // Domaine contenu editorial.
 //
-// Les pages du site vitrine etaient ecrites en dur dans les composants et dans
-// `src/lib/shared/site.ts`. Elles deviennent editables ici, sans deploiement.
+// Les pages publiques sont composees de sections editables. La base est la
+// source de ce que le site affiche : supprimer une section la fait disparaitre
+// pour de bon.
 //
-// Une page publiee prend le pas sur les constantes ; tant qu'aucune version
-// n'est publiee, le site affiche ce qu'il affichait avant. Retirer la
-// publication suffit donc a revenir en arriere.
+// Rien n'est perdu pour autant. Le modele d'origine de chaque page vit dans le
+// depot (`src/lib/shared/content/templates/`) et se reapplique en un geste
+// depuis le back-office : c'est ce qui permet d'editer sans filet sans editer
+// sans retour.
 
 enum ContentPageKey {
   HOME
   ABOUT
   TOUR
+  METHOD
+  GALLERY
+  DATA
+  MEDIA
+  ANSWER
 }
 
 enum ContentPageStatus {
@@ -43,13 +50,13 @@ model ContentBlock {
   pageId String
   page   ContentPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
-  /// Cle du registre `src/lib/shared/content/`. Contrat : jamais renommee.
+  /// Cle du registre `src/lib/shared/content/blocks/`. Contrat : jamais renommee.
   type String
 
   position Int
 
-  /// Champs propres au type de bloc, valides par le registre. Aucune colonne ne
-  /// s'ajoute en base quand un type de bloc apparait (AGENTS.md section 2).
+  /// Champs propres au type de section, valides par le registre. Aucune colonne
+  /// ne s'ajoute en base quand un type de section apparait (AGENTS.md § 2).
   data Json @default("{}")
 
   createdAt DateTime @default(now())

@@ -37,7 +37,7 @@ describe('requireUser', () => {
 
 describe('requirePermission', () => {
 	it('laisse passer quand la permission est detenue', () => {
-		expect(requirePermission(user(['survey.import']), 'survey.import').id).toBe('u1');
+		expect(requirePermission(user(['survey.sync']), 'survey.sync').id).toBe('u1');
 	});
 
 	it('repond 403 quand la permission manque', () => {

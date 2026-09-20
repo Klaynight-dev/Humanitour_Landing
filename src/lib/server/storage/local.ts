@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 import { env } from '$env/dynamic/private';
 import type { StorageDriver, StoredFile } from './types';
@@ -43,5 +43,19 @@ export const localStorage: StorageDriver = {
 
 	async remove(key): Promise<void> {
 		await rm(resolveKey(key), { force: true });
+	},
+
+	async list(prefix): Promise<readonly string[]> {
+		try {
+			const entries = await readdir(resolveKey(prefix), { withFileTypes: true });
+			return entries
+				.filter((entry) => entry.isFile())
+				.map((entry) => `${prefix}/${entry.name}`)
+				.sort();
+		} catch {
+			// Le dossier n'existe pas encore : rien n'a ete depose, ce n'est pas
+			// une erreur.
+			return [];
+		}
 	}
 };

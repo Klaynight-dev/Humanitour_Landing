@@ -1,5 +1,16 @@
 import type { Handle } from '@sveltejs/kit';
 import { SESSION_COOKIE, validateSession } from '$lib/server/auth/session';
+import { startSyncSchedule } from '$lib/server/openforms/schedule';
+
+/*
+ * Au chargement du module, donc une fois par processus serveur.
+ *
+ * SvelteKit n'offre pas de crochet de demarrage : ce fichier est le seul point
+ * garanti d'etre evalue une fois, avant la premiere requete. La fonction est
+ * elle-meme idempotente, ce qui la rend sans danger si le rechargement a chaud
+ * du developpement reevalue le module.
+ */
+startSyncSchedule();
 
 /**
  * Resout la session a chaque requete et la depose dans `locals`.

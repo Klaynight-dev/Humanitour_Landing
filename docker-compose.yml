@@ -31,10 +31,16 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET est obligatoire en production}
       PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://humanitour.fr}
       STORAGE_LOCAL_PATH: /var/storage
-      # Connecteur Openforms : absent, le back-office propose simplement le
-      # depot de fichier a la place, sans erreur.
-      OPENFORMS_URL: ${OPENFORMS_URL:-}
-      OPENFORMS_API_KEY: ${OPENFORMS_API_KEY:-}
+      # Openforms est le SEUL canal de collecte : sans ces variables, aucune
+      # enquete ne peut recevoir de reponse. Le back-office le dit clairement
+      # plutot que d'echouer, mais la collecte est bel et bien a l'arret.
+      OPENFORMS_URL: ${OPENFORMS_URL:?OPENFORMS_URL est obligatoire : c'est le seul canal de collecte}
+      OPENFORMS_API_KEY: ${OPENFORMS_API_KEY:?OPENFORMS_API_KEY est obligatoire : c'est le seul canal de collecte}
+      # Periode de la synchronisation planifiee, en minutes. 0 la desactive.
+      OPENFORMS_SYNC_MINUTES: ${OPENFORMS_SYNC_MINUTES:-15}
+      # Jeton du webhook de soumission. Vide, la route repond 503 et seule la
+      # minuterie travaille.
+      OPENFORMS_WEBHOOK_TOKEN: ${OPENFORMS_WEBHOOK_TOKEN:-}
       NODE_ENV: production
       PORT: 3000
     ports:

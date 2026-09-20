@@ -2,6 +2,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { hash } from '@node-rs/argon2';
 import { PrismaClient, type Prisma } from '../src/lib/server/prisma-client/client';
 import { PERMISSION_KEYS } from '../src/lib/shared/permissions';
+import { CONTENT_TEMPLATES, prepareTemplate } from '../src/lib/shared/content/templates';
 import { requireMediaType } from '../src/lib/shared/media';
 import { requireQuestionType } from '../src/lib/shared/questions';
 import type { QuestionOptionLike } from '../src/lib/shared/questions/types';
@@ -71,8 +72,8 @@ const ROLES = [
 	{
 		slug: 'analyse',
 		name: 'Analyse',
-		description: 'Importe les réponses, construit les questionnaires et les cartes.',
-		permissions: ['survey.read', 'survey.write', 'survey.import', 'card.write', 'media.read'],
+		description: 'Relie les formulaires Openforms, construit les questionnaires et les cartes.',
+		permissions: ['survey.read', 'survey.write', 'survey.sync', 'card.write', 'media.read'],
 		isSystem: false
 	},
 	{
@@ -462,8 +463,9 @@ async function seedResponses(surveyId: string) {
 		const region = pick(Regions);
 		const age = 18 + Math.floor(random() * 72);
 
-		// Valeurs BRUTES, telles qu'elles arriveraient d'un fichier importe : c'est
-		// le registre qui les normalise, tranches d'age et non-reponses comprises.
+		// Valeurs BRUTES, telles qu'elles arriveraient d'une soumission Openforms :
+		// c'est le registre qui les normalise, tranches d'age et non-reponses
+		// comprises.
 		const raw: Record<string, unknown> = {
 			csp,
 			priorite: priority,
@@ -488,7 +490,10 @@ async function seedResponses(surveyId: string) {
 			data: {
 				surveyId,
 				collectedAt: new Date(start + random() * (end - start)),
-				source: 'MANUAL',
+				// Reference de soumission fictive : le jeu de demonstration ne vient
+				// d'aucune instance Openforms, mais la colonne est un contrat
+				// d'idempotence et ne se contourne pas pour un seed.
+				externalRef: `seed-${index.toString().padStart(5, '0')}`,
 				answers: { create: answers }
 			}
 		});
@@ -621,6 +626,50 @@ async function seedMedia() {
 	console.warn(`  medias : ${MEDIA.length}`);
 }
 
+/**
+ * Le contenu des pages publiques.
+ *
+ * La base est la source de ce que le site affiche : sans cette etape, une
+ * installation neuve ouvrirait le back-office sur huit pages vides. On y ecrit
+ * donc le site tel qu'il a ete compose — le meme modele que le bouton
+ * « Réappliquer le modèle » du back-office.
+ *
+ * Idempotent, et prudent avec ce qui existe : une page qui contient deja des
+ * sections n'est pas retouchee. Relancer le seed sur une base de travail ne
+ * doit pas effacer une apres-midi d'edition.
+ */
+async function seedContent() {
+	for (const template of CONTENT_TEMPLATES) {
+		const prepared = prepareTemplate(template);
+		// Un modele invalide est un bogue du depot : on le signale et on passe,
+		// plutot que d'ecrire une page a moitie.
+		if (!prepared.ok) {
+			console.error(`  contenu : ${prepared.reason}`);
+			continue;
+		}
+
+		const page = await prisma.contentPage.upsert({
+			where: { key: template.key },
+			create: { key: template.key, status: 'PUBLISHED', publishedAt: new Date() },
+			update: {},
+			select: { id: true, _count: { select: { blocks: true } } }
+		});
+
+		if (page._count.blocks > 0) continue;
+
+		await prisma.contentBlock.createMany({
+			data: prepared.blocks.map((block, index) => ({
+				pageId: page.id,
+				type: block.type,
+				position: index,
+				data: block.data as Prisma.InputJsonObject
+			}))
+		});
+	}
+
+	console.warn(`  pages de contenu : ${CONTENT_TEMPLATES.length}`);
+}
+
 async function main() {
 	console.warn('Seed Humanitour');
 	await seedRoles();
@@ -630,6 +679,7 @@ async function main() {
 	const surveyId = await seedSurvey();
 	await seedResponses(surveyId);
 	await seedMedia();
+	await seedContent();
 	console.warn('Termine.');
 }
 

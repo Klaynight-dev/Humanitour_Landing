@@ -1,3 +1,4 @@
+import { pageBlocks } from '$lib/server/content/queries';
 import { listPublishedSurveys, listPublishedThemes } from '$lib/server/survey/queries';
 import type { PageServerLoad } from './$types';
 
@@ -15,10 +16,11 @@ export const load: PageServerLoad = async ({ url }) => {
 	const search = url.searchParams.get('q')?.trim() ?? '';
 	const theme = url.searchParams.get('theme')?.trim() ?? '';
 
-	const [surveys, themes] = await Promise.all([
+	const [surveys, themes, blocks] = await Promise.all([
 		listPublishedSurveys(search, theme),
-		listPublishedThemes()
+		listPublishedThemes(),
+		pageBlocks('DATA')
 	]);
 
-	return { surveys, themes, search, theme };
+	return { surveys, themes, search, theme, blocks };
 };

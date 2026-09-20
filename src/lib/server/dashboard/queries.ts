@@ -45,25 +45,32 @@ export async function mediaByStatus(): Promise<StatusCount[]> {
 	return rows.map((row) => ({ status: row.status, count: row._count._all }));
 }
 
-export interface ImportSummary {
+export interface SyncSummary {
 	readonly status: string;
-	readonly batches: number;
-	readonly accepted: number;
+	readonly passes: number;
+	readonly created: number;
 	readonly rejected: number;
 }
 
-/** Activite d import : volumes et rejets, par statut de lot. */
-export async function importActivity(): Promise<ImportSummary[]> {
-	const rows = await prisma.importBatch.groupBy({
+/**
+ * Activite de synchronisation Openforms : passes, reponses reprises et rejets,
+ * par issue.
+ *
+ * Les passes en echec y figurent comme les autres. Une synchronisation qui
+ * echoue en silence est le scenario a redouter : les chiffres publies cessent
+ * simplement de bouger, sans que rien ne l'indique.
+ */
+export async function syncActivity(): Promise<SyncSummary[]> {
+	const rows = await prisma.openformsSync.groupBy({
 		by: ['status'],
 		_count: { _all: true },
-		_sum: { acceptedCount: true, rejectedCount: true }
+		_sum: { createdCount: true, rejectedCount: true }
 	});
 
 	return rows.map((row) => ({
 		status: row.status,
-		batches: row._count._all,
-		accepted: row._sum.acceptedCount ?? 0,
+		passes: row._count._all,
+		created: row._sum.createdCount ?? 0,
 		rejected: row._sum.rejectedCount ?? 0
 	}));
 }

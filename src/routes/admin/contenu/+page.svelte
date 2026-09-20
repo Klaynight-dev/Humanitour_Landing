@@ -12,14 +12,14 @@
 
 <PageHeader
 	title="Contenu du site"
-	description="Les pages publiques éditables ici. Tant qu'une page n'est pas publiée, le site affiche son contenu d'origine."
+	description="Les pages publiques éditables ici. Tant qu'une page n'est pas publiée, le site affiche son modèle d'origine."
 />
 
 <Table empty={false} emptyTitle="" minWidth="44rem">
 	{#snippet head()}
 		<th scope="col" class="px-5 py-3 font-semibold">Page</th>
 		<th scope="col" class="px-3 py-3 font-semibold">État</th>
-		<th scope="col" class="px-3 py-3 text-right font-semibold">Blocs</th>
+		<th scope="col" class="px-3 py-3 text-right font-semibold">Sections</th>
 		<th scope="col" class="px-5 py-3 text-right font-semibold">Dernière modification</th>
 	{/snippet}
 	{#snippet body()}

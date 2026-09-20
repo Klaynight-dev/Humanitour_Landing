@@ -21,6 +21,11 @@ export default defineConfig({
 				'src/lib/server/survey/queries.ts',
 				'src/lib/server/survey/export-query.ts',
 				'src/lib/server/media/queries.ts',
+				// Orchestration de la synchronisation Openforms : base, reseau et
+				// minuterie. La seule regle qu'elle portait — la mise a plat des
+				// soumissions — vit dans `openforms/rows.ts`, couvert a part.
+				'src/lib/server/openforms/sync.ts',
+				'src/lib/server/openforms/schedule.ts',
 				// Constantes d'identite et de configuration : rien a executer.
 				'src/lib/shared/site.ts'
 			],
@@ -37,7 +42,16 @@ export default defineConfig({
 					branches: 90,
 					statements: 95
 				},
-				'src/lib/server/import/**': {
+				// Successeurs du registre d'import : la chaine par laquelle TOUTE
+				// donnee publiee entre desormais. Un bug ici corrompt le jeu de
+				// donnees, d'ou le meme seuil qu'auparavant.
+				'src/lib/server/normalize/**': {
+					lines: 90,
+					functions: 90,
+					branches: 85,
+					statements: 90
+				},
+				'src/lib/server/openforms/**': {
 					lines: 90,
 					functions: 90,
 					branches: 85,

@@ -16,6 +16,11 @@
  * fichier lui-meme : elles reservent la place de l image avant son chargement.
  * Deposer un nouveau cliche demande donc de relever ses dimensions reelles,
  * sans quoi la page saute au chargement.
+ *
+ * Pas de champ `caption` distinct : `alt` decrit deja chaque cliche en une
+ * phrase complete, ce qui EST une legende. Un second champ recopierait la
+ * meme phrase et finirait par diverger (`/galerie` l affiche en legende
+ * quand la photo s ouvre en grand ; PhotoLightbox.svelte).
  */
 export interface TourPhoto {
 	readonly src: string;

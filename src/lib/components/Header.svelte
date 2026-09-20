@@ -60,7 +60,10 @@
 				/>
 			</a>
 
-			<nav class="hidden items-center gap-1 lg:flex" aria-label="Navigation principale">
+			<!-- Sept rubriques plus les deux appels a l action tiennent tout juste a
+			     1024 px : l espacement se resserre a `lg` et retrouve sa valeur a
+			     `xl`, plutot que de renvoyer les portables au menu deroulant. -->
+			<nav class="hidden items-center gap-0.5 lg:flex xl:gap-1" aria-label="Navigation principale">
 				{#each NAV as item (item.href)}
 					{@const current = isCurrent(item.href)}
 					<!-- La page courante se signale par un aplat plein, pas par une seule
@@ -68,7 +71,7 @@
 					<a
 						href={item.href}
 						aria-current={current ? 'page' : undefined}
-						class="rounded-pill px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors {current
+						class="rounded-pill px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors xl:px-4 {current
 							? 'bg-ink text-paper'
 							: 'hover:bg-ink/8'}"
 					>

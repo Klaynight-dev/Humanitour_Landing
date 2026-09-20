@@ -54,7 +54,7 @@ images de tiers, pas celles de l'association.
 | Domaine | Rôle | Remarque |
 | --- | --- | --- |
 | `humanitour.fr` | La plateforme — **ce dépôt** | |
-| `forms.humanitour.fr` | Collecte des réponses | SvelteKit également ; code ouvert : `Klaynight/Openforms` (MIT) |
+| `forms.humanitour.fr` | **Collecte des réponses — canal unique** | SvelteKit également ; code ouvert : `Klaynight/Openforms` (MIT). Toute réponse publiée ici vient de là, sans exception |
 | HelloAsso | Dons et adhésions | Lien sortant |
 
 ---
@@ -86,22 +86,28 @@ src/
     shared/             Code isomorphe (client + serveur)
       questions/        REGISTRE des types de question
       media/            REGISTRE des types de média
+      openforms/        REGISTRE des types de champ Openforms
       permissions.ts    REGISTRE des permissions atomiques
     server/             Jamais importable côté client (garanti par SvelteKit)
       auth/             Mots de passe, sessions
       rbac/             Résolution des permissions, gardes
       survey/           Agrégation, k-anonymat, croisements
-      import/           REGISTRE des formats d'import
+      openforms/        Client, synchronisation, minuterie
+      normalize/        Normalisation des réponses, détection d'identifiants
       storage/          REGISTRE des backends de fichiers
     charts/             REGISTRE des visualisations
-    components/         UI réutilisable
+    components/
+      openforms/        REGISTRE des widgets de champ
+      ...               UI réutilisable
   routes/
     (public)/           Vitrine, données, médias, légal
+      repondre/         Questionnaires en cours, rendus nativement
     admin/              Back-office
     api/public/         API ouverte — contrat stable, voir AGENTS.md §1.4
+    api/openforms/      Webhook de synchronisation
 ```
 
-**Le principe, en une phrase :** les six dossiers marqués REGISTRE s'étendent en
+**Le principe, en une phrase :** les dossiers marqués REGISTRE s'étendent en
 ajoutant un fichier, jamais en modifiant un `switch`.
 
 ---
@@ -126,6 +132,56 @@ Conséquences :
   sont **des questions comme les autres**. Pas de colonnes dédiées, pas de cas
   particulier — voir la règle du « bon goût » dans `AGENTS.md` §1.2.
 - `NON_RESPONSE` est une modalité ordinaire, jamais un `null` filtré.
+- Une `Response` ne dit **pas** par quel tuyau elle est entrée : il n'y en a
+  qu'un. Elle porte en revanche `externalRef`, l'identifiant de sa soumission
+  chez Openforms, **obligatoire** — c'est lui qui rend la synchronisation
+  idempotente.
+
+---
+
+## La collecte : Openforms, et rien d'autre
+
+`forms.humanitour.fr` est le **seul** endroit où une réponse naît. Ce dépôt en
+est le miroir publié.
+
+```
+        écrit                    lit et recopie              publie
+visiteur ──► Openforms ◄──────────── sync ────────────► Survey/Response ──► pages,
+   ▲         (source)              (3 déclencheurs)        (miroir)          exports,
+   │                                                                          API
+   └── /repondre/<slug> ── rend le questionnaire, poste la réponse chez Openforms
+```
+
+**Pourquoi un miroir plutôt qu'une lecture directe.** Une page de résultats doit
+se rendre en SSR, s'exporter en brut, appliquer le seuil de k-anonymat et rester
+debout quand Openforms ne répond pas. Le back-office, lui, interroge Openforms
+**en direct** : c'est la seule façon d'y voir l'écart entre ce qui a été collecté
+là-bas et ce qui a été repris ici, un écart durable étant le symptôme d'une
+synchronisation en panne.
+
+**Trois déclencheurs, une seule passe.** Bouton du back-office, minuterie
+(`OPENFORMS_SYNC_MINUTES`, défaut 15) et webhook posté par Openforms à chaque
+soumission. Ils font tous le même travail et peuvent se marcher dessus sans
+dommage : `Response.externalRef` est unique par enquête.
+
+**Le webhook n'est qu'un signal.** Son corps n'est jamais cru — l'enregistrer
+ferait de cette URL un point d'injection. Il dit « quelque chose a bougé », et la
+synchronisation va relire les données avec la clé `ofk_`, qui fait autorité.
+Conséquence heureuse : rien à modifier dans Openforms, son champ `webhookUrl`
+par formulaire suffit.
+
+**Répondre depuis `humanitour.fr`.** `/repondre` liste les enquêtes ouvertes,
+`/repondre/<slug>` rend le questionnaire **nativement** — ni iframe, ni script
+tiers, ni cookie supplémentaire — à partir de sa définition lue chez Openforms,
+puis poste la réponse chez Openforms. Elle y subit exactement les mêmes contrôles
+qu'une réponse déposée sur `forms.humanitour.fr`.
+
+**Ce qui n'est pas proposé ici.** Les champs intrinsèquement identifiants
+(courriel, adresse, signature, fichier) ne sont jamais affichés : l'association
+recueille des opinions politiques, donnée sensible au sens de l'article 9. S'ils
+sont *facultatifs*, ils sont retirés et la fiche de liaison les nomme un par un ;
+s'ils sont *obligatoires*, le questionnaire entier est refusé ici et la page
+renvoie vers `forms.humanitour.fr`.
 
 ---
 
@@ -140,7 +196,7 @@ raison, pas une préférence.
 | --- | --- | --- |
 | 1 | Périmètre | Plateforme complète : vitrine + données + médias + back-office |
 | 2 | Modèle de sondage | 100 % dynamique, schéma défini en base |
-| 3 | Sources de données | Les quatre : upload CSV/XLSX, connecteur `forms.humanitour.fr`, saisie manuelle terrain, API d'ingestion |
+| 3 | Sources de données | **Openforms (`forms.humanitour.fr`) et rien d'autre** — révisée le 20 septembre 2026. L'upload CSV/XLSX, la saisie manuelle et l'API d'ingestion ont été retirés du produit et du code |
 | 4 | Variables croisables | **Tous les champs disponibles**, sans socle figé |
 | 5 | Explorateur | Cartes publiées par le back-office **et** exploration libre avec permalien |
 | 6 | Visualisations | Carte choroplèthe, barres / barres empilées / camembert, tableau croisé, évolution temporelle |
@@ -187,7 +243,8 @@ raison, pas une préférence.
 | Pages légales `/legal/*` | **Manquantes** : le pied de page pointe vers cinq pages qui n'existent pas (décision 13) |
 | Carte choroplèthe | Bloquée : il faut une géométrie des régions sous licence compatible (ODbL ou Etalab) |
 | Courbe d'évolution temporelle | À construire ; la donnée existe déjà (`Response.collectedAt`) |
-| Tracé du parcours | `TourMap` est un schéma assumé : l'itinéraire ville par ville n'est pas publié |
+| Licence du fond de carte | `static/carte-du-tour.jpg` est le tracé de l'association sur un fond de carte **DILA** (mention « © DILA 2026 » incrustée). La licence de ce fond est **à confirmer** avant mise en production. Le schéma hexagonal qu'il remplace le 20 septembre 2026 n'avait, lui, aucun problème de droits |
+| Cookie tiers Polarsteps | Le carnet de route est encadré en `iframe` sur `/le-tour` : Polarsteps dépose un cookie `session` et charge ses scripts. Dérogation tranchée par le porteur du projet le 20 septembre 2026 ; **la politique de confidentialité doit le nommer** |
 | Jeu de démonstration | `prisma/seed.ts` porte encore trois questions, pas les quatre de la plaquette |
 | Pondération | La plaquette annonce « pondérer les résultats », `AGENTS.md` § 6 l'interdit. À trancher |
 | Portrait de Mareva Vaucher | Extrait de la plaquette en 210 px : nettement plus doux que les trois autres, à remplacer par un original |
@@ -195,6 +252,8 @@ raison, pas une préférence.
 | URL de la campagne HelloAsso | `TODO` explicite dans `src/lib/shared/site.ts` |
 | Contact | Le code utilise `contact@humanitour.fr`, la plaquette `humanitour.france@gmail.com` |
 | Externalisation des chaînes | `src/lib/i18n/` est annoncé en § 5 d'`AGENTS.md` mais n'existe pas |
+| Verrou de synchronisation | La minuterie est un `setInterval` par processus. Plusieurs instances de front feraient des passes concurrentes : sans conséquence sur les données (l'insertion est idempotente), mais inutilement bavardes chez Openforms. Un verrou partagé sera nécessaire le jour où l'on passe à deux conteneurs |
+| Champs distants sans équivalent | Dates et grilles se remplissent et se soumettent, mais n'ont aucun type de question qui les reçoive : elles n'entrent donc pas dans les croisements publiés. La fiche de liaison le signale |
 
 ---
 

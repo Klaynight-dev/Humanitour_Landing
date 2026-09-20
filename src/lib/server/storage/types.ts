@@ -19,6 +19,17 @@ export interface StorageDriver {
 	put(key: string, content: Uint8Array, contentType: string): Promise<StoredFile>;
 	get(key: string): Promise<Uint8Array>;
 	remove(key: string): Promise<void>;
+	/**
+	 * Les cles rangees sous un prefixe.
+	 *
+	 * Le back-office propose de reutiliser une image deja televersee plutot que
+	 * de la redeposer : sans lecture du depot, chaque page repartirait d'un
+	 * champ vide et le meme fichier finirait stocke cinq fois.
+	 *
+	 * Un prefixe inconnu rend une liste vide, jamais une erreur : « rien n'a
+	 * encore ete depose » n'est pas une panne.
+	 */
+	list(prefix: string): Promise<readonly string[]>;
 }
 
 /**

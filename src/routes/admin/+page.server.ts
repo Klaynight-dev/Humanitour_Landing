@@ -1,5 +1,5 @@
 import {
-	importActivity,
+	syncActivity,
 	mediaByStatus,
 	responseTrend,
 	surveysByStatus,
@@ -13,7 +13,7 @@ import type { PageServerLoad } from './$types';
  * Tableau de bord.
  *
  * Chaque bloc reste conditionne a la permission correspondante : un compte de la
- * redaction n'a pas a savoir combien de reponses ont ete importees. Les chiffres
+ * redaction n'a pas a savoir combien de reponses ont ete synchronisees. Les chiffres
  * viennent uniquement de la base — aucun traceur, aucun service tiers
  * (AGENTS.md section 6).
  *
@@ -32,7 +32,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const responses = readsSurveys ? await prisma.response.count() : 0;
 	const surveyStatuses = readsSurveys ? await surveysByStatus() : [];
 	const trend = readsSurveys ? await responseTrend() : null;
-	const imports = readsSurveys ? await importActivity() : [];
+	const syncs = readsSurveys ? await syncActivity() : [];
 
 	const media = readsMedia ? await prisma.mediaItem.count() : 0;
 	const mediaStatuses = readsMedia ? await mediaByStatus() : [];
@@ -57,7 +57,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		responses,
 		surveyStatuses,
 		trend,
-		imports,
+		syncs,
 		media,
 		mediaStatuses,
 		team,

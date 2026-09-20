@@ -41,14 +41,14 @@ const surveyDeleted: NotificationType = {
 	})
 };
 
-const importCommitted: NotificationType = {
-	key: 'import.committed',
-	label: 'Import validé',
+const openformsSynced: NotificationType = {
+	key: 'openforms.synced',
+	label: 'Réponses synchronisées',
 	requiredPermission: 'survey.read',
 	render: (data) => ({
-		title: 'Réponses importées',
-		description: `${text(data, 'accepted', '0')} réponse(s) ajoutée(s) à « ${text(data, 'title', 'une enquête')} ».`,
-		href: `/admin/sondages/${text(data, 'surveyId')}/import`
+		title: 'Nouvelles réponses',
+		description: `${text(data, 'created', '0')} réponse(s) reprises d'Openforms pour « ${text(data, 'title', 'une enquête')} ».`,
+		href: `/admin/sondages/${text(data, 'surveyId')}/openforms`
 	})
 };
 
@@ -89,7 +89,7 @@ const REGISTERED: readonly NotificationType[] = [
 	surveyPublished,
 	surveyUnpublished,
 	surveyDeleted,
-	importCommitted,
+	openformsSynced,
 	mediaPublished,
 	contentPublished,
 	invitationAccepted

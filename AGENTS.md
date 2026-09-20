@@ -94,7 +94,10 @@ Notre « userspace », c'est ce que des tiers ont mis en signet ou en dépendanc
 
 - les **permaliens de croisement** (`/donnees/[sondage]?x=…&y=…&filtre=…`) ;
 - l'**API publique** `/api/public/**` et les URLs d'export ;
-- les **slugs** d'articles et de sondages.
+- les **slugs** d'articles et de sondages ;
+- l'URL du **webhook** `/api/openforms/webhook`, inscrite dans les réglages de
+  chaque formulaire Openforms : la renommer couperait la collecte en temps réel
+  sans que rien ne le signale ici.
 
 Ces trois surfaces sont un **contrat**. On ajoute des paramètres, on n'en renomme
 jamais. Un permalien partagé par un journaliste en 2026 doit fonctionner en 2030.
@@ -128,10 +131,39 @@ contrat, un dossier, un `index` qui agrège, zéro `switch` ailleurs dans le cod
 | --- | --- | --- |
 | Types de question | `src/lib/shared/questions/` | 1 fichier : validation, normalisation, modalités |
 | Visualisations | `src/lib/charts/` | 1 fichier : contrat `ChartDef` + composant Svelte |
-| Formats d'import | `src/lib/server/import/` | 1 fichier : `parse(buffer) → RowSet` |
+| Types de champ Openforms | `src/lib/shared/openforms/fields/` | 1 fichier : valeur vide, validation, envoi, relecture, aplatissement |
+| Widgets de champ | `src/lib/components/openforms/fields/` | 1 composant + 1 ligne dans `index.ts` |
 | Types de média | `src/lib/shared/media/` | 1 fichier : champs, rendu, validation |
+| Sections de page | `src/lib/shared/content/blocks/` | 1 fichier de champs + 1 composant + 1 ligne dans `components/content/registry.ts` |
 | Permissions | `src/lib/shared/permissions.ts` | 1 constante déclarée |
 | Stockage de fichiers | `src/lib/server/storage/` | 1 fichier : disque local aujourd'hui, S3/MinIO demain |
+
+Le registre des **formats d'import** (`csv`, `xlsx`, `json`) a été retiré le
+20 septembre 2026 avec la révision de la décision 3 : il n'y a plus de fichier à
+lire, Openforms est le seul canal. Ce qui en survit est la chaîne de
+normalisation, déplacée en `src/lib/server/normalize/` — elle ne sait toujours
+pas d'où vient le tableau qu'on lui donne, et c'est ce qui la rend testable sans
+réseau.
+
+**Le registre des sections en est un troisième.** Une section déclare ses champs
+dans `shared/content/blocks/` (isomorphe, testé) et les rend dans
+`components/content/` (composant Svelte). `components/content/registry.test.ts`
+tient la correspondance : un type déclaré sans composant échoue au test avant
+qu'on puisse créer au back-office une section qui ne s'afficherait nulle part.
+
+Les pages publiques n'ont plus de contenu écrit dans leurs composants : elles
+servent ce que la base contient. La version de référence de chaque page vit dans
+`shared/content/templates/`, passe la **même** validation qu'une saisie de
+back-office (`templates.test.ts`), sert de repli quand la base est injoignable,
+et se réapplique en un geste depuis le back-office. C'est ce qui permet d'éditer
+sans filet sans éditer sans retour.
+
+**Les deux registres de champ sont un cas particulier assumé.** Le comportement
+vit dans `shared/` (isomorphe, testé à 90 %), le widget dans `components/`
+(non testé, AGENTS.md §3.2). Ce qui rend la séparation sûre n'est pas la
+discipline mais `components/openforms/fields/widgets.test.ts` : il échoue dès
+qu'une clé existe d'un côté sans exister de l'autre, et vérifie qu'aucun champ
+identifiant n'a de widget.
 
 **La règle qui rend ces registres réels :** si ajouter un type de question oblige à
 toucher un `switch` dans un composant, un `if` dans l'agrégation et une colonne en
@@ -166,7 +198,8 @@ publiés**, parce qu'une erreur y est une fausse information publique :
 | Périmètre | Seuil | Pourquoi |
 | --- | --- | --- |
 | `src/lib/server/survey/**` (agrégation, k-anonymat) | **95 %** | Un bug ici publie un chiffre faux |
-| `src/lib/server/import/**` | **90 %** | Un bug ici corrompt le jeu de données |
+| `src/lib/server/openforms/**` | **90 %** | Toute donnée publiée entre par là |
+| `src/lib/server/normalize/**` | **90 %** | Un bug ici corrompt le jeu de données |
 | `src/lib/shared/**` (permissions, types de question) | **90 %** | Socle partagé par tout le reste |
 | Global | 70 % | Le reste est du câblage et de l'UI |
 
@@ -247,7 +280,23 @@ exactement la garantie qu'on veut.
   back-office. Les données sont consultables sans compte : c'est le sens de l'open
   data.
 - **Pas de tracker, pas d'analytics tiers, pas de cookie non essentiel.** Le cookie
-  de session est le seul cookie du site public.
+  de session est le seul cookie du site public. C'est aussi la raison pour
+  laquelle un questionnaire en cours est **rendu nativement** sur `/repondre` et
+  non encadré dans une `iframe` : le cadre d'Openforms poserait son propre
+  cookie et chargerait son propre script sur une page du site public. Openforms
+  n'est pas un tiers — c'est notre logiciel, sous notre contrôle — mais
+  l'encadrer reviendrait au même pour le visiteur.
+  **Une dérogation, une seule, tranchée par le porteur du projet le 20 septembre
+  2026** : le carnet de route Polarsteps est encadré directement sur `/le-tour`
+  (`PolarstepsEmbed.svelte`), et dépose donc son cookie `session` dès
+  l'ouverture de la page. Le clic-pour-charger a été proposé et écarté. La règle
+  reste entière partout ailleurs, et la politique de confidentialité doit nommer
+  ce cookie avant la mise en production.
+- **Pas de donnée identifiante collectée ici**, quelle que soit la configuration
+  d'Openforms. Un champ courriel, adresse, signature ou fichier n'a aucun widget
+  dans `src/lib/components/openforms/fields/`, et cette absence est vérifiée par
+  un test. S'il est obligatoire chez Openforms, le questionnaire est refusé sur
+  ce site plutôt que soumis amoindri.
 - **Pas d'image sous droits.** Les documents sources contiennent une photo de
   couverture de livre (Bourdieu) : elle ne part pas en production.
 

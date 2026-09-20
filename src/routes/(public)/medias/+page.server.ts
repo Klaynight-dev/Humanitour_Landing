@@ -1,3 +1,4 @@
+import { pageBlocks } from '$lib/server/content/queries';
 import { countMediaByKind, listPublishedMedia } from '$lib/server/media/queries';
 import { getMediaType, type MediaKind } from '$lib/shared/media';
 import type { PageServerLoad } from './$types';
@@ -12,12 +13,14 @@ export const load: PageServerLoad = async ({ url }) => {
 	const requested = url.searchParams.get('type');
 	const kind = requested && getMediaType(requested) ? (requested as MediaKind) : null;
 
-	const [items, counts] = await Promise.all([
+	const [items, counts, blocks] = await Promise.all([
 		listPublishedMedia({ kind }),
-		countMediaByKind()
+		countMediaByKind(),
+		pageBlocks('MEDIA')
 	]);
 
 	return {
+		blocks,
 		items,
 		activeKind: kind,
 		counts: [...counts].map(([key, count]) => ({ key, count })),

@@ -13,7 +13,7 @@ export const SITE = {
 	name: 'Humanitour',
 	tagline: "L'institut de sondage citoyen",
 	description:
-		"Un institut de sondage citoyen : 4 000 kilomètres à vélo, 1 000 personnes rencontrées en face-à-face, et la totalité des données brutes publiées.",
+		'Un institut de sondage citoyen : 4 000 kilomètres à vélo, 1 000 personnes rencontrées en face-à-face, et la totalité des données brutes publiées.',
 	email: 'contact@humanitour.fr',
 	domain: 'humanitour.fr'
 } as const;
@@ -212,6 +212,17 @@ export const LINKS = {
 		href: 'https://www.helloasso.com/associations/humanitour',
 		description: "Soutiens le projet et adhère à l'association."
 	},
+	/**
+	 * Le carnet de route du tour. L adresse est celle du voyage public, sans le
+	 * suffixe `/embed` : c est celle qu on donne a un visiteur. Le cadre de
+	 * `PolarstepsEmbed.svelte` ajoute le suffixe lui-meme, pour que les deux ne
+	 * puissent pas designer deux voyages differents.
+	 */
+	polarsteps: {
+		label: 'Polarsteps',
+		href: 'https://www.polarsteps.com/Humanitour/27139019-l-aventure-commence',
+		description: 'Le carnet de route du tour, étape par étape.'
+	},
 	forms: {
 		label: 'Répondre au sondage',
 		href: 'https://forms.humanitour.fr',
@@ -249,7 +260,9 @@ export const RETENTION = {
 export const NAV = [
 	{ href: '/le-tour', label: 'Le tour' },
 	{ href: '/donnees', label: 'Les données' },
+	{ href: '/repondre', label: 'Répondre' },
 	{ href: '/medias', label: 'Médias' },
+	{ href: '/galerie', label: 'Galerie' },
 	{ href: '/methodologie', label: 'Méthodologie' },
 	{ href: '/a-propos', label: 'À propos' }
 ] as const;

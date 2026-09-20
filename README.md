@@ -36,7 +36,11 @@ totalité du matériau publiée.
   permanent.
 - **Données brutes** — export CSV et JSON de chaque sondage publié, sans compte.
 - **Médiathèque** — articles, reportages vidéo, podcasts, revue de presse.
-- **Back-office** — import des enquêtes, construction des questionnaires,
+- **Répondre en ligne** — les enquêtes encore ouvertes se remplissent sur
+  `/repondre`, sans compte et sans quitter le site. Le questionnaire est rendu
+  nativement à partir de sa définition Openforms, et la réponse repart chez
+  Openforms, seul canal de collecte.
+- **Back-office** — liaison aux formulaires Openforms, construction des questionnaires,
   publication des cartes, gestion des rôles.
 
 ## Les garanties, écrites dans le code

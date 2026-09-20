@@ -1,42 +1,67 @@
-import { isEmptyDoc, parseRichText } from './richtext';
+import { parseDeclaredFields, type ContentDataResult, type ContentField } from './fields';
 
 /**
- * Contrat du registre des blocs de contenu.
+ * Contrat du registre des sections de contenu.
  *
- * Ajouter un type de bloc = ajouter un fichier qui exporte un `ContentBlockType`
- * et l enregistrer dans `index.ts`. Les champs propres au type vivent dans la
- * colonne `data`, validee ici : aucune colonne ne s ajoute en base
- * (AGENTS.md section 2).
+ * Ajouter une section au site = ajouter un fichier qui exporte un
+ * `ContentBlockType`, l'enregistrer dans `index.ts`, et lui donner son
+ * composant dans `src/lib/components/content/registry.ts`. Les champs propres
+ * au type vivent dans la colonne `data`, validee ici : aucune colonne ne
+ * s'ajoute en base (AGENTS.md § 2).
  *
- * Meme forme que le registre des natures de media, volontairement : deux
- * registres qui font la meme chose doivent se lire pareil.
+ * Une section est un morceau de page reel, pas un gabarit generique : la
+ * couverture de l'accueil, le tableau des ecarts, la ligne de portraits. Les
+ * variantes de mise en page sont des champs `choice` du type lui-meme, ce qui
+ * evite d'avoir dix types qui ne different que par une couleur de fond.
  */
 
-export type ContentPageKey = 'HOME' | 'ABOUT' | 'TOUR';
+export type ContentPageKey =
+	| 'HOME'
+	| 'ABOUT'
+	| 'TOUR'
+	| 'METHOD'
+	| 'GALLERY'
+	| 'DATA'
+	| 'MEDIA'
+	| 'ANSWER';
 
-export type ContentDataResult =
-	| { readonly ok: true; readonly data: Record<string, unknown> }
-	| { readonly ok: false; readonly reason: string };
+/**
+ * Familles de la bibliotheque de sections.
+ *
+ * Elles ne servent qu'a ranger le catalogue au back-office : dix-sept sections
+ * dans une liste deroulante unique ne se choisissent pas, elles se subissent.
+ */
+export type ContentBlockGroup = 'couverture' | 'texte' | 'listes' | 'medias' | 'site' | 'action';
 
-/** Un champ a saisir au back-office pour ce type de bloc. */
-export interface ContentField {
-	readonly name: string;
+export const CONTENT_BLOCK_GROUPS: readonly {
+	readonly key: ContentBlockGroup;
 	readonly label: string;
-	readonly help?: string;
-	/**
-	 * `richtext` ouvre l'editeur de mise en forme et stocke un document
-	 * structure, jamais du HTML (voir `richtext.ts`).
-	 */
-	readonly type: 'text' | 'url' | 'number' | 'textarea' | 'richtext';
-	readonly required: boolean;
-}
+}[] = [
+	{ key: 'couverture', label: 'Couvertures' },
+	{ key: 'texte', label: 'Textes' },
+	{ key: 'listes', label: 'Listes et chiffres' },
+	{ key: 'medias', label: 'Images et cartes' },
+	{ key: 'site', label: 'Contenus du site' },
+	{ key: 'action', label: 'Appels à l’action' }
+];
 
 export interface ContentBlockType {
 	/** Valeur stockee dans `ContentBlock.type`. Contrat : jamais renommee. */
 	readonly key: string;
 	readonly label: string;
 	readonly description: string;
+	readonly group: ContentBlockGroup;
 	readonly fields: readonly ContentField[];
+
+	/**
+	 * Contenu pose a l'ajout de la section.
+	 *
+	 * Une section ajoutee arrive remplie d'un exemple juste, pas vide : une page
+	 * ne doit jamais passer par un etat casse entre l'ajout et la saisie, et on
+	 * corrige un texte plus facilement qu'on n'en invente un devant un champ
+	 * blanc. C'est aussi ce qui rend « ajouter » reversible sans danger.
+	 */
+	readonly starter: Readonly<Record<string, unknown>>;
 
 	/** Valide et normalise le contenu de la colonne `data`. */
 	parseData(raw: unknown): ContentDataResult;
@@ -50,59 +75,48 @@ export interface ContentBlockRecord {
 	readonly data: Readonly<Record<string, unknown>>;
 }
 
-/** Lit une chaine non vide dans un objet de donnees libre. */
-export function readString(raw: unknown, key: string): string | null {
-	if (typeof raw !== 'object' || raw === null) return null;
-	const value = (raw as Record<string, unknown>)[key];
-	if (typeof value !== 'string') return null;
-	const trimmed = value.trim();
-	return trimmed === '' ? null : trimmed;
+interface BlockDefinition {
+	readonly key: string;
+	readonly label: string;
+	readonly description: string;
+	readonly group: ContentBlockGroup;
+	readonly fields: readonly ContentField[];
+	readonly starter: Readonly<Record<string, unknown>>;
+	/**
+	 * Regle editoriale propre au type, verifiee apres les champs.
+	 *
+	 * Rend un motif de refus, ou `null`. Sert aux contraintes qu'un champ ne
+	 * peut pas porter seul : un tableau dont les lignes n'ont pas le meme
+	 * nombre de cellules que l'en-tete, par exemple.
+	 */
+	check?(data: Record<string, unknown>): string | null;
 }
 
 /**
- * Valide les champs declares par un type de bloc.
+ * Fabrique un type de section a partir de sa declaration.
  *
- * Mutualise ici plutot que recopie dans chaque fichier : un type de bloc ne
- * decrit que ses champs, il n a pas a reimplementer « obligatoire » a chaque
- * fois. Un champ obligatoire vide refuse l enregistrement, il n est jamais
- * silencieusement remplace par une valeur par defaut.
+ * Aucun fichier de section ne reimplemente « obligatoire », « une image a une
+ * description » ou « cette variante existe » : la validation descend des
+ * champs declares. Un fichier de section ne contient donc que ce qui lui est
+ * propre, et se relit en une minute.
  */
-export function parseDeclaredFields(
-	fields: readonly ContentField[],
-	raw: unknown
-): ContentDataResult {
-	const data: Record<string, unknown> = {};
+export function defineBlockType(definition: BlockDefinition): ContentBlockType {
+	return {
+		key: definition.key,
+		label: definition.label,
+		description: definition.description,
+		group: definition.group,
+		fields: definition.fields,
+		starter: definition.starter,
 
-	for (const field of fields) {
-		const value = readString(raw, field.name);
+		parseData(raw) {
+			const result = parseDeclaredFields(definition.fields, raw);
+			if (!result.ok) return result;
 
-		if (value === null) {
-			if (field.required) return { ok: false, reason: `Le champ « ${field.label} » est obligatoire.` };
-			continue;
+			const reason = definition.check?.(result.data) ?? null;
+			return reason === null ? result : { ok: false, reason };
 		}
-
-		if (field.type === 'richtext') {
-			const doc = parseRichText(value);
-			// Une mise en forme sans texte reste un champ vide : un document dont
-			// tous les fragments ont ete ecartes ne remplit pas un champ obligatoire.
-			if (isEmptyDoc(doc) && field.required) {
-				return { ok: false, reason: `Le champ « ${field.label} » est obligatoire.` };
-			}
-			if (!isEmptyDoc(doc)) data[field.name] = doc;
-			continue;
-		}
-
-		if (field.type !== 'number') {
-			data[field.name] = value;
-			continue;
-		}
-
-		const parsed = Number(value);
-		if (!Number.isFinite(parsed)) {
-			return { ok: false, reason: `Le champ « ${field.label} » attend un nombre.` };
-		}
-		data[field.name] = parsed;
-	}
-
-	return { ok: true, data };
+	};
 }
+
+export * from './fields';

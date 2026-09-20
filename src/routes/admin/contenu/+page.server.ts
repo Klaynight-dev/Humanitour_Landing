@@ -7,8 +7,8 @@ import type { PageServerLoad } from './$types';
  * Pages editables du site public.
  *
  * La liste vient du registre, pas de la base : une page existe parce que le
- * site a une route pour elle. Tant qu elle n a jamais ete editee, elle n a pas
- * de ligne en base et le site affiche son contenu d origine.
+ * site a une route pour elle. Tant qu'elle n'a jamais ete publiee, elle n'a pas
+ * de ligne en base et le site affiche son modele d'origine.
  */
 export const load: PageServerLoad = async ({ locals }) => {
 	requirePermission(locals.user, 'content.read');
@@ -34,7 +34,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				label: page.label,
 				href: page.href,
 				description: page.description,
-				// Jamais editee : le site sert encore le contenu ecrit dans le code.
+				// Jamais editee : le site sert encore le modele d'origine du depot.
 				status: row?.status ?? null,
 				publishedAt: row?.publishedAt ?? null,
 				updatedAt: row?.updatedAt ?? null,

@@ -15,7 +15,7 @@
 	const publishedMedia = $derived(
 		data.mediaStatuses.find((row) => row.status === 'PUBLISHED')?.count ?? 0
 	);
-	const rejectedRows = $derived(data.imports.reduce((total, row) => total + row.rejected, 0));
+	const rejectedRows = $derived(data.syncs.reduce((total, row) => total + row.rejected, 0));
 </script>
 
 <svelte:head><title>Back-office, Humanitour</title></svelte:head>
@@ -40,9 +40,9 @@
 			<p class="text-muted mt-1 text-sm">toutes enquêtes confondues</p>
 		</Panel>
 
-		<Panel title="Lignes rejetées à l'import">
+		<Panel title="Réponses rejetées">
 			<p class="tabular text-3xl font-semibold">{formatCount(rejectedRows)}</p>
-			<p class="text-muted mt-1 text-sm">jamais masquées, toujours consultables par lot</p>
+			<p class="text-muted mt-1 text-sm">jamais masquées, consultables passe par passe</p>
 		</Panel>
 	{/if}
 
@@ -69,19 +69,22 @@
 {/if}
 
 <div class="mt-6 grid gap-5 lg:grid-cols-2">
-	{#if can(data.user, 'survey.read') && data.imports.length > 0}
-		<Panel title="Imports" description="Où en sont les lots déposés.">
+	{#if can(data.user, 'survey.read') && data.syncs.length > 0}
+		<Panel
+			title="Synchronisation Openforms"
+			description="Ce que les passes ont rapporté depuis forms.humanitour.fr."
+		>
 			<ul class="flex flex-col gap-3">
-				{#each data.imports as batch (batch.status)}
+				{#each data.syncs as pass (pass.status)}
 					<li class="flex flex-wrap items-center justify-between gap-3">
-						<StatusBadge status={batch.status} />
+						<StatusBadge status={pass.status} />
 						<span class="tabular text-muted text-sm">
-							{formatCount(batch.batches)} lot{batch.batches > 1 ? 's' : ''},
-							{formatCount(batch.accepted)} ligne{batch.accepted > 1 ? 's' : ''} retenue{batch.accepted >
+							{formatCount(pass.passes)} passe{pass.passes > 1 ? 's' : ''},
+							{formatCount(pass.created)} réponse{pass.created > 1 ? 's' : ''} reprise{pass.created >
 							1
 								? 's'
 								: ''}
-							{#if batch.rejected > 0}, {formatCount(batch.rejected)} rejetée{batch.rejected > 1
+							{#if pass.rejected > 0}, {formatCount(pass.rejected)} rejetée{pass.rejected > 1
 									? 's'
 									: ''}{/if}
 						</span>

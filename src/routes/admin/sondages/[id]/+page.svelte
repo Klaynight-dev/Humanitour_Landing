@@ -31,12 +31,12 @@
 >
 	{#snippet actions()}
 		<StatusBadge status={data.survey.status} />
-		{#if can(data.user, 'survey.import')}
+		{#if can(data.user, 'survey.sync')}
 			<a
-				href="/admin/sondages/{data.survey.id}/import"
+				href="/admin/sondages/{data.survey.id}/openforms"
 				class="bg-ink text-paper press rounded-pill px-4 py-2 text-sm font-semibold min-h-11 inline-flex items-center justify-center"
 			>
-				Importer des réponses
+				Collecte Openforms
 			</a>
 		{/if}
 	{/snippet}

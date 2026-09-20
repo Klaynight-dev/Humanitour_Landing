@@ -26,7 +26,7 @@ model User {
 
   sessions          Session[]
   invitationsSent   Invitation[]  @relation("InvitationCreatedBy")
-  importBatches     ImportBatch[]
+  openformsSyncs    OpenformsSync[]
   mediaItems        MediaItem[]
   auditEvents       AuditEvent[]
   settingsUpdated   AppSetting[]

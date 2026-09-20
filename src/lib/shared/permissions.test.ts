@@ -114,7 +114,7 @@ describe('permissionsByGroup', () => {
 	it('place chaque permission dans le groupe qu elle declare', () => {
 		const groups = permissionsByGroup();
 
-		expect(groups.get('Sondages')).toContain('survey.import');
+		expect(groups.get('Sondages')).toContain('survey.sync');
 		expect(groups.get('Equipe')).toContain('role.manage');
 	});
 });
