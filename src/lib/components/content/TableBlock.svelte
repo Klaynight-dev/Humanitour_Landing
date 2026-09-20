@@ -20,6 +20,7 @@
 
 	const title = $derived(read.text('title'));
 	const rows = $derived(read.list('rows'));
+	const comment = $derived(read.text('comment'));
 	const note = $derived(read.text('note'));
 
 	const headBorder = $derived(surface === 'ink' ? 'border-paper/25' : 'border-ink/25');
@@ -87,11 +88,21 @@
 		</tbody>
 	</table>
 
+	<!--
+		Pleine largeur et non la mesure de lecture : les deux textes commentent un
+		tableau qui occupe toute la section, et s'arreter a mi-parcours les
+		detacherait de ce qu'ils expliquent.
+
+		Le commentaire porte ce que les chiffres montrent, la note d'ou ils
+		viennent. L'opacite les distingue sans changer leur taille : la source
+		reste lisible, elle passe simplement apres la lecture.
+	-->
+	{#if comment}
+		<p class="mt-6 text-base leading-relaxed">{comment}</p>
+	{/if}
+
 	{#if note}
-		<!-- Pleine largeur et non la mesure de lecture : la note commente un
-		     tableau qui occupe toute la section, et s'arreter a mi-parcours la
-		     detacherait de ce qu'elle explique. -->
-		<p class="mt-6 text-base leading-relaxed opacity-80">{note}</p>
+		<p class="mt-4 text-base leading-relaxed opacity-70">{note}</p>
 	{/if}
 </Section>
 

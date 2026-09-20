@@ -120,6 +120,8 @@ export const homeTemplate: ContentTemplate = {
 					value1: line.broadcast,
 					value2: line.ground
 				})),
+				comment:
+					"Les instituts et entreprises de sondages sous-estiment la gauche et surestiment la droite. C'était aussi le cas lors des deux dernières élections présidentielles. Et aux législatives de 2024, tous les sondages projetaient le RN devant, mais c'est l'alliance de gauche qui est arrivée en tête en nombre de sièges, suivie du bloc central, démontrant une mauvaise mesure des dynamiques de barrage.",
 				note: `Colonne « À la télé » : ce que les plateaux mettaient en avant pendant le tour. Colonne « Sur le terrain » : les réponses des ${formatCount(TOUR.respondents)} personnes rencontrées en face-à-face, en effectifs bruts, sans pondération ni redressement. Chiffres repris du dossier « Le constat » d'Humanitour.`,
 				surface: 'ink',
 				spacing: 'suite'
@@ -158,7 +160,9 @@ export const homeTemplate: ContentTemplate = {
 				highlightStyle: 'brand',
 				figures: FIGURES,
 				body: "Pour rompre avec l'opacité des sondages, nous allons tout vous partager dans une série documentaire. La quasi-totalité des personnes rencontrées ont accepté de partager leur vote et chaque soir nous avons été hébergés chez les français·es.",
-				buttons: [{ label: 'Voir la médiathèque', href: '/medias', variant: 'outline' }],
+				buttons: [
+					{ label: 'S’abonner pour être informé·e', href: '/infolettre', variant: 'outline' }
+				],
 				aside: 'photos',
 				asideLink: '/galerie',
 				surface: 'mesh',

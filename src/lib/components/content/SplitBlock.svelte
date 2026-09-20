@@ -133,7 +133,7 @@
 					<span
 						class="photo-deck-label glass-chip rounded-pill text-ink inline-flex min-h-11 items-center px-5 py-2.5 text-sm font-semibold"
 					>
-						Voir la galerie — {TOUR_PHOTOS.length} photos
+						Voir la galerie : {TOUR_PHOTOS.length} photos
 					</span>
 				</span>
 			</a>

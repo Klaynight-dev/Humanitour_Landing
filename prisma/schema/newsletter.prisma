@@ -1,0 +1,31 @@
+// Domaine infolettre.
+//
+// La SEULE table du depot qui porte une donnee directement identifiante. Elle
+// est isolee, et elle doit le rester : aucune relation ne la lie a `Response`,
+// et aucune ne le peut, parce qu'une reponse ne porte elle-meme aucune
+// identite. Rapprocher un abonne d'une opinion politique est donc impossible,
+// pas seulement interdit (AGENTS.md section 4).
+//
+// Pas de colonne « confirme » ni de jeton de confirmation : rien n'envoie de
+// courriel dans ce depot aujourd'hui, et un double opt-in dont le second temps
+// n'existe pas ne protege personne — il ne fait qu'en donner l'air. La
+// desinscription se fait donc en saisissant son adresse, sans jeton, donc sans
+// courriel a recevoir. Le jour ou un expediteur sera branche, la confirmation
+// et le lien de desinscription signe s'ajouteront ici.
+
+model NewsletterSubscriber {
+  id String @id @default(cuid())
+
+  /// Normalisee en minuscules a l'ecriture : sans cela, `A@exemple.fr` et
+  /// `a@exemple.fr` s'abonnent deux fois et recoivent deux courriels.
+  email String @unique
+
+  /// Preuve du consentement : sa date, et l'empreinte tronquee de l'adresse IP
+  /// qui l'a donne, calculee comme celle des sessions. Jamais affichee, jamais
+  /// exportee.
+  ipHash String?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

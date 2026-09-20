@@ -48,7 +48,9 @@
 	</div>
 
 	<div class="relative mx-auto max-w-6xl px-4 pt-14 pb-28 sm:px-6 sm:pt-16 sm:pb-36">
-		<div class="grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-x-8 md:grid-cols-[1.5fr_1fr_1fr] md:gap-12">
+		<div
+			class="grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-x-8 md:grid-cols-[1.5fr_1fr_1fr] md:gap-12"
+		>
 			<!-- `col-span-2` : le bloc identite (logo, accroche, adhesion) reste en
 			     pleine largeur au-dessus des deux colonnes courtes, plutot que de
 			     partager une moitie d ecran avec la nav. -->
@@ -96,6 +98,14 @@
 							{item.label}
 						</a>
 					{/each}
+					<!-- Hors `NAV` : l'infolettre se rejoint de partout, mais elle n'a
+					     pas sa place dans la barre du haut, deja pleine. -->
+					<a
+						href="/infolettre"
+						class="block py-1.5 text-sm break-inside-avoid text-white/75 hover:text-white"
+					>
+						Infolettre
+					</a>
 					{#each OUTBOUND as link (link.href)}
 						<a
 							href={link.href}
@@ -159,7 +169,6 @@
 				>
 			</p>
 		</div>
-
 	</div>
 </footer>
 

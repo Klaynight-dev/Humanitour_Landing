@@ -11,6 +11,12 @@ import { highlightFields, spacingField, surfaceField, titleField } from './commo
  *
  * La legende n'est pas decorative : elle est lue par les lecteurs d'ecran a la
  * place du tableau entier, et c'est elle qui dit de quoi il parle.
+ *
+ * Deux textes sous le tableau, et ils ne se confondent pas. Le COMMENTAIRE dit
+ * ce que les chiffres montrent ; la NOTE dit d'ou ils viennent. Les fondre en
+ * un seul champ ferait glisser l'analyse dans la provenance, et un lecteur qui
+ * cherche la source la trouverait noyee dans une interpretation — exactement ce
+ * qu'on reproche aux autres (AGENTS.md section 0).
  */
 export const tableType = defineBlockType({
 	key: 'table',
@@ -49,6 +55,13 @@ export const tableType = defineBlockType({
 				{ name: 'value1', label: 'Valeur, 2e colonne', type: 'text', required: true },
 				{ name: 'value2', label: 'Valeur, 3e colonne', type: 'text', required: true }
 			]
+		},
+		{
+			name: 'comment',
+			label: 'Commentaire sous le tableau',
+			help: 'Ce que le tableau montre, en une ou deux phrases. Distinct de la note, qui dit d’où viennent les chiffres.',
+			type: 'textarea',
+			required: false
 		},
 		{
 			name: 'note',

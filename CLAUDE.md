@@ -249,6 +249,7 @@ raison, pas une préférence.
 | Pondération | La plaquette annonce « pondérer les résultats », `AGENTS.md` § 6 l'interdit. À trancher |
 | Portrait de Mareva Vaucher | Extrait de la plaquette en 210 px : nettement plus doux que les trois autres, à remplacer par un original |
 | Photographies de terrain | `static/photos/` ne contient que deux images, extraites de la plaquette et plafonnant à 480×640. **À remplacer par les originaux** (le compte Instagram `humanitour.france` en héberge d'autres, mais il est derrière un mur de connexion et rien ne peut en être récupéré automatiquement) |
+| Infolettre | Le formulaire existe (`/infolettre`, `/infolettre/desinscription`, table `NewsletterSubscriber`), **mais rien ne peut encore envoyer un courriel** : aucun expediteur n'est branche dans le depot. Il manque donc le double opt-in, le lien de desinscription signe, et une page du back-office pour lire la liste. L'inscription est en simple opt-in, la desinscription se fait par saisie de l'adresse |
 | URL de la campagne HelloAsso | `TODO` explicite dans `src/lib/shared/site.ts` |
 | Contact | Le code utilise `contact@humanitour.fr`, la plaquette `humanitour.france@gmail.com` |
 | Externalisation des chaînes | `src/lib/i18n/` est annoncé en § 5 d'`AGENTS.md` mais n'existe pas |
