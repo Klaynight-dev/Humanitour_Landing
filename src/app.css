@@ -72,6 +72,14 @@
 	--radius-panel: 1rem;
 	--radius-block: 1.75rem;
 	--radius-pill: 999px;
+
+	/*
+	 * Le rayon des blocs photographiques. Plus grand que `--radius-block` parce
+	 * qu'il est porte par une courbure CONTINUE (`corner-shape: squircle`) :
+	 * a rayon egal, un squircle se lit plus carre qu'un quart de cercle, et
+	 * 1,75 rem y perdait la rondeur de la charte.
+	 */
+	--radius-photo: 2.25rem;
 }
 
 :root {
@@ -219,7 +227,22 @@ body {
  */
 @utility block-card {
 	border-radius: var(--radius-block);
+	/* Meme courbure continue que `photo-block` : deux grammaires d'angles dans
+	   une meme page se verraient, surtout la ou une carte de media porte une
+	   photographie a l'interieur. */
+	corner-shape: squircle;
 	background-color: var(--color-paper);
+}
+
+/*
+ * Le rayon des blocs, porte par la meme courbure continue que `block-card` et
+ * `photo-block`. Redefini ici plutot que pose classe par classe : Tailwind
+ * genererait sinon un `rounded-block` en quart de cercle, et les dix surfaces
+ * qui l'emploient auraient des angles differents de ceux des cartes voisines.
+ */
+@utility rounded-block {
+	border-radius: var(--radius-block);
+	corner-shape: squircle;
 }
 
 /*
@@ -386,10 +409,261 @@ body {
  * sinon des angles arrondis.
  */
 @utility photo-block {
-	border-radius: var(--radius-block);
+	border-radius: var(--radius-photo);
+	/*
+	 * Courbure CONTINUE plutot que quart de cercle : le rayon entre et sort
+	 * progressivement du cote, au lieu de s'y raccorder d'un coup. C'est la
+	 * forme des vignettes d'iOS, et c'est aussi celle de la charte — le logo est
+	 * un globe enlace, ses contreformes sont pleines et rondes, et un quart de
+	 * cercle franc y faisait une cassure visible sur un grand rayon.
+	 *
+	 * Amelioration progressive : `border-radius` ci-dessus fait tout le travail
+	 * partout, et `corner-shape` ne fait que lisser la jonction la ou il est
+	 * connu. Un navigateur qui l'ignore affiche l'angle arrondi habituel, pas un
+	 * angle droit.
+	 */
+	corner-shape: squircle;
 	overflow: hidden;
 	background-color: var(--color-ink);
 	box-shadow: var(--shadow-photo);
+}
+
+/*
+ * LE SQUELETTE DE CHARGEMENT
+ *
+ * Pose sur l'image ELLE-MEME, pas sur un bloc en dessous : une image dont le
+ * contenu n'est pas arrive peint quand meme son propre fond, et le contenu le
+ * recouvre entierement des qu'il arrive (`object-fit: cover`). Aucun element
+ * supplementaire, donc aucun risque de decalage au chargement — la place est
+ * deja reservee par `width`/`height` et le rapport de cadrage.
+ *
+ * MOTION : c'est une boucle, ce que DESIGN.md interdit partout ailleurs. Elle
+ * est admise ici pour la meme raison que la barre de progression : c'est un
+ * mouvement FONCTIONNEL, il repond a « est-ce que quelque chose arrive ? » et
+ * il s'arrete des que la reponse est oui. L'action `settled` retire la classe
+ * au chargement, donc rien ne tourne indefiniment derriere les vignettes, et le
+ * garde-fou global de `prefers-reduced-motion` fige le balayage sans retirer le
+ * fond.
+ *
+ * Teintes de la charte : le lavis corail et un balayage blanc. Un gris neutre
+ * aurait ete un squelette de gabarit, pas celui de ce site.
+ *
+ * Classe simple et non `@utility` : `photo-block` pose deja un fond d'encre, et
+ * entre deux utilitaires c'est l'ordre interne de Tailwind qui tranche — il
+ * donnait le noir. Hors couche, la regle l'emporte de facon deterministe.
+ */
+.photo-skeleton {
+	background-color: var(--color-coral-wash);
+	background-image: linear-gradient(
+		100deg,
+		transparent 24%,
+		rgb(255 255 255 / 0.7) 50%,
+		transparent 76%
+	);
+	background-size: 220% 100%;
+	background-repeat: no-repeat;
+	animation: skeleton-sweep 1.6s linear infinite;
+}
+
+@keyframes skeleton-sweep {
+	from {
+		background-position: 170% 0;
+	}
+	to {
+		background-position: -70% 0;
+	}
+}
+
+/*
+ * LE DECK DE PHOTOGRAPHIES
+ *
+ * Deux cliches poses l'un sur l'autre au repos, trois ouverts en eventail au
+ * survol : c'est l'apercu de `/galerie`, pas un diaporama. Le geste repond a un
+ * survol ou a un focus clavier, jamais au defilement ni a une minuterie
+ * (DESIGN.md, Mouvement) — et le garde-fou global de `prefers-reduced-motion`
+ * ramene la transition a 0,01 ms sans retirer l'ouverture elle-meme, donc le
+ * troisieme cliche et le libelle restent atteignables.
+ *
+ * Les cartes sont en `position: absolute` autour d'un centre commun : l'eventail
+ * s'ouvre alors des DEUX cotes sans changer la hauteur du bloc, et le texte qui
+ * suit ne bouge pas. La hauteur du conteneur est donc calculee, pas mesuree.
+ *
+ * `translate` et `rotate` et non `transform` : les deux proprietes s'animent
+ * separement, et `tilted` peut poser son angle sans que les deux se battent.
+ */
+.photo-deck {
+	/*
+	 * La LARGEUR est fixee, la hauteur est prise a la colonne d'en face.
+	 *
+	 * C'est l'inverse d'une carte ordinaire, et c'est voulu : le deck occupe
+	 * toute la hauteur de la section, donc sa hauteur ne lui appartient pas.
+	 * Les cliches s'y etirent et `object-fit: cover` recadre — un rapport fixe
+	 * aurait laisse une bande vide sous eux des que la colonne de texte grandit.
+	 *
+	 * `min-height` sert la disposition empilee du telephone, ou il n'y a plus de
+	 * colonne d'en face a qui prendre une hauteur.
+	 */
+	--deck-card-width: clamp(8.5rem, 22vw, 15rem);
+	--deck-spread: clamp(2rem, 5vw, 3.5rem);
+
+	position: relative;
+	display: grid;
+	place-items: center;
+
+	/* La boite reserve l'ecartement des DEUX cotes : l'eventail s'ouvre alors
+	   jusqu'a ses bords exactement, sans deborder dans la marge de la page ni
+	   provoquer de defilement horizontal sur un telephone. */
+	width: calc(var(--deck-card-width) + var(--deck-spread) * 2);
+	height: 100%;
+	min-height: clamp(17rem, 46vw, 24rem);
+}
+
+/*
+ * Le liset blanc est celui du tirage papier : il detache le cliche du degrade
+ * de marque, sur lequel un bord sombre se perdrait. Il est compte DANS la
+ * hauteur (`box-sizing: border-box` de la base), donc la carte fait exactement
+ * la hauteur du module, liseret compris.
+ */
+.photo-deck-card {
+	position: absolute;
+	height: 100%;
+	width: var(--deck-card-width);
+	object-fit: cover;
+	border: 0.3125rem solid var(--color-paper);
+	transition:
+		translate 420ms var(--ease-overshoot),
+		rotate 420ms var(--ease-overshoot);
+}
+
+/* Au repos : la premiere carte de face, la deuxieme qui depasse derriere elle,
+   la troisieme exactement sous la deuxieme donc invisible. */
+.photo-deck-card:nth-child(1) {
+	z-index: 3;
+	translate: 0 0;
+	rotate: -2deg;
+}
+
+.photo-deck-card:nth-child(2) {
+	z-index: 2;
+	translate: 1.25rem 0.5rem;
+	rotate: 3.5deg;
+}
+
+.photo-deck-card:nth-child(3) {
+	z-index: 1;
+	translate: 1.25rem 0.5rem;
+	rotate: 3.5deg;
+}
+
+/* A l'ouverture : les trois cartes en eventail symetrique. */
+.photo-deck-link:hover .photo-deck-card:nth-child(1),
+.photo-deck-link:focus-visible .photo-deck-card:nth-child(1) {
+	translate: calc(var(--deck-spread) * -1) -0.25rem;
+	rotate: -7deg;
+}
+
+.photo-deck-link:hover .photo-deck-card:nth-child(2),
+.photo-deck-link:focus-visible .photo-deck-card:nth-child(2) {
+	translate: 0 -0.75rem;
+	rotate: 0deg;
+}
+
+.photo-deck-link:hover .photo-deck-card:nth-child(3),
+.photo-deck-link:focus-visible .photo-deck-card:nth-child(3) {
+	translate: var(--deck-spread) -0.25rem;
+	rotate: 7deg;
+}
+
+/*
+ * Le libelle monte du bas et se pose SUR les cliches : il annonce la
+ * destination la ou l'oeil est deja, au lieu d'ajouter une ligne sous le bloc.
+ * `z-index` au-dessus des trois cartes, sans quoi l'eventail le recouvrirait.
+ *
+ * Il n'apparait au survol que la ou le survol existe : sur un ecran tactile, il
+ * n'y a pas d'etat intermediaire entre « rien » et « la page a change », et un
+ * lien dont l'intitule ne s'affiche jamais n'est pas un lien.
+ */
+/*
+ * VERRE LIQUIDE. Trois ingredients, et aucun n'est decoratif : le flou prend
+ * ce qui passe DERRIERE (la photographie ou l'aplat), la saturation rattrape
+ * ce que le flou delave, et le voile blanc remonte le tout assez haut pour que
+ * l'encre y tienne son contraste.
+ *
+ * CONTRASTE, releve au pixel sur le rendu et non estime, DANS la bande ou les
+ * glyphes de `.photo-deck-label` vivent reellement (le seul usage mesure a ce
+ * jour) : 4,95:1 au pire cas, 6,72:1 au premier centile, 13,96:1 en mediane.
+ * Le plancher passe donc AA, que la mediane depasse largement. D'ou l'encre et
+ * non le papier partout ou ce verre est repris : c'est la regle de contraste
+ * de la charte, et c'est aussi le seul sens qui tienne sur un fond qui change
+ * d'une photographie a l'autre.
+ *
+ * CE PLANCHER EST LA CONTRAINTE DU VOILE. A 0,62 il reste au-dessus de AA sur
+ * `DECK_PHOTOS` ; descendre plus bas le ferait passer dessous sur les cliches
+ * sombres. Reutiliser cette classe sur un autre fond photographique (portraits
+ * de `/equipe/`, notamment) reprend cette meme valeur par coherence visuelle,
+ * mais n'a pas ete remesure pixel par pixel comme `DECK_PHOTOS` : seul un
+ * texte de grand corps demanderait AA (4,5:1) et justifierait cette mesure,
+ * une icone n'a besoin que du seuil non-textuel (3:1, WCAG 1.4.11), que l'encre
+ * sur ce voile tient meme au pire des quatre coins mesures ci-dessus.
+ *
+ * Le liseret clair est le bord qui capte la lumiere, pas un contour : c'est
+ * lui qui donne l'epaisseur du verre. L'ombre est `--shadow-lift`, le token
+ * des surfaces qui passent REELLEMENT au-dessus du contenu (DESIGN.md,
+ * Formes) — ce qui est exactement le cas ici, l'etiquette flottant sur les
+ * cliches. Aucune troisieme elevation n'est introduite.
+ */
+.glass-chip {
+	background-color: rgb(255 255 255 / 0.62);
+	backdrop-filter: blur(24px) saturate(180%);
+	-webkit-backdrop-filter: blur(24px) saturate(180%);
+	border: 1px solid rgb(255 255 255 / 0.55);
+	box-shadow: var(--shadow-lift);
+	color: var(--color-ink);
+}
+
+/*
+ * Sans `backdrop-filter`, le voile laisserait passer la photographie NETTE sous
+ * le texte, et le contraste dependrait alors du detail du cliche. Le blanc
+ * devient donc presque opaque : le verre disparait, la lisibilite reste.
+ */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.glass-chip {
+		background-color: rgb(255 255 255 / 0.94);
+	}
+}
+
+/* Meme raison pour qui demande explicitement moins de transparence. */
+@media (prefers-reduced-transparency: reduce) {
+	.glass-chip {
+		background-color: rgb(255 255 255 / 0.96);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+}
+
+.photo-deck-label {
+	position: absolute;
+	bottom: 1rem;
+	z-index: 4;
+
+	transition:
+		opacity 260ms ease,
+		translate 380ms var(--ease-overshoot);
+}
+
+@media (hover: hover) {
+	.photo-deck-label {
+		opacity: 0;
+		/* Depuis SOUS le bloc, pas depuis sa place : c'est ce qui le fait monter
+		   dans le cadre plutot que simplement apparaitre. */
+		translate: 0 2.25rem;
+	}
+
+	.photo-deck-link:hover .photo-deck-label,
+	.photo-deck-link:focus-visible .photo-deck-label {
+		opacity: 1;
+		translate: 0 0;
+	}
 }
 
 /*

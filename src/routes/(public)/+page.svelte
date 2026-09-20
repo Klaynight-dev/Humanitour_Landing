@@ -5,62 +5,42 @@
 
 	let { data }: { data: PageData } = $props();
 	import { reveal } from '$lib/actions/reveal';
-	import { LINKS, PILLARS, QUESTIONS, SITE, TEAM, TOUR } from '$lib/shared/site';
+	import { DECK_PHOTOS, HERO_PHOTO, TOUR_PHOTOS } from '$lib/shared/photos';
+	import { LINKS, PILLARS, QUESTIONS, SITE, TOUR } from '$lib/shared/site';
 
 	/**
-	 * Les photographies du tour.
-	 *
-	 * Elles viennent de la plaquette de l association (`source/Humanitour.pdf`)
-	 * et sont les seules images de terrain dont le projet dispose : leur
-	 * definition d origine plafonne a 480x640, ce qui interdit un fond
-	 * pleine largeur reellement net. La couverture les cadre donc sur une
-	 * colonne, jamais etirees sur toute la largeur d un grand ecran.
-	 *
-	 * Un seul point de remplacement : deposer un original plus grand sous le
-	 * meme nom dans `static/photos/` et corriger `width` / `height` suffit.
-	 *
-	 * La personne photographiee est Come Moudenner, referent des sondages : son
-	 * portrait de `static/equipe/` est un recadrage de la premiere de ces deux
-	 * photos. L equipe a donne son accord pour l usage de son image (CLAUDE.md,
-	 * « Mandat »).
+	 * La ligne de l equipe defile a l horizontale (voir plus bas). Les deux
+	 * booleens pilotent l affichage des fleches : la gauche n apparait qu une
+	 * fois qu on a avance, la droite disparait en butee de fin, pour qu aucune
+	 * des deux ne propose un mouvement impossible.
 	 */
-	const HERO_PHOTO = {
-		src: '/photos/tour-depart.jpg',
-		width: 768,
-		height: 1024,
-		alt: "Côme Moudenner, casque de vélo sur la tête, tient son vélo chargé de sacoches au pied d'un escalier, à côté d'une grande tête de coq."
-	} as const;
+	let teamRow: HTMLUListElement | undefined = $state();
+	let canScrollTeamLeft = $state(false);
+	let canScrollTeamRight = $state(false);
 
-	/**
-	 * Les deux photographies posees cote a cote dans le bilan du tour,
-	 * legerement de travers et d angles OPPOSES : c est l opposition des angles
-	 * qui fait lire une pose a la main plutot qu une grille ratee.
-	 *
-	 * A deux par rangee, chacune fait environ 550 px de large pour une source de
-	 * 693 a 768 px : elles sont affichees SOUS leur definition native, donc
-	 * nettes. C est la seule disposition qui echappe a l agrandissement tant que
-	 * les originaux ne sont pas deposes.
-	 *
-	 * `tour-depart` sert aussi de couverture. La repetition est assumee faute de
-	 * troisieme photographie, et elle disparait des qu une autre arrive : il
-	 * suffira de remplacer la seconde entree ci-dessous.
-	 */
-	const FIELD_PHOTOS = [
-		{
-			src: '/photos/tour-route.jpg',
-			width: 693,
-			height: 866,
-			tilt: '-1.6deg',
-			alt: "Côme Moudenner en mouvement, de profil, sur son vélo de voyage, la tête de coq arrimée à l'arrière."
-		},
-		{
-			src: '/photos/tour-depart.jpg',
-			width: 768,
-			height: 1024,
-			tilt: '1.4deg',
-			alt: "Côme Moudenner à l'arrêt, tenant son vélo chargé de sacoches au pied d'un escalier."
-		}
-	] as const;
+	function updateTeamScrollState() {
+		if (!teamRow) return;
+		canScrollTeamLeft = teamRow.scrollLeft > 4;
+		canScrollTeamRight = teamRow.scrollLeft + teamRow.clientWidth < teamRow.scrollWidth - 4;
+	}
+
+	function scrollTeam(direction: 1 | -1) {
+		teamRow?.scrollBy({ left: direction * 176, behavior: 'smooth' });
+	}
+
+	$effect(() => {
+		if (!teamRow) return;
+		updateTeamScrollState();
+		// Le nombre de portraits est fixe au chargement, mais leur largeur ne l
+		// est pas (redimensionnement de fenetre, zoom) : les deux ecouteurs
+		// gardent les fleches justes dans les deux cas.
+		teamRow.addEventListener('scroll', updateTeamScrollState, { passive: true });
+		window.addEventListener('resize', updateTeamScrollState);
+		return () => {
+			teamRow?.removeEventListener('scroll', updateTeamScrollState);
+			window.removeEventListener('resize', updateTeamScrollState);
+		};
+	});
 
 	/**
 	 * L ecart entre l estimation et l urne, repris du dossier « Le constat »
@@ -354,49 +334,90 @@
 	l association qui parle d elle-meme. Texte noir sur le degrade, jamais blanc
 	(2,69:1 sur l orange).
 
-	Les deux photographies sont posees sous les chiffres qu elles documentent :
-	« 4 000 km parcourus a velo » et les images du velo sur la route disent la
-	meme chose, l une ne decore pas l autre. Elles tiennent toute la largeur
-	parce que c est la ou elles restent nettes.
+	Le deck de photographies est pose sous les chiffres qu il documente :
+	« 4 000 km parcourus a velo » et les photos du tour disent la meme chose,
+	l une ne decore pas l autre. Il n en montre que trois et renvoie a
+	`/galerie` : l accueil donne l echelle, la galerie donne les preuves.
 -->
 <section class="surface-mesh" aria-labelledby="bilan">
 	<div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-		<h2 id="bilan" class="max-w-3xl">Deux mois de terrain, sans institut derrière</h2>
+		<!--
+			DEUX colonnes, et une seule rangee : le titre, les chiffres et la phrase
+			tiennent a gauche, les photographies occupent la droite sur TOUTE la
+			hauteur de la section. Tant que les chiffres restaient en bandeau au-
+			dessus, le deck ne pouvait remplir que le bas de la section.
 
-		<dl class="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-			{#each FIGURES as figure (figure.label)}
-				<!-- `flex-col-reverse` : le chiffre se lit en premier a l ecran, mais
-				     l ordre du DOM garde le couple terme/definition dans le sens que
-				     `dl` impose aux lecteurs d ecran. -->
-				<div class="flex flex-col-reverse gap-2">
-					<dt class="text-base leading-snug">{figure.label}</dt>
-					<dd class="font-display text-4xl leading-none whitespace-nowrap">{figure.value}</dd>
-				</div>
-			{/each}
-		</dl>
+			`items-stretch` (defaut de la grille) et non `items-center` : c'est ce
+			qui donne au deck une hauteur definie a occuper.
+		-->
+		<div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-16">
+			<div class="flex flex-col">
+				<h2 id="bilan">Deux mois de terrain, sans institut derrière</h2>
 
-		<p class="measure mt-10 text-lg leading-relaxed">
-			{TOUR.voteSharedRatio} personnes rencontrées ont accepté de partager leur vote, et {TOUR.onCameraRatio}
-			ont répondu face caméra. Chaque soir, l'équipe a été hébergée chez des habitants différents.
-		</p>
+				<!--
+					Deux colonnes de chiffres et non quatre : la grille vit desormais dans
+					une demi-largeur, quatre y auraient casse chaque libelle.
 
-		<div class="mt-14 grid gap-5 sm:grid-cols-2 sm:gap-8">
-			{#each FIELD_PHOTOS as photo, index (photo.src)}
-				<!-- MOTION : les photos entrent une fois, l une apres l autre, quand
-				     elles atteignent la zone de lecture. C est l un des deux seuls
-				     declenchements au defilement de la page (DESIGN.md). -->
-				<figure class="tilted" style="--tilt: {photo.tilt}" use:reveal={index * 120}>
-					<img
-						src={photo.src}
-						alt={photo.alt}
-						width={photo.width}
-						height={photo.height}
-						loading="lazy"
-						decoding="async"
-						class="photo-block aspect-4/5 w-full object-cover"
-					/>
-				</figure>
-			{/each}
+					UNE SEULE colonne sous `sm`, et c'est mesure, pas esthetique : Bowlby
+					One est tres large et `whitespace-nowrap` lui interdit de se couper,
+					donc « 4 000 km » deborde d'une demi-colonne de telephone et vient
+					chevaucher « 2 mois ». C'est la meme contrainte que le plancher du
+					`clamp` de `h1` (DESIGN.md, Typographie), et elle se reverifie a 320 px.
+				-->
+				<dl class="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2">
+					{#each FIGURES as figure (figure.label)}
+						<!-- `flex-col-reverse` : le chiffre se lit en premier a l ecran, mais
+						     l ordre du DOM garde le couple terme/definition dans le sens que
+						     `dl` impose aux lecteurs d ecran. -->
+						<div class="flex flex-col-reverse gap-2">
+							<dt class="text-base leading-snug">{figure.label}</dt>
+							<dd class="font-display text-4xl leading-none whitespace-nowrap">{figure.value}</dd>
+						</div>
+					{/each}
+				</dl>
+
+				<p class="measure mt-10 text-lg leading-relaxed">
+					{TOUR.voteSharedRatio} personnes rencontrées ont accepté de partager leur vote, et {TOUR.onCameraRatio}
+					ont répondu face caméra. Chaque soir, l'équipe a été hébergée chez des habitants différents.
+				</p>
+			</div>
+
+			<!--
+				MOTION : le bloc entre une fois, quand il atteint la zone de lecture
+				(DESIGN.md limite `reveal` a ce moment et aux portraits de l equipe).
+				L ouverture de l eventail, elle, repond au survol et au focus clavier.
+
+				Un seul lien porte le deck entier : les trois cliches sont un seul
+				objet, et trois liens empiles donneraient trois arrets de tabulation
+				pour une seule destination. Les images sont donc `alt=""`, leur contenu
+				etant deja porte par l intitule du lien.
+			-->
+			<div class="h-full" use:reveal>
+				<a
+					href="/galerie"
+					class="photo-deck-link rounded-block focus-visible:outline-ink flex h-full focus-visible:outline-2 focus-visible:outline-offset-8"
+				>
+					<span class="photo-deck">
+						{#each DECK_PHOTOS as photo (photo.src)}
+							<img
+								src={photo.src}
+								alt=""
+								width={photo.width}
+								height={photo.height}
+								loading="lazy"
+								decoding="async"
+								class="photo-deck-card photo-block"
+							/>
+						{/each}
+
+						<span
+							class="photo-deck-label glass-chip rounded-pill text-ink inline-flex min-h-11 items-center px-5 py-2.5 text-sm font-semibold"
+						>
+							Voir la galerie — {TOUR_PHOTOS.length} photos
+						</span>
+					</span>
+				</a>
+			</div>
 		</div>
 	</div>
 </section>
@@ -460,10 +481,32 @@
 	</div>
 </section>
 
+{#snippet teamArrowIcon(extraClass = '')}
+	<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" class={extraClass}>
+		<path
+			d="M5 12h14M13 6l6 6-6 6"
+			stroke="currentColor"
+			stroke-width="2.5"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+		/>
+	</svg>
+{/snippet}
+
 <!--
 	L equipe, juste apres la section sur l opacite des commanditaires : c est la
-	reponse a la question que cette section pose. Quatre personnes, nommees, avec
-	leur visage, et le lien vers leur parcours.
+	reponse a la question que cette section pose. Cinq personnes, nommees, avec
+	leur visage, sur une seule ligne.
+
+	L ordre vient de `+page.server.ts`, tire au hasard a chaque chargement de la
+	page : sans cela, les premieres fiches de `TEAM` recevraient toujours plus
+	d attention que les dernieres.
+
+	Une seule ligne, y compris sur mobile : elle defile horizontalement plutot
+	que de se replier sur plusieurs rangees, ce qui aurait avantage les fiches du
+	haut. La derniere case n est pas un visage mais un lien « Voir plus » vers
+	`/a-propos`, seule facon de voir l equipe au complet quand elle deborde du
+	cadre.
 
 	Les portraits viennent de la plaquette (`static/equipe/`). Le `alt` est vide
 	parce que le nom est ecrit juste en dessous : le repeter ferait entendre deux
@@ -476,33 +519,81 @@
 				<h2 id="equipe" class="text-2xl sm:text-3xl">Qui a posé les questions</h2>
 				<p class="mt-4 text-base leading-relaxed opacity-80">
 					Un institut qui reproche aux autres leur opacité doit pouvoir dire qui il est. Voilà les
-					quatre personnes qui ont monté celui-ci.
+					cinq personnes qui ont monté celui-ci.
 				</p>
-				<div class="mt-7">
-					<Button href="/a-propos" variant="inverse">Lire leurs parcours</Button>
-				</div>
 			</div>
 
-			<ul class="grid grid-cols-2 gap-x-6 gap-y-9 sm:grid-cols-4">
-				{#each TEAM as member, index (member.slug)}
-					<!-- MOTION : les portraits entrent l un apres l autre, de gauche a
-					     droite, une seule fois. Second et dernier declenchement au
-					     defilement de la page. -->
-					<li use:reveal={index * 110}>
-						<img
-							src="/equipe/{member.slug}.jpg"
-							alt=""
-							width="420"
-							height="420"
-							loading="lazy"
-							decoding="async"
-							class="rounded-block aspect-square w-full object-cover"
-						/>
-						<p class="mt-4 text-base leading-tight font-semibold">{member.name}</p>
-						<p class="mt-1 text-sm opacity-70">{member.role}</p>
+			<!--
+				`overflow-x-auto` + `snap-x` : sur un ecran etroit, cinq portraits a
+				taille lisible ne tiennent pas dans la largeur, et les reduire jusqu a
+				ce qu ils y tiennent les aurait rendus illisibles. Le defilement
+				horizontal garde leur taille et la ligne unique.
+
+				La scrollbar est masquee (`.team-row`), donc rien ne dit qu il y a
+				plus de monde de chaque cote : les deux boutons fleche, en verre
+				liquide comme l etiquette du deck de photos plus haut, font defiler
+				la ligne d une largeur de portrait. Chacun ne s affiche que quand le
+				mouvement qu il propose est possible : pas de fleche gauche tant
+				qu on n a pas avance, pas de fleche droite une fois la fin atteinte.
+			-->
+			<div class="relative">
+				<ul
+					bind:this={teamRow}
+					class="team-row -mx-4 flex snap-x snap-mandatory gap-x-6 overflow-x-auto px-4 pb-2"
+				>
+					{#each data.team as member, index (member.slug)}
+						<!-- MOTION : les portraits entrent l un apres l autre, de gauche a
+						     droite, une seule fois. Second et dernier declenchement au
+						     defilement de la page. -->
+						<li use:reveal={index * 110} class="w-28 shrink-0 snap-start sm:w-36">
+							<img
+								src="/equipe/{member.slug}.jpg"
+								alt=""
+								width="420"
+								height="420"
+								loading="lazy"
+								decoding="async"
+								class="rounded-block aspect-square w-full object-cover"
+							/>
+							<p class="mt-4 text-base leading-tight font-semibold">{member.name}</p>
+							<p class="mt-1 text-sm opacity-70">{member.role}</p>
+						</li>
+					{/each}
+
+					<li class="w-28 shrink-0 snap-start sm:w-36">
+						<a
+							href="/a-propos"
+							aria-label="Voir plus : toute l'équipe et leurs parcours"
+							class="glass-chip rounded-block text-ink focus-visible:outline-ink flex aspect-square w-full flex-col items-center justify-center gap-1.5 text-sm font-semibold transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4"
+						>
+							{@render teamArrowIcon()}
+							Voir plus
+						</a>
 					</li>
-				{/each}
-			</ul>
+				</ul>
+
+				{#if canScrollTeamLeft}
+					<button
+						type="button"
+						onclick={() => scrollTeam(-1)}
+						aria-label="Faire défiler l'équipe vers la gauche"
+						class="glass-chip text-ink focus-visible:outline-ink absolute top-14 left-2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4 sm:top-18"
+					>
+						{@render teamArrowIcon('rotate-180')}
+					</button>
+				{/if}
+
+				{#if canScrollTeamRight}
+					<button
+						type="button"
+						onclick={() => scrollTeam(1)}
+						aria-label="Faire défiler l'équipe vers la droite"
+						class="glass-chip text-ink focus-visible:outline-ink absolute top-14 right-2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4 sm:top-18"
+					>
+						{@render teamArrowIcon()}
+					</button>
+				{/if}
+			</div>
 		</div>
 	</div>
 </section>
@@ -822,5 +913,19 @@
 		.drop {
 			animation: none;
 		}
+	}
+
+	/*
+	 * La ligne de l equipe defile horizontalement. La scrollbar reste
+	 * fonctionnelle (clavier, trackpad, glisser tactile) mais s efface
+	 * visuellement : un filet gris sur l aplat noir ne fait qu ajouter du bruit
+	 * a une rangee deja lisible par ses cartes.
+	 */
+	.team-row {
+		scrollbar-width: none;
+	}
+
+	.team-row::-webkit-scrollbar {
+		display: none;
 	}
 </style>

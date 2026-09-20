@@ -132,14 +132,28 @@ plancher doit être revérifiée à 320 px.
 
 ## Formes
 
-Trois rayons, et l'écart entre eux porte une information :
+Quatre rayons, et l'écart entre eux porte une information :
 
 | Token | Valeur | Usage |
 | --- | --- | --- |
 | `--radius-field` | 0,625 rem | champs de saisie |
 | `--radius-panel` | 1 rem | surfaces du back-office |
 | `--radius-block` | 1,75 rem | cartes et blocs du site public |
+| `--radius-photo` | 2,25 rem | blocs photographiques |
 | `--radius-pill` | 999 px | boutons et étiquettes |
+
+**La courbure est continue, pas circulaire.** Les grands rayons (`block-card`,
+`rounded-block`, `photo-block`) portent `corner-shape: squircle` : le rayon entre
+et sort progressivement du côté au lieu de s'y raccorder d'un coup. C'est la
+forme des vignettes d'iOS, et c'est ce que la charte demande — le logo est un
+globe enlacé, ses contreformes sont pleines, et un quart de cercle franc faisait
+une cassure visible dès 1,75 rem.
+
+C'est une **amélioration progressive** : `border-radius` fait tout le travail
+partout, `corner-shape` ne lisse la jonction que là où il est connu. Un
+navigateur qui l'ignore affiche l'angle arrondi habituel, jamais un angle droit.
+À rayon égal un squircle se lit plus carré, d'où `--radius-photo` plus grand que
+`--radius-block` : sans ça, les photographies perdaient la rondeur de la charte.
 
 **Aucune carte ne porte d'ombre.** Deux élévations existent, et aucune autre :
 
@@ -152,6 +166,30 @@ Ce qui détache un bloc de contenu, c'est le contraste de fond, pas un contour n
 une ombre. `--shadow-photo` est l'exception ajoutée le 18 septembre 2026 : une
 photographie rectangulaire posée sur le dégradé mesh se lit comme un trou dans
 l'aplat tant qu'elle ne porte pas d'ombre.
+
+### Le verre
+
+**Une seule surface translucide sur le site : l'étiquette du deck de l'accueil**
+(`.photo-deck-label`). Elle flotte sur les photographies, donc elle prend ce qui
+passe derrière : `backdrop-filter: blur(20px) saturate(180%)`, un voile blanc à
+0,72, un liseré clair pour l'épaisseur, et `--shadow-lift` — le token des
+surfaces qui passent réellement au-dessus du contenu, pas une troisième
+élévation.
+
+Le texte y est **noir**, comme partout sur les surfaces claires. Mesuré au pixel
+sur le rendu et dans la bande où les glyphes vivent réellement, pas estimé :
+**4,95:1 au pire cas**, 6,72:1 au premier centile, 13,96:1 en médiane. Le
+plancher passe donc AA.
+
+**C'est ce plancher qui fixe l'opacité du voile**, pas le goût : à 0,62 il tient,
+en dessous il passerait sous AA sur les clichés sombres. Rendre le verre plus
+transparent demande donc de remesurer sur le rendu, et les photographies de
+`DECK_PHOTOS` sont ce qui décide.
+
+Deux replis, parce qu'un fond translucide n'est pas toujours souhaitable ni
+disponible : sans `backdrop-filter`, le blanc monte à 0,94 (la photographie
+passerait sinon **nette** sous le texte) ; sous `prefers-reduced-transparency`,
+il monte à 0,96 et le flou tombe.
 
 **Les titres ne se coupent pas.** `hyphens: auto` est retiré de `h1` : combinée
 à `text-wrap: balance`, la césure automatique offrait au navigateur une coupure
@@ -219,10 +257,11 @@ les aplats et le mouvement s'arrêtent à la porte des pages de données.**
 
 | Page | Registre | Mot marqué | Aplats | Entrée `enter` | `reveal` |
 | --- | --- | --- | --- | --- | --- |
-| `/` | argument | `vérité`, `l'urne` | engagements | oui | photos, portraits |
+| `/` | argument | `vérité`, `l'urne` | engagements | oui | deck de photos, portraits |
 | `/le-tour` | argument | `France` (`mark-ink`) | méthode | oui | schéma du parcours |
 | `/a-propos` | argument | `engagé` | couverture | oui | portraits |
 | `/medias` | éditorial | `voix` | non | oui | cartes, par rangée |
+| `/galerie` | éditorial | `visages` | non | oui | vignettes, par rangée |
 | `/donnees` | **chiffres, en-tête colorée** | non | en-tête de fiche | non | non |
 | `/methodologie` | **chiffres** | non | non | non | non |
 | back-office | outil | non | non | non | non |
@@ -230,6 +269,14 @@ les aplats et le mouvement s'arrêtent à la porte des pages de données.**
 Les deux pages de chiffres restent à `ENERGY 1 / MOTION 1`, sans ombre et sans
 apparition. Ce n'est pas un oubli : c'est la règle, et la rouvrir revient à
 rouvrir la séparation des registres.
+
+**`/galerie` et `/medias` partagent le registre éditorial sans se recouvrir**, et
+la frontière est nette : `/medias` liste ce qui se lit, s'écoute et se regarde
+(articles, vidéos, podcasts, revue de presse), piloté par le back-office ;
+`/galerie` ne montre que les photographies du tour, qui n'ont ni auteur à créditer
+ni corps de texte et vivent donc dans un simple tableau. Les fusionner
+demanderait une nature « photo » au modèle des médias — ce serait un autre choix,
+pas une correction.
 
 **Révision du 19 septembre 2026, à la demande du porteur du projet.** La fiche
 d'une enquête (`/donnees/[slug]`) ouvre désormais sur un bandeau au dégradé de
@@ -309,8 +356,15 @@ appelle la chaleur.
 | Emploi | Où | Traitement |
 | --- | --- | --- |
 | Couverture | accueil | plein cadre, colonne de droite sur grand écran, bandeau de tête sur mobile |
-| Illustration de terrain | bilan du tour | bloc arrondi `photo-block`, seule ombre du site public |
+| Deck | bilan du tour | trois cartes en `photo-block`, deux visibles au repos, en regard du texte |
+| Galerie | `/galerie` | grille de vignettes `photo-block`, cadrage commun `aspect-4/5` |
 | Portraits | accueil, `/a-propos` | carré arrondi ou cercle, jamais recadrés serré |
+
+Les photographies sont déclarées **une seule fois**, dans
+[`src/lib/shared/photos.ts`](./src/lib/shared/photos.ts) : l'accueil y prend la
+couverture et les trois cartes du deck, `/galerie` les prend toutes. Leurs
+`width` et `height` sont les dimensions natives des fichiers, relevées sur les
+fichiers eux-mêmes ; c'est ce qui réserve leur place avant le chargement.
 
 Trois règles, et elles ne sont pas négociables :
 
@@ -323,8 +377,13 @@ Trois règles, et elles ne sont pas négociables :
    étroit pour porter voile et photo à la fois, c'est la superposition qui
    tombe, pas le contraste : la photo devient alors une bande séparée.
 3. **Aucune photo n'est étirée au-delà de sa définition utile.** Les originaux
-   disponibles plafonnent à 480×640 : la couverture les cadre sur une colonne
-   plutôt que sur toute la largeur d'un moniteur.
+   de l'association mesurent 1536×2048 (ou l'inverse en paysage) depuis le
+   versement de septembre 2026 ; la contrainte des 480×640 qui limitait la
+   couverture à une colonne étroite a donc disparu. Le cadrage en colonne, lui,
+   est conservé : c'est désormais une décision de composition, pas une limite
+   technique. Une seule vignette rogne, celle de `/galerie`, parce qu'une grille
+   dont chaque case a sa propre hauteur devient un escalier — et l'original
+   entier reste à un clic.
 
 ## Mouvement
 
@@ -346,8 +405,18 @@ Ce qui est autorisé, nommément :
 | `MeshShader` | couverture de `/le-tour` | montage, fond seulement |
 | `enter` | couverture d'accueil | chargement, une fois, échelonné dans l'ordre de lecture |
 | `drop-in` | colonne « Dans l'urne » | chargement, une fois, ligne par ligne |
-| `reveal` | photo de terrain, portraits de l'équipe | entrée dans la zone de lecture, une fois |
+| `reveal` | deck de photographies, portraits de l'équipe, vignettes de `/galerie` | entrée dans la zone de lecture, une fois |
+| ouverture du deck | bilan du tour, accueil | survol **et** focus clavier |
 | barre de progression | en haut de la fenêtre, **toutes** les pages | pendant une navigation qui dépasse 120 ms |
+| en-tête flottant | `Header.svelte`, **toutes** les pages | défilement au-delà de 24 px : la barre se détache, se resserre à 56 rem et prend `--radius-block` |
+
+**Ajout du 20 septembre 2026, à la demande directe du porteur du projet.** L'en-tête
+flottant n'est pas une apparition : l'état de base (haut de page) reste la barre
+pleine largeur déjà en place, et le changement suit la position de défilement,
+pas un chargement ou une entrée dans le viewport. Il est plus proche de la barre
+de progression, un mouvement fonctionnel qui répond à « où en est la page ? »,
+que d'un `reveal`. `prefers-reduced-motion` retire la transition, l'état final
+(flottant ou plein cadre) reste atteint sans elle.
 
 La **barre de progression** (`NavigationProgress`) est un mouvement fonctionnel,
 au même titre que `press` : elle répond à « est-ce que mon clic a été pris en

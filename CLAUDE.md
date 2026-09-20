@@ -39,7 +39,7 @@ médiathèque et le back-office.
 | Déclaration | Préfecture des Côtes-d'Armor, 23 août 2026 (récépissé du 7 septembre 2026) |
 | Directeur de publication | Elouan Passereau |
 | Contact | contact@humanitour.fr |
-| Hébergeur | Contabo GmbH — datacenter de Nuremberg, Allemagne (UE) |
+| Hébergeur | WinHeberg — datacenter nLighten Lyon LYS1, Villeurbanne, France |
 | Code déontologique | ICC/ESOMAR — Commission des sondages |
 
 **Mandat.** Côme Moudenner, référent des sondages, a missionné Elouan Passereau
@@ -72,7 +72,7 @@ images de tiers, pas celles de l'association.
 | Tests | **Vitest** + couverture | Runner natif de l'écosystème Vite |
 | Lint | ESLint 9 (flat config) + `eslint-plugin-svelte` | |
 | Exécution | Bun | |
-| Déploiement | `adapter-node` + Docker Compose sur VPS | Cohérent avec l'hébergement Contabo déjà déclaré |
+| Déploiement | `adapter-node` + Docker Compose sur VPS | Cohérent avec l'hébergement WinHeberg déjà déclaré |
 | Base en développement | **PostgreSQL**, via `docker-compose` | Le même moteur qu'en production. Une base de développement qui diffère du moteur réel laisse passer ce qui casse ensuite : types, transactions, contraintes |
 
 ---

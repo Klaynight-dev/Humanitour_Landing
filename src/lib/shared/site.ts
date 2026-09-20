@@ -59,8 +59,10 @@ export const QUESTIONS = [
  * L equipe de l association.
  *
  * Noms, fonctions et notices sont repris MOT POUR MOT de la plaquette
- * (`source/Humanitour.pdf`, page « L equipe »). Ce sont des personnes reelles :
- * rien ici ne s invente ni ne se reformule sans leur accord.
+ * (`source/Humanitour.pdf`, page « L equipe ») pour les membres qui y
+ * figurent ; Marie Angèle Gicquel a rejoint l equipe apres cette plaquette,
+ * sa fiche vient directement de l association. Ce sont des personnes
+ * reelles : rien ici ne s invente ni ne se reformule sans leur accord.
  *
  * Les portraits viennent de la meme page et sont stockes dans
  * `static/equipe/`. Le visuel de l incubateur, lui, n a pas ete repris : c est
@@ -110,6 +112,14 @@ export const TEAM: readonly TeamMember[] = [
 		name: 'Jeanne Tardivel',
 		role: 'Référente de la communication',
 		bio: "Communicante et créative, elle est à l'origine de la direction artistique Humanitour."
+	},
+	{
+		// Rejointe apres la plaquette d origine (source/Humanitour.pdf) : nom,
+		// fonction et notice viennent directement de l equipe, pas du PDF.
+		slug: 'marie-angele-gicquel',
+		name: 'Marie Angèle Gicquel',
+		role: 'Référente sociologie',
+		bio: 'Étudiante en sociologie et en mode, elle analyse nos enquêtes de terrains.'
 	}
 ];
 
@@ -167,11 +177,11 @@ export const ORGANISATION = {
 } as const;
 
 export const HOST = {
-	name: 'Contabo GmbH',
-	address: 'Aschauer Straße 32a, 81549 Munich, Allemagne',
-	phone: '+49 89 3564717 70',
-	website: 'https://contabo.com',
-	dataCenter: 'Nuremberg, Allemagne (Union européenne)'
+	name: 'WinHeberg',
+	address: 'Rue Chaussade, Bâtiment 2, 43260 Saint-Julien-Chapteuil, France',
+	phone: '+33 9 72 14 79 11',
+	website: 'https://winheberg.com',
+	dataCenter: 'nLighten Lyon LYS1, Villeurbanne, France'
 } as const;
 
 export const POLLING = {

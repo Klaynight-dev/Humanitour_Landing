@@ -4,6 +4,7 @@
 
 	let open = $state(false);
 	let toggleEl: HTMLButtonElement | undefined = $state();
+	let scrolled = $state(false);
 
 	// La navigation au clavier et le lecteur d ecran ont besoin de savoir quelle
 	// entree correspond a la page courante : `aria-current` le dit, la couleur
@@ -19,117 +20,186 @@
 		open = false;
 		toggleEl?.focus();
 	}
+
+	// Seuil au-dela du premier ecran : sur mobile, le rebond elastique
+	// (overscroll) produit de petites valeurs de `scrollY` au repos, un seuil
+	// bas ferait entrer et sortir l en-tete de son etat flottant sans que le
+	// visiteur ait vraiment scrolle.
+	$effect(() => {
+		function onScroll() {
+			scrolled = window.scrollY > 24;
+		}
+		onScroll();
+		window.addEventListener('scroll', onScroll, { passive: true });
+		return () => window.removeEventListener('scroll', onScroll);
+	});
 </script>
 
 <svelte:window onkeydown={onKeydown} />
 
 <!--
-	En-tete colle. C est la seule surface du site qui passe reellement au-dessus
-	du contenu : elle est donc la seule a porter l ombre `shadow-lift`. Fond
-	opaque et non floute, la charte n ayant aucune transparence.
+	En-tete colle. Au repos elle occupe toute la largeur, sur `--header-h`
+	exactement (la couverture d accueil calcule sa hauteur dessus). Des qu on
+	scrolle, la barre se detache : plus etroite, centree, coins arrondis, comme
+	posee sur le contenu plutot que soudee au bord de l ecran.
+
+	Deux couches : `header-shell` porte le collage et l espace qui se creuse
+	autour de la barre (transparent, le fond de la section defilee y apparait) ;
+	`header-surface` porte le fond, l ombre et la forme qui changent.
 -->
-<header class="bg-cream sticky top-0 z-50" style="box-shadow: var(--shadow-lift)">
-	<div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-		<a href="/" class="flex items-center py-1" aria-label="{SITE.name}, accueil">
-			<img
-				src="/logo-lockup-ink.png"
-				alt={SITE.name}
-				width="1200"
-				height="335"
-				class="h-8 w-auto sm:h-9"
-			/>
-		</a>
-
-		<nav class="hidden items-center gap-1 lg:flex" aria-label="Navigation principale">
-			{#each NAV as item (item.href)}
-				{@const current = isCurrent(item.href)}
-				<!-- La page courante se signale par un aplat plein, pas par une seule
-				     couleur : un daltonien doit pouvoir la reperer aussi. -->
-				<a
-					href={item.href}
-					aria-current={current ? 'page' : undefined}
-					class="rounded-pill px-4 py-2.5 text-sm font-semibold transition-colors {current
-						? 'bg-ink text-paper'
-						: 'hover:bg-ink/8'}"
-				>
-					{item.label}
-				</a>
-			{/each}
-		</nav>
-
-		<div class="hidden items-center gap-4 lg:flex">
-			<a
-				href={LINKS.discord.href}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="rounded-pill px-3 py-2.5 text-sm font-semibold underline decoration-2 underline-offset-4"
-			>
-				Discord
+<header class="header-shell sticky top-0 z-50" class:is-scrolled={scrolled}>
+	<div class="header-surface bg-cream mx-auto" style="box-shadow: var(--shadow-lift)">
+		<div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+			<a href="/" class="flex items-center py-1" aria-label="{SITE.name}, accueil">
+				<img
+					src="/logo-lockup-ink.png"
+					alt={SITE.name}
+					width="1200"
+					height="335"
+					class="h-8 w-auto sm:h-9"
+				/>
 			</a>
-			<a
-				href={LINKS.helloasso.href}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="surface-brand press rounded-pill px-5 py-2.5 text-sm font-semibold"
-			>
-				Adhérer
-			</a>
-		</div>
 
-		<!-- Le libelle « Menu » reste visible : une icone seule suppose que le
-		     visiteur sait deja qu un menu se cache derriere trois traits. -->
-		<button
-			bind:this={toggleEl}
-			type="button"
-			class="border-ink flex min-h-11 items-center gap-2 rounded-pill border-2 px-4 py-2 text-sm font-semibold lg:hidden"
-			aria-expanded={open}
-			aria-controls="menu-mobile"
-			onclick={() => (open = !open)}
-		>
-			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-				{#if open}
-					<path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.5" />
-				{:else}
-					<path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.5" />
-				{/if}
-			</svg>
-			{open ? 'Fermer' : 'Menu'}
-		</button>
-	</div>
-
-	{#if open}
-		<div id="menu-mobile" class="bg-cream border-ink/10 border-t lg:hidden">
-			<nav class="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3" aria-label="Navigation mobile">
+			<nav class="hidden items-center gap-1 lg:flex" aria-label="Navigation principale">
 				{#each NAV as item (item.href)}
 					{@const current = isCurrent(item.href)}
+					<!-- La page courante se signale par un aplat plein, pas par une seule
+					     couleur : un daltonien doit pouvoir la reperer aussi. -->
 					<a
 						href={item.href}
 						aria-current={current ? 'page' : undefined}
-						class="rounded-pill px-4 py-3 font-semibold {current ? 'bg-ink text-paper' : ''}"
-						onclick={() => (open = false)}
+						class="rounded-pill px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors {current
+							? 'bg-ink text-paper'
+							: 'hover:bg-ink/8'}"
 					>
 						{item.label}
 					</a>
 				{/each}
-				<div class="mt-2 flex flex-col gap-2">
-					<a
-						href={LINKS.discord.href}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="border-ink rounded-pill border-2 px-5 py-3 text-center font-semibold"
-					>
-						Rejoindre le Discord
-					</a>
-					<a
-						href={LINKS.helloasso.href}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="surface-brand rounded-pill px-5 py-3 text-center font-semibold"
-					>
-						Adhérer à l'association
-					</a>
-				</div>
 			</nav>
+
+			<div class="hidden items-center gap-4 lg:flex">
+				<a
+					href={LINKS.discord.href}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="rounded-pill px-3 py-2.5 text-sm font-semibold whitespace-nowrap underline decoration-2 underline-offset-4"
+				>
+					Discord
+				</a>
+				<a
+					href={LINKS.helloasso.href}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="surface-brand press rounded-pill px-5 py-2.5 text-sm font-semibold whitespace-nowrap"
+				>
+					Adhérer
+				</a>
+			</div>
+
+			<!-- Le libelle « Menu » reste visible : une icone seule suppose que le
+			     visiteur sait deja qu un menu se cache derriere trois traits. -->
+			<button
+				bind:this={toggleEl}
+				type="button"
+				class="border-ink flex min-h-11 items-center gap-2 rounded-pill border-2 px-4 py-2 text-sm font-semibold lg:hidden"
+				aria-expanded={open}
+				aria-controls="menu-mobile"
+				onclick={() => (open = !open)}
+			>
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+					{#if open}
+						<path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.5" />
+					{:else}
+						<path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.5" />
+					{/if}
+				</svg>
+				{open ? 'Fermer' : 'Menu'}
+			</button>
 		</div>
-	{/if}
+
+		{#if open}
+			<div id="menu-mobile" class="border-ink/10 border-t lg:hidden">
+				<nav class="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3" aria-label="Navigation mobile">
+					{#each NAV as item (item.href)}
+						{@const current = isCurrent(item.href)}
+						<a
+							href={item.href}
+							aria-current={current ? 'page' : undefined}
+							class="rounded-pill px-4 py-3 font-semibold {current ? 'bg-ink text-paper' : ''}"
+							onclick={() => (open = false)}
+						>
+							{item.label}
+						</a>
+					{/each}
+					<div class="mt-2 flex flex-col gap-2">
+						<a
+							href={LINKS.discord.href}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="border-ink rounded-pill border-2 px-5 py-3 text-center font-semibold"
+						>
+							Rejoindre le Discord
+						</a>
+						<a
+							href={LINKS.helloasso.href}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="surface-brand rounded-pill px-5 py-3 text-center font-semibold"
+						>
+							Adhérer à l'association
+						</a>
+					</div>
+				</nav>
+			</div>
+		{/if}
+	</div>
 </header>
+
+<style>
+	/*
+	 * `header-shell` reste transparent et pleine largeur : c est lui qui colle
+	 * en haut de la fenetre. L espace qui se creuse autour de la barre au
+	 * defilement laisse voir la section defilee derriere, ce qui donne l effet
+	 * de flottement plutot qu un simple retrecissement.
+	 */
+	.header-shell {
+		padding: 0;
+		transition: padding 380ms var(--ease-overshoot);
+	}
+
+	.header-shell.is-scrolled {
+		padding: 0.75rem 1rem;
+	}
+
+	/*
+	 * `max-width` anime de « toute la largeur » (habillee par `header-shell`)
+	 * a une colonne plus etroite que `max-w-6xl` : sans cet ecart, la barre
+	 * flottante toucherait les memes bords que le contenu et ne lirait pas
+	 * comme detachee.
+	 */
+	.header-surface {
+		max-width: 100%;
+		transition:
+			max-width 380ms var(--ease-overshoot),
+			border-radius 380ms var(--ease-overshoot);
+	}
+
+	/*
+	 * 76 rem, pas moins : la rangee interne (logo, six liens, Discord, Adherer)
+	 * est deja plafonnee a `max-w-6xl` (72 rem) plus son propre `px-6` (1,5 rem
+	 * de chaque cote). En dessous de cette somme, les liens n ont pas la place
+	 * de tenir sur une ligne et leur texte se met a la couper au lieu que le
+	 * flex deborde.
+	 */
+	.header-shell.is-scrolled .header-surface {
+		max-width: 76rem;
+		border-radius: var(--radius-block);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.header-shell,
+		.header-surface {
+			transition: none;
+		}
+	}
+</style>

@@ -33,7 +33,7 @@
 	<title>À propos, {SITE.name}</title>
 	<meta
 		name="description"
-		content="Les quatre personnes derrière Humanitour, l'association qui les porte, et ce qui la finance."
+		content="Les cinq personnes derrière Humanitour, l'association qui les porte, et ce qui la finance."
 	/>
 	<meta property="og:title" content="À propos, {SITE.name}" />
 	<meta property="og:type" content="website" />
@@ -65,12 +65,12 @@
 		</h1>
 
 		<p class="measure enter mt-7 text-xl font-medium sm:text-2xl" style="--enter-delay: 90ms">
-			Quatre personnes, une association loi 1901, et aucun actionnaire. Voilà qui a posé les
+			Cinq personnes, une association loi 1901, et aucun actionnaire. Voilà qui a posé les
 			questions sur {TOUR.kilometres.toLocaleString('fr-FR')} kilomètres.
 		</p>
 
 		<!--
-			Les quatre fiches sont identiques a dessein : ce sont des pairs, et donner
+			Les fiches sont identiques a dessein : ce sont des pairs, et donner
 			plus de place a l une d elles laisserait entendre une hierarchie qui
 			n existe pas dans l association.
 		-->

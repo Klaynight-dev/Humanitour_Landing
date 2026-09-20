@@ -83,6 +83,8 @@
 		<img
 			src={media.coverUrl}
 			alt={media.coverAlt ?? ''}
+			loading="lazy"
+			decoding="async"
 			class="rounded-block mt-8 w-full object-cover"
 		/>
 	{/if}

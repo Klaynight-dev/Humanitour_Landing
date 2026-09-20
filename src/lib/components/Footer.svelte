@@ -48,13 +48,18 @@
 	</div>
 
 	<div class="relative mx-auto max-w-6xl px-4 pt-14 pb-28 sm:px-6 sm:pt-16 sm:pb-36">
-		<div class="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr] md:gap-12">
-			<div class="flex flex-col items-start gap-4">
+		<div class="grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-x-8 md:grid-cols-[1.5fr_1fr_1fr] md:gap-12">
+			<!-- `col-span-2` : le bloc identite (logo, accroche, adhesion) reste en
+			     pleine largeur au-dessus des deux colonnes courtes, plutot que de
+			     partager une moitie d ecran avec la nav. -->
+			<div class="col-span-2 flex flex-col items-start gap-4 md:col-span-1">
 				<img
 					src="/logo-lockup-paper.png"
 					alt={SITE.name}
 					width="1200"
 					height="335"
+					loading="lazy"
+					decoding="async"
 					class="h-10 w-auto"
 				/>
 				<p class="font-hand text-3xl leading-tight">{SITE.tagline}</p>
@@ -68,7 +73,10 @@
 				</a>
 			</div>
 
-			<nav aria-labelledby="footer-nav" class="flex flex-col items-start gap-1">
+			<!-- `min-w-0` : sans lui, une cellule de grille garde une largeur minimale
+			     egale a son contenu le plus long et peut faire deborder toute la
+			     grille sur un ecran etroit. -->
+			<nav aria-labelledby="footer-nav" class="flex min-w-0 flex-col items-start gap-1">
 				<h2 id="footer-nav" class="mb-1 text-base font-semibold">Le site</h2>
 				{#each NAV as item (item.href)}
 					<a href={item.href} class="py-1.5 text-sm text-white/75 hover:text-white">
@@ -87,7 +95,7 @@
 				{/each}
 			</nav>
 
-			<div class="flex flex-col items-start gap-1">
+			<div class="flex min-w-0 flex-col items-start gap-1">
 				<h2 class="mb-1 text-base font-semibold">L'association</h2>
 				<p class="text-sm text-white/75">
 					{ORGANISATION.form}.<br />
@@ -100,7 +108,7 @@
 				</p>
 				<a
 					href="mailto:{SITE.email}"
-					class="py-1.5 text-sm text-white/75 underline decoration-2 underline-offset-2 hover:text-white"
+					class="py-1.5 text-sm wrap-break-word text-white/75 underline decoration-2 underline-offset-2 hover:text-white"
 				>
 					{SITE.email}
 				</a>
