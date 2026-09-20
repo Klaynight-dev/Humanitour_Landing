@@ -1,4 +1,4 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { recordAudit } from '$lib/server/audit';
 import { contentTokens } from '$lib/server/content/queries';
 import { listLibrary } from '$lib/server/content/images';
@@ -47,10 +47,22 @@ async function ensurePage(key: ContentPageKey, userId: string) {
 	});
 }
 
-export const load: PageServerLoad = async ({ locals, params }) => {
-	// `+page@.svelte` sort du gabarit du back-office : la garde ne peut donc pas
-	// reposer sur celui-ci, et le compte ne descend pas non plus par lui. Les
-	// deux sont repris ici, explicitement.
+export const load: PageServerLoad = async ({ locals, params, url }) => {
+	/*
+	 * `+page@.svelte` sort du gabarit du back-office, et le `load` de ce gabarit
+	 * ne tourne donc pas : ni sa garde, ni le compte qu'il fait descendre. Les
+	 * deux sont repris ici.
+	 *
+	 * La redirection vient AVANT la permission, et c'est la meme que celle du
+	 * gabarit : sans elle, une session expiree rendait un 401 nu au lieu de
+	 * renvoyer vers la connexion avec l'adresse demandee. Perdre la page visee a
+	 * chaque expiration serait une brimade quotidienne, et elle serait pire ici
+	 * qu'ailleurs, au milieu d'une page en cours d'edition.
+	 */
+	if (!locals.user) {
+		redirect(303, `/connexion?suite=${encodeURIComponent(url.pathname + url.search)}`);
+	}
+
 	const user = requirePermission(locals.user, 'content.read');
 
 	const page = pageFrom(params.key);
