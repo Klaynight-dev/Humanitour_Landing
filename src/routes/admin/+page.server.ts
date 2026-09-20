@@ -1,7 +1,6 @@
 import {
 	mediaCounts,
 	responseCounts,
-	responseTrend,
 	subscriberCounts,
 	surveysByStatus,
 	syncActivity,
@@ -20,10 +19,13 @@ const NO_COUNT: PeriodCount = { total: 0, current: 0, previous: 0 };
 /**
  * Tableau de bord.
  *
- * Il repond a trois questions, dans cet ordre : qu'est-ce qui attend quelqu'un,
- * qu'est-ce que je viens faire ici, et ou en est-on. La version precedente ne
- * repondait qu'a la troisieme — elle alignait des totaux, qu'on regarde une
- * fois puis plus jamais.
+ * Ecran dense : tout ce qui compte tient sans faire defiler. Un bandeau de
+ * compteurs, puis des listes serrees cote a cote.
+ *
+ * La courbe de collecte a ete retiree avec la mise en page dense, et sa lecture
+ * avec : `responseTrend` chargeait la date de CHAQUE reponse pour dessiner une
+ * dizaine de points. Elle vit toujours dans `dashboard/queries.ts` pour l'ecran
+ * de synchronisation d'un sondage, qui l'affiche pour de bon.
  *
  * Chaque bloc reste conditionne a la permission correspondante : un compte de la
  * redaction n'a pas a savoir combien de reponses ont ete synchronisees. Les chiffres
@@ -52,13 +54,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const surveys = readsSurveys ? await prisma.survey.count() : 0;
 	const surveyStatuses = readsSurveys ? await surveysByStatus() : [];
 	const responses = readsSurveys ? await responseCounts() : NO_COUNT;
-	const trend = readsSurveys ? await responseTrend() : null;
 	const syncs = readsSurveys ? await syncActivity() : [];
 
 	const media = readsMedia ? await mediaCounts() : NO_COUNT;
-	const mediaPublished = readsMedia
-		? await prisma.mediaItem.count({ where: { status: 'PUBLISHED' } })
-		: 0;
 
 	const subscribers = readsNewsletter ? await subscriberCounts() : NO_COUNT;
 
@@ -82,10 +80,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		surveys,
 		surveyStatuses,
 		responses,
-		trend,
 		syncs,
 		media,
-		mediaPublished,
 		subscribers,
 		team,
 		recentAudit
