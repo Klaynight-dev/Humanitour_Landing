@@ -54,9 +54,10 @@
 						<span class="font-display shrink-0 text-xl leading-tight {numberClass}">
 							{index + 1}
 						</span>
-						<p class="min-w-0 text-lg leading-snug font-semibold sm:text-xl">
-							{read.itemText(item, 'text')}
-						</p>
+						<p
+							class="min-w-0 text-lg leading-snug font-semibold sm:text-xl"
+							data-field="items.{index}.text"
+						>{read.itemText(item, 'text')}</p>
 					</li>
 				{/each}
 			</ol>

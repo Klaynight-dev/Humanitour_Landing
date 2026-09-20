@@ -63,10 +63,13 @@
 				<dl class="mt-10 flex flex-col gap-8">
 					{#each items as item, index (index)}
 						<div class="measure">
-							<dt class="text-xl font-semibold">{read.itemText(item, 'term')}</dt>
-							<dd class="mt-2 leading-relaxed {mutedClass(surface)}">
-								{read.itemText(item, 'body')}
-							</dd>
+							<dt class="text-xl font-semibold" data-field="items.{index}.term">
+								{read.itemText(item, 'term')}
+							</dt>
+							<dd
+								class="mt-2 leading-relaxed {mutedClass(surface)}"
+								data-field="items.{index}.body"
+							>{read.itemText(item, 'body')}</dd>
 						</div>
 					{/each}
 				</dl>

@@ -52,10 +52,10 @@
 
 			{#if style === 'cartes'}
 				<div class="block-card p-6">
-					<dt class="font-display text-3xl">{value}</dt>
+					<dt class="font-display text-3xl" data-field="items.{index}.value">{value}</dt>
 					<dd class="text-muted mt-2 text-sm">
-						{label}
-						{#if hint}<span class="mt-1 block">{hint}</span>{/if}
+						<span class="block" data-field="items.{index}.label">{label}</span>
+						{#if hint}<span class="mt-1 block" data-field="items.{index}.hint">{hint}</span>{/if}
 					</dd>
 				</div>
 			{:else}

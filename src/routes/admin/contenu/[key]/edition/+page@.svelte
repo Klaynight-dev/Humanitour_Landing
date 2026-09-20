@@ -75,6 +75,8 @@
 
 	/** Les chemins modifiables dans le rendu, par section. */
 	let inlinePaths: Record<number, readonly string[]> = $state({});
+	/** Le panneau, pour y reporter ce qui vient d'etre tape dans la page. */
+	let panel: HTMLElement | undefined = $state();
 
 	/**
 	 * Ce qui est tape dans le rendu, en attente.
@@ -191,7 +193,10 @@
 		delete pending[key];
 
 		let next = block.data;
-		for (const [path, value] of Object.entries(held)) next = setPath(next, path, value);
+		for (const [path, value] of Object.entries(held)) {
+			next = setPath(next, path, value);
+			mirror(path, value);
+		}
 
 		const definition = getContentBlockType(block.type);
 		const parsed = definition?.parseData(next);
@@ -203,6 +208,30 @@
 
 		blocks[index] = updated;
 		return updated;
+	}
+
+	/**
+	 * Reporte dans le panneau ce qui vient d'etre tape dans la page.
+	 *
+	 * Les listes repetables restent dans le panneau — c'est la qu'on ajoute,
+	 * retire et reordonne une ligne — alors que le texte de leurs lignes se tape
+	 * dans la page. Le meme champ a donc bien deux surfaces, et sans ce report la
+	 * plus ancienne gagnerait : le panneau renvoie TOUS ses champs a chaque
+	 * frappe, y compris ceux qu'il n'a pas vus changer.
+	 *
+	 * C'est le chemin commun qui rend le report possible : le champ du panneau
+	 * s'appelle `data.items.0.term` et la marque du rendu vaut `items.0.term`.
+	 */
+	function mirror(path: string, value: unknown) {
+		if (!panel || typeof value !== 'string') return;
+
+		const field = panel.querySelector(`[name="data.${CSS.escape(path)}"]`);
+		if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+			field.value = value;
+			// `defaultValue` autant que `value` : une remise a zero du formulaire
+			// rendrait sinon au champ sa valeur d'avant la frappe.
+			field.defaultValue = value;
+		}
 	}
 
 	/**
@@ -559,6 +588,7 @@
 
 		<!-- Le panneau. Il ne pilote jamais le canevas autrement que par les donnees. -->
 		<aside
+			bind:this={panel}
 			class="border-ink/12 bg-cream w-full shrink-0 overflow-y-auto border-l lg:block lg:w-96"
 			class:hidden={!panelOpen}
 			aria-label="Réglages de la section"

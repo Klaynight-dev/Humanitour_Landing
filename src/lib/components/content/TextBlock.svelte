@@ -61,8 +61,13 @@
 		<div class="mt-10 grid gap-8 sm:grid-cols-2">
 			{#each items as item, index (index)}
 				<div>
-					<h3 class="text-lg font-semibold">{read.itemText(item, 'term')}</h3>
-					<p class="mt-2 leading-relaxed {mutedClass(surface)}">{read.itemText(item, 'body')}</p>
+					<h3 class="text-lg font-semibold" data-field="items.{index}.term">
+						{read.itemText(item, 'term')}
+					</h3>
+					<p
+						class="mt-2 leading-relaxed {mutedClass(surface)}"
+						data-field="items.{index}.body"
+					>{read.itemText(item, 'body')}</p>
 				</div>
 			{/each}
 		</div>

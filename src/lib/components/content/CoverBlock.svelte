@@ -82,14 +82,16 @@
 					impose aux lecteurs d'ecran.
 				-->
 				<div class="flex flex-col-reverse gap-1">
-					<dt class="text-xs leading-snug opacity-75 sm:text-sm">
-						{read.itemText(figure, 'label')}
-					</dt>
+					<dt
+						class="text-xs leading-snug opacity-75 sm:text-sm"
+						data-field="figures.{index}.label"
+					>{read.itemText(figure, 'label')}</dt>
 					<!-- `nowrap` : Bowlby One est large, « 4 000 km » se cassait en deux
 					     lignes dans une demi-colonne. -->
-					<dd class="font-display text-lg leading-none whitespace-nowrap sm:text-2xl">
-						{read.itemText(figure, 'value')}
-					</dd>
+					<dd
+						class="font-display text-lg leading-none whitespace-nowrap sm:text-2xl"
+						data-field="figures.{index}.value"
+					>{read.itemText(figure, 'value')}</dd>
 				</div>
 			{/each}
 		</dl>

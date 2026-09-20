@@ -65,16 +65,19 @@
 		{#each items as item, index (index)}
 			{@const consequence = read.itemText(item, 'consequence')}
 			<div class="grid gap-2 py-7 {ROWS[layout]}">
-				<dt class="text-xl font-semibold">{read.itemText(item, 'term')}</dt>
+				<dt class="text-xl font-semibold" data-field="items.{index}.term">
+					{read.itemText(item, 'term')}
+				</dt>
 				<dd class="measure leading-relaxed {mutedClass(surface)}">
-					{read.itemText(item, 'body')}
+					<span class="block" data-field="items.{index}.body">{read.itemText(item, 'body')}</span>
 
 					{#if consequence}
 						<!-- Le filet corail ne decore pas : il isole ce que la regle coute,
 						     pour qu'on ne lise pas l'avantage sans la contrepartie. -->
-						<span class="border-coral measure mt-4 block border-l-4 pl-4 leading-relaxed">
-							{consequence}
-						</span>
+						<span
+							class="border-coral measure mt-4 block border-l-4 pl-4 leading-relaxed"
+							data-field="items.{index}.consequence"
+						>{consequence}</span>
 					{/if}
 				</dd>
 			</div>

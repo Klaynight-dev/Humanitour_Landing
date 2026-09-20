@@ -84,10 +84,13 @@
 			<dl class="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2">
 				{#each figures as figure, index (index)}
 					<div class="flex flex-col-reverse gap-2">
-						<dt class="text-base leading-snug">{read.itemText(figure, 'label')}</dt>
-						<dd class="font-display text-4xl leading-none whitespace-nowrap">
-							{read.itemText(figure, 'value')}
-						</dd>
+						<dt class="text-base leading-snug" data-field="figures.{index}.label">
+							{read.itemText(figure, 'label')}
+						</dt>
+						<dd
+							class="font-display text-4xl leading-none whitespace-nowrap"
+							data-field="figures.{index}.value"
+						>{read.itemText(figure, 'value')}</dd>
 					</div>
 				{/each}
 			</dl>
@@ -168,13 +171,19 @@
 				{#each items as item, index (index)}
 					{#if itemsLayout === 'bord-a-bord'}
 						<div class="flex justify-between gap-4 py-3">
-							<dt>{read.itemText(item, 'term')}</dt>
-							<dd class="tabular font-semibold">{read.itemText(item, 'value')}</dd>
+							<dt data-field="items.{index}.term">{read.itemText(item, 'term')}</dt>
+							<dd class="tabular font-semibold" data-field="items.{index}.value">
+								{read.itemText(item, 'value')}
+							</dd>
 						</div>
 					{:else}
 						<div class="grid gap-1 py-4 sm:grid-cols-[13rem_minmax(0,1fr)] sm:gap-6">
-							<dt class="font-semibold {mutedClass(surface)}">{read.itemText(item, 'term')}</dt>
-							<dd class="leading-snug">{read.itemText(item, 'value')}</dd>
+							<dt class="font-semibold {mutedClass(surface)}" data-field="items.{index}.term">
+								{read.itemText(item, 'term')}
+							</dt>
+							<dd class="leading-snug" data-field="items.{index}.value">
+								{read.itemText(item, 'value')}
+							</dd>
 						</div>
 					{/if}
 				{/each}
