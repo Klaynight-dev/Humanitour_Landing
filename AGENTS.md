@@ -136,6 +136,8 @@ contrat, un dossier, un `index` qui agrège, zéro `switch` ailleurs dans le cod
 | Types de média | `src/lib/shared/media/` | 1 fichier : champs, rendu, validation |
 | Sections de page | `src/lib/shared/content/blocks/` | 1 fichier de champs + 1 composant + 1 ligne dans `components/content/registry.ts` |
 | Permissions | `src/lib/shared/permissions.ts` | 1 constante déclarée |
+| Plan du back-office | `src/lib/shared/admin/navigation.ts` | 1 entrée : menu, raccourcis du tableau de bord et fil d'Ariane la lisent |
+| Alertes du tableau de bord | `src/lib/shared/admin/worklist.ts` | 1 entrée + 1 comptage dans `server/dashboard/queries.ts` |
 | Stockage de fichiers | `src/lib/server/storage/` | 1 fichier : disque local aujourd'hui, S3/MinIO demain |
 
 Le registre des **formats d'import** (`csv`, `xlsx`, `json`) a été retiré le
@@ -164,6 +166,14 @@ vit dans `shared/` (isomorphe, testé à 90 %), le widget dans `components/`
 discipline mais `components/openforms/fields/widgets.test.ts` : il échoue dès
 qu'une clé existe d'un côté sans exister de l'autre, et vérifie qu'aucun champ
 identifiant n'a de widget.
+
+**Ajouter une permission demande une commande, pas seulement un commit.** Il n'y
+a pas de joker dans la résolution des permissions : le rôle d'administration
+porte la liste complète, en clair. Une permission ajoutée au registre reste donc
+invisible pour tout le monde, administrateur compris, tant que
+`bun run db:permissions` n'a pas tourné. Ce script ne touche que les rôles
+système : les rôles créés par l'équipe gardent exactement ce qu'on leur a donné,
+une nouvelle fonctionnalité ne s'accorde jamais toute seule.
 
 **La règle qui rend ces registres réels :** si ajouter un type de question oblige à
 toucher un `switch` dans un composant, un `if` dans l'agrégation et une colonne en
