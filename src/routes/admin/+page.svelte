@@ -1,19 +1,23 @@
 <script lang="ts">
 	import PageHeader from '$components/admin/PageHeader.svelte';
 	import Panel from '$components/admin/Panel.svelte';
+	import StatTile from '$components/admin/StatTile.svelte';
 	import StatusBadge from '$components/admin/StatusBadge.svelte';
 	import TrendChart from '$components/admin/TrendChart.svelte';
+	import Worklist from '$components/admin/Worklist.svelte';
+	import { visibleNavigation } from '$lib/shared/admin/navigation';
+	import { buildWorklist } from '$lib/shared/admin/worklist';
 	import { formatCount, formatDate } from '$lib/shared/format';
 	import { can } from '$lib/shared/permissions';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
+	const work = $derived(buildWorklist(data.work, data.user));
+	const shortcuts = $derived(visibleNavigation(data.user).flatMap((section) => section.links));
+
 	const published = $derived(
 		data.surveyStatuses.find((row) => row.status === 'PUBLISHED')?.count ?? 0
-	);
-	const publishedMedia = $derived(
-		data.mediaStatuses.find((row) => row.status === 'PUBLISHED')?.count ?? 0
 	);
 	const rejectedRows = $derived(data.syncs.reduce((total, row) => total + row.rejected, 0));
 </script>
@@ -25,35 +29,79 @@
 	description="Vous êtes connecté avec le rôle « {data.user.role.name} »."
 />
 
+<!--
+	Trois etages, dans l'ordre des questions qu'on se pose en arrivant : ce qui
+	attend, ou je vais, ou on en est. La liste « a faire » est le point focal de
+	l'ecran, seule sur sa ligne a partir de `lg`.
+-->
+<div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+	<Worklist items={work} />
+
+	<Panel title="Aller directement à" description="Les sections que votre rôle vous ouvre.">
+		<ul class="flex flex-col gap-1">
+			{#each shortcuts as link (link.href)}
+				<li>
+					<a
+						href={link.href}
+						class="hover:bg-cream rounded-field -mx-2 flex min-h-11 flex-col justify-center px-2 py-1.5"
+					>
+						<span class="font-medium underline decoration-2 underline-offset-2">{link.label}</span>
+						<span class="text-muted text-xs">{link.description}</span>
+					</a>
+				</li>
+			{/each}
+		</ul>
+	</Panel>
+</div>
+
+<h2 class="mt-10 mb-4 text-lg font-semibold">Où on en est</h2>
+
 <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
 	{#if can(data.user, 'survey.read')}
-		<Panel title="Sondages">
-			<p class="tabular text-3xl font-semibold">{formatCount(data.surveys)}</p>
-			<p class="text-muted mt-1 text-sm">dont {formatCount(published)} publiés</p>
-			<a href="/admin/sondages" class="text-coral-ink mt-4 inline-block text-sm underline">
-				Gérer les sondages
-			</a>
-		</Panel>
+		<StatTile
+			label="Sondages"
+			total={data.surveys}
+			detail="dont {formatCount(published)} publiés"
+			href="/admin/sondages"
+			linkLabel="Gérer les sondages"
+		/>
 
-		<Panel title="Réponses collectées">
-			<p class="tabular text-3xl font-semibold">{formatCount(data.responses)}</p>
-			<p class="text-muted mt-1 text-sm">toutes enquêtes confondues</p>
-		</Panel>
+		<StatTile
+			label="Réponses collectées"
+			total={data.responses.total}
+			current={data.responses.current}
+			previous={data.responses.previous}
+			detail="toutes enquêtes confondues"
+		/>
 
-		<Panel title="Réponses rejetées">
-			<p class="tabular text-3xl font-semibold">{formatCount(rejectedRows)}</p>
-			<p class="text-muted mt-1 text-sm">jamais masquées, consultables passe par passe</p>
-		</Panel>
+		<StatTile
+			label="Réponses rejetées"
+			total={rejectedRows}
+			detail="jamais masquées, consultables passe par passe"
+		/>
 	{/if}
 
 	{#if can(data.user, 'media.read')}
-		<Panel title="Médiathèque">
-			<p class="tabular text-3xl font-semibold">{formatCount(data.media)}</p>
-			<p class="text-muted mt-1 text-sm">dont {formatCount(publishedMedia)} en ligne</p>
-			<a href="/admin/medias" class="text-coral-ink mt-4 inline-block text-sm underline">
-				Gérer la médiathèque
-			</a>
-		</Panel>
+		<StatTile
+			label="Médiathèque"
+			total={data.media.total}
+			current={data.media.current}
+			previous={data.media.previous}
+			detail="dont {formatCount(data.mediaPublished)} en ligne"
+			href="/admin/medias"
+			linkLabel="Gérer la médiathèque"
+		/>
+	{/if}
+
+	{#if can(data.user, 'newsletter.read')}
+		<StatTile
+			label="Abonnés à l'infolettre"
+			total={data.subscribers.total}
+			current={data.subscribers.current}
+			previous={data.subscribers.previous}
+			href="/admin/infolettre"
+			linkLabel="Ouvrir l'infolettre"
+		/>
 	{/if}
 </div>
 

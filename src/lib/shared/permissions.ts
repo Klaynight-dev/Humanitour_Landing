@@ -101,6 +101,24 @@ export const PERMISSIONS = {
 		sensitive: true
 	},
 
+	/*
+	 * Infolettre. Deux permissions et non une : la liste des abonnes est la
+	 * SEULE donnee directement identifiante du depot (AGENTS.md section 4), et
+	 * la consulter n'est pas du meme ordre que l'exporter ou desabonner
+	 * quelqu'un a sa place.
+	 */
+	'newsletter.read': {
+		group: 'Infolettre',
+		label: 'Consulter les abonnes',
+		description: 'Voir le nombre d abonnes et la liste des adresses.'
+	},
+	'newsletter.manage': {
+		group: 'Infolettre',
+		label: 'Gerer les abonnes',
+		description: 'Exporter la liste et desabonner une adresse.',
+		sensitive: true
+	},
+
 	'user.read': {
 		group: 'Equipe',
 		label: 'Consulter les comptes',

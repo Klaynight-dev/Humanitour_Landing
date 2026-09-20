@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import CommandPalette from '$components/admin/CommandPalette.svelte';
 	import NotificationBell from '$components/admin/NotificationBell.svelte';
-	import { can, type Permission } from '$lib/shared/permissions';
+	import { currentLink, visibleNavigation } from '$lib/shared/admin/navigation';
 	import { SITE } from '$lib/shared/site';
 	import type { LayoutData } from './$types';
 
@@ -13,25 +13,19 @@
 	let toggleEl: HTMLButtonElement | undefined = $state();
 
 	/**
-	 * Le menu n'affiche que ce que le compte peut ouvrir.
+	 * Le plan vient de `shared/admin/navigation.ts`, groupe et deja filtre par
+	 * permission : une entree menant a un 403 est une promesse non tenue.
 	 *
-	 * Une entree menant a un 403 est une promesse non tenue : la permission decide
-	 * de l'affichage comme elle decide de l'acces.
+	 * Les groupes ne sont pas decoratifs. A plat, les neuf entrees se lisaient
+	 * comme une liste de courses et il fallait les relire toutes pour trouver
+	 * « Medias ». Trois ou quatre familles courtes se balaient d'un coup.
 	 */
-	const SECTIONS: { href: string; label: string; permission: Permission }[] = [
-		{ href: '/admin/sondages', label: 'Sondages', permission: 'survey.read' },
-		{ href: '/admin/medias', label: 'Médiathèque', permission: 'media.read' },
-		{ href: '/admin/contenu', label: 'Contenu du site', permission: 'content.read' },
-		{ href: '/admin/equipe', label: 'Équipe', permission: 'user.read' },
-		{ href: '/admin/roles', label: 'Rôles', permission: 'role.manage' },
-		{ href: '/admin/reglages', label: 'Réglages', permission: 'settings.manage' },
-		{ href: '/admin/journal', label: 'Journal', permission: 'audit.read' }
-	];
-
-	const visible = $derived(SECTIONS.filter((section) => can(data.user, section.permission)));
+	const sections = $derived(visibleNavigation(data.user));
+	const active = $derived(currentLink(page.url.pathname));
+	const atHome = $derived(page.url.pathname === '/admin');
 
 	function isCurrent(href: string): boolean {
-		return page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
+		return active?.href === href;
 	}
 
 	function onKeydown(event: KeyboardEvent) {
@@ -132,9 +126,14 @@
 		panneau recouvrait le contenu au lieu de le pousser.
 	-->
 	<div class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:gap-8 lg:py-8">
+		<!--
+			`sticky` a partir de `lg` : les ecrans de liste du back-office descendent
+			sur plusieurs hauteurs d'ecran, et remonter en haut pour changer de
+			section etait le geste le plus repete de la journee.
+		-->
 		<nav
 			id="sections-admin"
-			class="shrink-0 lg:block lg:w-52"
+			class="shrink-0 lg:block lg:w-56 lg:self-start lg:sticky lg:top-6"
 			class:hidden={!open}
 			aria-label="Sections du back-office"
 		>
@@ -144,33 +143,50 @@
 				<li class="md:hidden">
 					<a
 						href="/admin/recherche"
-						aria-current={isCurrent('/admin/recherche') ? 'page' : undefined}
-						class="rounded-field flex min-h-11 items-center px-3.5 py-2 font-medium {isCurrent(
-							'/admin/recherche'
-						)
-							? 'bg-ink text-paper'
-							: 'hover:bg-paper'}"
+						class="rounded-field hover:bg-paper flex min-h-11 items-center px-3.5 py-2 font-medium"
 						onclick={() => (open = false)}
 					>
 						Rechercher
 					</a>
 				</li>
-				{#each visible as section (section.href)}
-					{@const current = isCurrent(section.href)}
-					<li>
-						<a
-							href={section.href}
-							aria-current={current ? 'page' : undefined}
-							class="rounded-field flex min-h-11 items-center px-3.5 py-2 font-medium {current
-								? 'bg-ink text-paper'
-								: 'hover:bg-paper'}"
-							onclick={() => (open = false)}
-						>
-							{section.label}
-						</a>
-					</li>
-				{/each}
+				<li>
+					<a
+						href="/admin"
+						aria-current={atHome ? 'page' : undefined}
+						class="rounded-field flex min-h-11 items-center px-3.5 py-2 font-medium {atHome
+							? 'bg-ink text-paper'
+							: 'hover:bg-paper'}"
+						onclick={() => (open = false)}
+					>
+						Tableau de bord
+					</a>
+				</li>
 			</ul>
+
+			{#each sections as section (section.label)}
+				<p class="text-muted mt-5 mb-1.5 px-3.5 text-xs font-semibold tracking-wide uppercase">
+					{section.label}
+				</p>
+				<ul class="flex flex-col gap-1">
+					{#each section.links as link (link.href)}
+						{@const current = isCurrent(link.href)}
+						<li>
+							<a
+								href={link.href}
+								title={link.description}
+								aria-current={current ? 'page' : undefined}
+								class="rounded-field flex min-h-11 items-center px-3.5 py-2 font-medium {current
+									? 'bg-ink text-paper'
+									: 'hover:bg-paper'}"
+								onclick={() => (open = false)}
+							>
+								{link.label}
+							</a>
+						</li>
+					{/each}
+				</ul>
+			{/each}
+
 			<a
 				href="/"
 				class="text-muted mt-6 inline-block px-3.5 text-sm underline decoration-2 underline-offset-2"
