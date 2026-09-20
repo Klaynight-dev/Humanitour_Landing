@@ -270,9 +270,13 @@ exactement la garantie qu'on veut.
 
 ## 6. Ce qu'on ne fait pas
 
-- **Pas de pondération ni de redressement.** Même « pour corriger l'échantillon ».
-  C'est le reproche central adressé aux autres. Si une pondération devient un jour
-  nécessaire, elle sera un champ explicite, affiché, versionné, jamais un défaut.
+- **Pas de pondération implicite.** Un redressement peut exister — c'est le cas
+  depuis le 20 septembre 2026 (`survey/weighting.ts`, calage par raking) — mais
+  seulement comme un champ explicite : les marges sont saisies par un·e
+  opérateur·rice, le poids de chaque répondant est écrit en base et auditable,
+  et le site public affiche les deux lectures, brute et redressée, la brute
+  restant la référence. Un redressement qui ne se voit pas est exactement le
+  reproche adressé aux autres instituts.
 - **Pas de dépendance à un service tiers pour l'identité.** L'authentification est
   maison (Argon2id + sessions en base). « Aucun milliardaire ne nous dit quoi faire »
   vaut aussi pour l'annuaire des comptes.

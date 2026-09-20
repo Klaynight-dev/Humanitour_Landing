@@ -20,10 +20,10 @@ import type { ContentTemplate } from './types';
  */
 const RULES = [
 	{
-		term: 'On compte, on ne pondère pas',
-		body: "Aucun redressement n'est appliqué, même « pour corriger l'échantillon ». Un chiffre affiché est un comptage réel. C'est le reproche central adressé aux instituts privés : nous ne pouvions pas le formuler et le pratiquer.",
+		term: 'Le brut d’abord, le redressement à côté',
+		body: "Un redressement existe, mais jamais en silence : les marges sont saisies par un·e opérateur·rice, le poids de chaque répondant est écrit en base, et les deux lectures s'affichent ensemble. C'est le reproche central adressé aux instituts privés : eux ne montrent que le résultat redressé.",
 		consequence:
-			"Nos résultats ne prétendent donc pas représenter la France entière. Ils représentent les personnes rencontrées, décrites telles qu'elles sont."
+			"Le brut reste la référence. Un chiffre redressé sans son équivalent brut à côté ne se publie pas."
 	},
 	{
 		term: 'Les non-réponses sont comptées',

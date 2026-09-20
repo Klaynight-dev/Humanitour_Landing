@@ -9,7 +9,7 @@
 	<title>Méthodologie, Humanitour</title>
 	<meta
 		name="description"
-		content="Comment Humanitour collecte, calcule et publie. Aucun redressement, non-réponses comptées, données brutes ouvertes."
+		content="Comment Humanitour collecte, calcule et publie. Aucune pondération implicite, non-réponses comptées, données brutes ouvertes."
 	/>
 </svelte:head>
 

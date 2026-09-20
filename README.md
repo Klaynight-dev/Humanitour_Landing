@@ -2,7 +2,7 @@
 
 # Humanitour
 
-**L'institut de sondage citoyen.**
+**Le sondage sans détour.**
 Les données brutes, la méthodologie, et les non-réponses. Tout est public.
 
 [![Licence du code : AGPL v3](https://img.shields.io/badge/code-AGPL--3.0-FF5757)](./LICENSE)
@@ -23,8 +23,8 @@ mêmes groupes que les médias qui les publient, ne diffusent ni leurs données 
 ni leurs redressements, et recrutent par formulaire en ligne auprès de volontaires
 rémunérés en bons d'achat.
 
-Humanitour prend le problème par l'autre bout : **5 000 kilomètres à vélo, deux
-mois, toutes les régions métropolitaines**, des entretiens en face-à-face, et la
+Humanitour prend le problème par l'autre bout : **4 000 kilomètres à vélo, deux
+mois, treize régions métropolitaines**, des entretiens en face-à-face, et la
 totalité du matériau publiée.
 
 > « L'opinion publique n'existe pas. » — Pierre Bourdieu, 1972
@@ -47,7 +47,7 @@ totalité du matériau publiée.
 
 | Promesse | Où elle est tenue |
 | --- | --- |
-| Aucun redressement, aucune pondération | L'agrégation ne fait que compter |
+| Aucune pondération implicite | Un redressement, s'il est appliqué, est un champ explicite : le brut et le redressé s'affichent tous les deux, le brut restant la référence |
 | Les non-réponses sont comptées | `NON_RESPONSE` est une modalité ordinaire, jamais un `null` filtré |
 | Les effectifs accompagnent les pourcentages | Le `n` brut voyage avec chaque part |
 | Pas de ré-identification possible | Seuil de k-anonymat appliqué dans la couche d'agrégation |

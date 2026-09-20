@@ -59,7 +59,7 @@ export const dataTemplate: ContentTemplate = {
 				highlight: 'Croisez',
 				highlightStyle: 'brand',
 				intro:
-					"Chaque enquête expose ses données brutes, sa méthodologie et ses effectifs. Aucun redressement n'est appliqué, les non-réponses sont comptées, et vous pouvez croiser n'importe quelle question avec n'importe quelle autre.",
+					"Chaque enquête expose ses données brutes, sa méthodologie et ses effectifs. Aucune pondération implicite, les non-réponses sont comptées, et vous pouvez croiser n'importe quelle question avec n'importe quelle autre.",
 				fullHeight: 'contenu',
 				surface: 'cream',
 				spacing: 'compact'
