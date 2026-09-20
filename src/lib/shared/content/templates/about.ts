@@ -10,6 +10,7 @@ import {
 } from '../../site';
 import { formatCount } from '../../format';
 import type { ContentTemplate } from './types';
+import { templateTeam } from './common';
 
 /**
  * A propos, telle qu'elle a ete composee.
@@ -92,7 +93,12 @@ export const aboutTemplate: ContentTemplate = {
 		},
 		{
 			type: 'team',
-			data: { layout: 'grille', surface: 'cream', spacing: 'compact' }
+			data: {
+				members: templateTeam(),
+				layout: 'grille',
+				surface: 'cream',
+				spacing: 'compact'
+			}
 		},
 		{
 			type: 'split',

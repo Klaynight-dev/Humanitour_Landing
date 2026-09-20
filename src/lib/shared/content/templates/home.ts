@@ -1,6 +1,7 @@
 import { formatCount } from '../../format';
 import { HERO_PHOTO } from '../../photos';
 import { LINKS, PILLARS, QUESTIONS, TOUR } from '../../site';
+import { templateDeck, templateTeam } from './common';
 import type { ContentTemplate } from './types';
 
 /**
@@ -163,6 +164,7 @@ export const homeTemplate: ContentTemplate = {
 				body: "Pour rompre avec l'opacité des sondages, nous allons tout vous partager dans une série documentaire. La quasi-totalité des personnes rencontrées ont accepté de partager leur vote et chaque soir nous avons été hébergés chez les français·es.",
 				aside: 'photos',
 				asideLink: '/galerie',
+				deckPhotos: templateDeck(),
 				surface: 'mesh',
 				spacing: 'ample'
 			}
@@ -209,6 +211,7 @@ export const homeTemplate: ContentTemplate = {
 				title: 'Qui a posé les questions',
 				intro:
 					'Un institut qui reproche aux autres leur opacité doit pouvoir dire qui il est. Voilà les cinq personnes qui ont monté celui-ci.',
+				members: templateTeam(),
 				layout: 'ligne',
 				moreHref: '/a-propos',
 				surface: 'ink',

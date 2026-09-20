@@ -74,6 +74,16 @@ export const splitType = defineBlockType({
 		},
 		{ name: 'image', label: 'Photographie de la seconde colonne', type: 'image', required: false },
 		{
+			name: 'deckPhotos',
+			label: 'Photographies mises en avant',
+			help: 'Utilisées par la variante « deck de photos ». Laissez vide pour reprendre les trois premières photographies du tour, telles qu’elles sont écrites dans le code du site.',
+			type: 'list',
+			required: false,
+			max: 3,
+			itemLabel: 'une photographie',
+			item: [{ name: 'photo', label: 'Photographie', type: 'image', required: true }]
+		},
+		{
 			name: 'asideLink',
 			label: 'Lien de l’éventail de photos',
 			help: 'Où mène l’éventail, par exemple /galerie.',

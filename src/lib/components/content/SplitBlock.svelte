@@ -41,6 +41,36 @@
 	const figures = $derived(read.list('figures'));
 	const items = $derived(read.list('items'));
 	const image = $derived(read.image('image'));
+
+	/**
+	 * Les trois cliches mis en avant.
+	 *
+	 * La section les porte si on les y a poses, sinon ce sont les trois premieres
+	 * photographies du tour, ecrites dans le code (`shared/photos.ts`). Le repli
+	 * garde l'accueil et `/galerie` d'accord tant que personne n'a choisi
+	 * autrement : les recopier page par page, c'est garantir qu'elles finiront
+	 * par diverger.
+	 */
+	const deck = $derived.by(() => {
+		const chosen = read
+			.list('deckPhotos')
+			.map((row) => read.itemImage(row, 'photo'))
+			.filter((photo): photo is NonNullable<typeof photo> => photo !== null);
+
+		return chosen.length > 0
+			? chosen.map((photo) => ({
+					src: photo.src,
+					alt: photo.alt,
+					width: photo.width ?? 1200,
+					height: photo.height ?? 1600
+				}))
+			: DECK_PHOTOS.map((photo) => ({
+					src: photo.src,
+					alt: '',
+					width: photo.width,
+					height: photo.height
+				}));
+	});
 	const note = $derived(read.text('asideNote'));
 	const deckHref = $derived(read.raw('asideLink'));
 
@@ -121,7 +151,7 @@
 				class="photo-deck-link rounded-block focus-visible:outline-ink flex h-full focus-visible:outline-2 focus-visible:outline-offset-8"
 			>
 				<span class="photo-deck">
-					{#each DECK_PHOTOS as photo (photo.src)}
+					{#each deck as photo (photo.src)}
 						<img
 							src={photo.src}
 							alt=""
