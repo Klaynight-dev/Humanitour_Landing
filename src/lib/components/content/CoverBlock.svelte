@@ -210,7 +210,7 @@
 	 */
 	.hero-media {
 		position: relative;
-		min-height: 8rem;
+		min-height: 42svh;
 		flex: 1 1 0;
 		overflow: hidden;
 	}
