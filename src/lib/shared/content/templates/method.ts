@@ -1,5 +1,5 @@
-import { formatCount } from '../../format';
-import { LICENSES, LINKS, POLLING, RETENTION, TOUR } from '../../site';
+import { LICENSES, LINKS, RETENTION } from '../../site';
+import { BOURDIEU_BIASES } from './common';
 import type { ContentTemplate } from './types';
 
 /**
@@ -13,78 +13,45 @@ import type { ContentTemplate } from './types';
  */
 
 /**
- * Les cinq regles de publication.
+ * Les trois principes fondamentaux, texte de l'association (septembre 2026).
  *
- * Chacune porte sa consequence, y compris quand elle joue contre nous : une
- * regle dont on ne montre que le benefice est un argument, pas une methode.
+ * Chacun appelle un geste : proposer une question, repondre a une enquete. Les
+ * deux boutons de la section les portent, faute de lien par entree.
  */
-const RULES = [
+const PRINCIPLES = [
 	{
-		term: 'Le brut d’abord, le redressement à côté',
-		body: "Un redressement existe, mais jamais en silence : les marges sont saisies par un·e opérateur·rice, le poids de chaque répondant est écrit en base, et les deux lectures s'affichent ensemble. C'est le reproche central adressé aux instituts privés : eux ne montrent que le résultat redressé.",
-		consequence:
-			"Le brut reste la référence. Un chiffre redressé sans son équivalent brut à côté ne se publie pas."
+		term: 'La démocratie',
+		body: "Parce que la démocratie n'a pas de prix, nos questionnaires ne sont pas commandités par des élites économiques, médiatiques ou politiques. Nous intégrons directement les citoyen·ne·s dans le choix des thématiques et la formulation des questions afin que ce soient leurs préoccupations qui dictent l'agenda des médias et des politiques, et non l'inverse."
 	},
 	{
-		term: 'Les non-réponses sont comptées',
-		body: '« Sans opinion », refus de répondre et intention de ne pas voter sont des modalités de plein droit. Elles apparaissent dans chaque graphique et pèsent dans la base de calcul des pourcentages.',
-		consequence:
-			"Invisibiliser l'abstention et les non-réponses revient à falsifier l'état réel de la société. Dans notre code, la non-réponse n'est pas un cas particulier : c'est une réponse comme une autre."
+		term: 'La citoyenneté',
+		body: "Parce que chaque voix compte, nous privilégions l'enquête de terrain pour inclure l'ensemble de la population, y compris les personnes éloignées du numérique et de la politique. La démarche d'« aller vers » nous permet de considérer les invisibles, d'inclure toutes les générations, de traverser toutes les zones d'habitation, tout en diversifiant les lieux (au domicile, dans la rue, les centres commerciaux, à la sortie du travail…). En plus du tour de France à vélo, le projet est de développer un réseau de référents locaux, et une plateforme citoyenne de sondage pour permettre à chacun·e de s'exprimer régulièrement."
 	},
 	{
-		term: 'Les effectifs accompagnent les parts',
-		body: "Chaque pourcentage voyage avec son effectif brut et sa base. Un « 62 % » calculé sur douze personnes s'affiche avec ses douze personnes.",
-		consequence: "Vous pouvez juger de la solidité d'un chiffre sans nous croire sur parole."
-	},
-	{
-		term: 'La formulation exacte est affichée',
-		body: 'Le libellé posé sur le terrain apparaît avec chaque graphique, mot pour mot, sans reformulation.',
-		consequence:
-			"La manière de poser une question fait partie du résultat. Bourdieu appelait cela l'imposition de problématiques ; le minimum est de vous montrer la nôtre."
-	},
-	{
-		term: 'Aucune question achetée',
-		body: "L'association ne vend pas de question et n'accepte pas de commanditaire. Le financement vient des dons et des adhésions.",
-		consequence: "Personne ne peut acheter la formulation qui l'arrange."
+		term: "L'humain",
+		body: "L'être humain ne se résume pas à une case ou à un pourcentage. Humanitour invente le sondage-reportage : une prolongation du questionnaire statistique en documentaire audio et vidéo. Donner la parole permet de mesurer le niveau d'engagement des répondants. Les témoignages en image et en son facilitent l'écoute, la compréhension mutuelle et la réflexion intellectuelle. Et la documentation des sondages permet une plus grande transparence."
 	}
 ];
 
-const COLLECTE_BODY = {
-	blocks: [
-		{
-			type: 'paragraph',
-			items: [
-				[
-					{
-						text: `Les entretiens ont été menés en face-à-face, sur la voie publique et dans les commerces, le long d'un parcours à vélo de ${formatCount(TOUR.kilometres)} kilomètres traversant les ${TOUR.regions} régions métropolitaines. Il n'y a eu ni panel, ni recrutement par courriel, ni rémunération des répondants.`
-					}
-				]
-			]
-		},
-		{
-			type: 'paragraph',
-			items: [
-				[
-					{
-						text: "Cette méthode a ses limites, et nous les énonçons : rencontrer les gens dehors surreprésente celles et ceux qui sortent, et un parcours à vélo suit des routes, pas une carte de la population. Chaque enquête publie sa propre note de méthodologie avec ses limites connues."
-					}
-				]
-			]
-		},
-		{
-			type: 'paragraph',
-			items: [
-				[
-					{
-						text: `L'association applique le ${POLLING.code}. Les sondages électoraux relèvent du contrôle de la `
-					},
-					{ text: 'Commission des sondages', href: POLLING.commissionUrl },
-					{ text: '.' }
-				]
-			]
-		}
-	]
-};
+/** Ce que ces principes engagent, meme texte. */
+const COMMITMENTS = [
+	{
+		term: 'Des résultats contextualisés',
+		body: "L'alliance entre sondage statistique et reportage de terrain remet les chiffres dans leur contexte sociologique. Aucun sondage ne détient de vérité absolue, et les écarts majeurs entre nos données de terrain et celles des sondages en ligne en apportent la preuve. Là où les sondages numériques fabriquent une illusion d'unanimité, en invisibilisant les sans-opinion et en forçant un choix artificiel, nous prenons réellement en compte les non-réponses et les « je ne sais pas ». L'abstention et l'indécision sont des indicateurs sociologiques clés que nous mesurons. Nous expérimentons de nouvelles approches de terrain pour nous rapprocher au plus près du réel."
+	},
+	{
+		term: 'Transparence intégrale',
+		body: "Chez la majorité des entreprises de sondage, les données brutes et les algorithmes de redressement restent secrets, empêchant les citoyens et les chercheurs de vérifier comment un chiffre a été fabriqué. Humanitour est le seul institut à faire le choix de la transparence intégrale. Vous avez accès à nos données brutes et, lorsque nous appliquons des pondérations statistiques, nos méthodes sont publiées en toute clarté. En rendant le matériau brut et le processus de calcul entièrement vérifiables, nous redonnons au sondage son statut d'outil scientifique ouvert et digne de confiance."
+	},
+	{
+		term: 'Éthique et sécurité des données',
+		body: "En tant qu'institut à but non lucratif, nous ne commercialisons aucune donnée personnelle. Nous développons des plateformes numériques sécurisées et indépendantes. Les résultats de nos enquêtes sont anonymisés et mis à disposition des chercheurs, des citoyens et des acteurs de la société civile en accès libre (open data)."
+	},
+	{
+		term: 'Impartialité et indépendance',
+		body: "En sciences humaines, la neutralité absolue n'existe pas. Mais là où les instituts traditionnels prétendent à une « neutralité » de façade tout en répondant aux impératifs financiers de leurs commanditaires, Humanitour fait le choix d'une indépendance totale. Nos sondeurs n'ont aucun résultat à « vendre » ou à fabriquer. Ils adoptent une posture d'écoute, pour offrir un espace où chaque citoyen·ne se sent légitime et libre de s'exprimer."
+	}
+];
 
 const REUTILISATION_BODY = {
 	blocks: [
@@ -119,9 +86,12 @@ export const methodTemplate: ContentTemplate = {
 		{
 			type: 'cover',
 			data: {
-				title: 'Comment nous mesurons, et ce que nous ne faisons pas',
+				title: 'Une approche scientifique et humaine du sondage',
+				highlight: 'humaine',
+				highlightStyle: 'brand',
 				intro:
-					"Reprocher l'opacité aux autres oblige à une contrainte simple : tout ce qui suit doit être vérifiable. Ces règles ne sont pas des intentions, ce sont des contraintes écrites dans un code public.",
+					"Les entreprises de sondage répondent avant tout à des impératifs économiques. En tant qu'institut citoyen et à but non lucratif, notre priorité n'est pas le rendement, mais le respect des êtres humains et des sciences sociales.",
+				buttons: [{ label: 'Découvrir notre enquête', href: '/le-tour', variant: 'primary' }],
 				fullHeight: 'contenu',
 				decor: 'aucun',
 				surface: 'paper',
@@ -129,20 +99,41 @@ export const methodTemplate: ContentTemplate = {
 			}
 		},
 		{
+			type: 'pull-quote',
+			data: {
+				title: 'Notre inspiration sociologique',
+				quote: "L'opinion publique n'existe pas.",
+				author: 'Pierre Bourdieu',
+				body: 'Bourdieu ne conteste pas la technique du sondage, mais la manière dont il est fabriqué et par qui. Il relève trois biais. Un demi-siècle plus tard, ils sont devenus des méthodes.',
+				items: BOURDIEU_BIASES,
+				surface: 'cream',
+				spacing: 'compact'
+			}
+		},
+		{
 			type: 'definitions',
 			data: {
-				title: 'Nos règles',
-				items: RULES,
+				title: 'Nos trois principes fondamentaux',
+				items: PRINCIPLES,
 				layout: 'large',
+				buttons: [
+					{
+						label: 'Proposer les prochaines questions',
+						href: LINKS.discord.href,
+						variant: 'primary'
+					},
+					{ label: 'Partager son avis : un geste citoyen', href: '/repondre', variant: 'outline' }
+				],
 				surface: 'paper',
 				spacing: 'compact'
 			}
 		},
 		{
-			type: 'text',
+			type: 'definitions',
 			data: {
-				title: 'La collecte',
-				body: COLLECTE_BODY,
+				title: 'Nos engagements',
+				items: COMMITMENTS,
+				layout: 'large',
 				surface: 'cream',
 				spacing: 'compact'
 			}

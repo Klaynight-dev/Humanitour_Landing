@@ -92,34 +92,34 @@ export const TEAM: readonly TeamMember[] = [
 		slug: 'come-moudenner',
 		name: 'Côme Moudenner',
 		role: 'Référent des sondages',
-		bio: "Entrepreneur et agent sportif, Côme a dit non aux millions, pour faire le tour de l'humanité et entreprendre socialement."
+		bio: 'Entrepreneur social et aventurier, il expérimente nos méthodologies de terrain.'
 	},
 	{
 		slug: 'elouan-passereau',
 		name: 'Elouan Passereau',
 		role: 'Référent du numérique',
-		bio: 'Engagé pour la démocratie, Elouan développe la première plateforme numérique indépendante et sécurisée pour les sondages.',
+		bio: 'Informaticien, il développe la première plateforme numérique de sondage citoyenne, indépendante et sécurisée.',
 		website: 'https://klaynight.fr'
+	},
+	{
+		slug: 'jeanne-tardivel',
+		name: 'Jeanne Tardivel',
+		role: 'Référente communication',
+		bio: "Créative, elle façonne l'identité visuelle et l'univers d'Humanitour."
 	},
 	{
 		slug: 'mareva-vaucher',
 		name: 'Mareva Vaucher',
 		role: 'Référente anthropologie',
-		bio: "Cadre et anthropologue, elle met sa connaissance de l'humain au service d'Humanitour."
+		bio: "Anthropologue, elle apporte sa fine connaissance de l'humain et des territoires ultramarins."
 	},
 	{
-		slug: 'jeanne-tardivel',
-		name: 'Jeanne Tardivel',
-		role: 'Référente de la communication',
-		bio: "Communicante et créative, elle est à l'origine de la direction artistique Humanitour."
-	},
-	{
-		// Rejointe apres la plaquette d origine (source/Humanitour.pdf) : nom,
-		// fonction et notice viennent directement de l equipe, pas du PDF.
+		// Rejointe apres la plaquette d origine (source/Humanitour.pdf). Les notices
+		// de toute l equipe viennent du texte « L'institut » de septembre 2026.
 		slug: 'marie-angele-gicquel',
 		name: 'Marie Angèle Gicquel',
 		role: 'Référente sociologie',
-		bio: 'Étudiante en sociologie et en mode, elle analyse nos enquêtes de terrains.'
+		bio: 'Étudiante en sociologie et en mode, elle analyse et contextualise nos enquêtes de terrain.'
 	}
 ];
 
@@ -263,5 +263,5 @@ export const NAV = [
 	{ href: '/medias', label: 'Médias' },
 	{ href: '/galerie', label: 'Galerie' },
 	{ href: '/methodologie', label: 'Méthodologie' },
-	{ href: '/a-propos', label: 'À propos' }
+	{ href: '/a-propos', label: "L'institut" }
 ] as const;
