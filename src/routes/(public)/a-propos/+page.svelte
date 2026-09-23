@@ -7,12 +7,12 @@
 </script>
 
 <svelte:head>
-	<title>À propos, {SITE.name}</title>
+	<title>L'institut, {SITE.name}</title>
 	<meta
 		name="description"
-		content="Les cinq personnes derrière Humanitour, l'association qui les porte, et ce qui la finance."
+		content="Humanitour, premier institut de sondage citoyen et indépendant : sa vision, ses valeurs, son équipe et son histoire."
 	/>
-	<meta property="og:title" content="À propos, {SITE.name}" />
+	<meta property="og:title" content="L'institut, {SITE.name}" />
 	<meta property="og:type" content="website" />
 </svelte:head>
 

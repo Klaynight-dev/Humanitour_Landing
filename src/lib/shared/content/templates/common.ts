@@ -52,3 +52,24 @@ export function templateDeck(): Record<string, unknown>[] {
 		photo: { src: photo.src, alt: photo.alt, width: photo.width, height: photo.height }
 	}));
 }
+
+/**
+ * Les trois biais releves par Bourdieu en 1972, formulation du dossier.
+ *
+ * L'accueil les cite sous la citation de Bourdieu, et la methodologie, qui
+ * s'en reclame, les reprend : une seule liste, pour qu'elles ne divergent pas.
+ */
+export const BOURDIEU_BIASES = [
+	{
+		term: "L'imposition de problématiques",
+		body: 'Les sondages posent des questions artificielles, que les gens ne se posent pas forcément.'
+	},
+	{
+		term: "L'illusion de la réponse universelle",
+		body: "Les individus sont incités à répondre même s'ils ne comprennent pas la question."
+	},
+	{
+		term: "La fabrication d'un consensus",
+		body: "Les « non-réponses » sont ignorées et créent l'illusion d'une opinion publique unanime."
+	}
+];

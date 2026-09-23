@@ -9,7 +9,7 @@
 	<title>Méthodologie, Humanitour</title>
 	<meta
 		name="description"
-		content="Comment Humanitour collecte, calcule et publie. Aucune pondération implicite, non-réponses comptées, données brutes ouvertes."
+		content="Une approche scientifique et humaine du sondage : trois principes, des résultats contextualisés, une transparence intégrale et des données ouvertes."
 	/>
 </svelte:head>
 

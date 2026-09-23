@@ -1,7 +1,7 @@
 import { formatCount } from '../../format';
 import { HERO_PHOTO } from '../../photos';
 import { LINKS, PILLARS, QUESTIONS, TOUR } from '../../site';
-import { templateDeck, templateTeam } from './common';
+import { BOURDIEU_BIASES, templateDeck, templateTeam } from './common';
 import type { ContentTemplate } from './types';
 
 /**
@@ -43,22 +43,6 @@ const BROADCAST_VERSUS_GROUND = [
 	{ subject: 'Mélenchon', broadcast: '16 %', ground: '16 %' },
 	{ subject: 'Philippe et Attal', broadcast: 'Plus de 15 %', ground: 'Moins de 5 %' },
 	{ subject: 'Immigration', broadcast: 'Premier sujet', ground: 'Dernier sujet' }
-];
-
-/** Les trois biais releves par Bourdieu en 1972, formulation du dossier. */
-const BIASES = [
-	{
-		term: "L'imposition de problématiques",
-		body: 'Les sondages posent des questions artificielles, que les gens ne se posent pas forcément.'
-	},
-	{
-		term: "L'illusion de la réponse universelle",
-		body: "Les individus sont incités à répondre même s'ils ne comprennent pas la question."
-	},
-	{
-		term: "La fabrication d'un consensus",
-		body: "Les « non-réponses » sont ignorées et créent l'illusion d'une opinion publique unanime."
-	}
 ];
 
 /** Le sondage commande sur fonds publics, meme source. */
@@ -188,7 +172,7 @@ export const homeTemplate: ContentTemplate = {
 					"L'effet fondamental du sondage d'opinion est de constituer l'illusion qu'il existe une opinion publique unanime, pour légitimer une politique.",
 				author: 'Pierre Bourdieu, 1980',
 				body: 'Bourdieu ne conteste pas la technique du sondage, mais la manière dont il est fabriqué et par qui. Il relève trois biais. Un demi-siècle plus tard, ils sont devenus des méthodes.',
-				items: BIASES,
+				items: BOURDIEU_BIASES,
 				surface: 'cream',
 				spacing: 'ample'
 			}
@@ -237,7 +221,8 @@ export const homeTemplate: ContentTemplate = {
 			type: 'cta',
 			data: {
 				title: "L'opinion publique n'est pas une marchandise",
-				intro: "Soutenez Humanitour, pour redonner la parole à chacun·e et le pouvoir aux citoyens.",
+				intro:
+					'Soutenez Humanitour, pour redonner la parole à chacun·e et le pouvoir aux citoyens.',
 				buttons: [
 					{ label: 'Adhérer sur HelloAsso', href: LINKS.helloasso.href, variant: 'primary' },
 					{ label: 'Rejoindre le Discord', href: LINKS.discord.href, variant: 'outline' },
