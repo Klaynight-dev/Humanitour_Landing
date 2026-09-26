@@ -8,7 +8,13 @@
 	import ResultTable from '$components/explorer/ResultTable.svelte';
 	import ShareBar from '$components/explorer/ShareBar.svelte';
 	import { formatBase, formatCount, formatFieldwork } from '$shared/format';
-	import { composePoster, type PosterChart, type PosterTable } from '$lib/poster';
+	import {
+		composePoster,
+		POSTER_QUALITIES,
+		type PosterChart,
+		type PosterQuality,
+		type PosterTable
+	} from '$lib/poster';
 	import {
 		exploreSearch,
 		filterValue,
@@ -178,7 +184,8 @@
 	 * Le composant de graphique expose son rendu ; la composition, elle, vit
 	 * dans `$lib/poster.ts`, ou sa mise en page se teste sans navigateur.
 	 */
-	let chartView: { toPng: () => Promise<PosterChart | null> } | null = $state(null);
+	let chartView: { toPng: (pixelRatio?: number) => Promise<PosterChart | null> } | null =
+		$state(null);
 
 	/**
 	 * Le tableau croise, tel qu il sera trace sur l affiche.
@@ -210,10 +217,12 @@
 		};
 	});
 
-	async function downloadPoster(): Promise<void> {
+	async function downloadPoster(quality: PosterQuality): Promise<void> {
+		const { scale, pixelRatio } = POSTER_QUALITIES[quality];
+
 		// Un graphique s exporte depuis son rendu, un tableau se trace : l un ou
 		// l autre, jamais les deux.
-		const rendered = posterTable ? null : ((await chartView?.toPng()) ?? null);
+		const rendered = posterTable ? null : ((await chartView?.toPng(pixelRatio)) ?? null);
 		if (!rendered && !posterTable) return;
 
 		const blob = await composePoster(
@@ -228,7 +237,8 @@
 				chart: rendered,
 				table: posterTable
 			},
-			'/logo-lockup-ink.png'
+			'/logo-lockup-ink.png',
+			scale
 		);
 
 		const href = URL.createObjectURL(blob);

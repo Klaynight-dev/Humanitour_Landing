@@ -57,7 +57,7 @@
 	 * affichee : en mode SVG, `getDataURL` rend du SVG, que `drawImage` ne sait
 	 * pas composer avec les polices de la page.
 	 */
-	export async function toPng(): Promise<{
+	export async function toPng(pixelRatio: number = 2): Promise<{
 		dataUrl: string;
 		width: number;
 		height: number;
@@ -77,7 +77,7 @@
 		try {
 			offscreen.setOption(option);
 			return {
-				dataUrl: offscreen.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: '#ffffff' }),
+				dataUrl: offscreen.getDataURL({ type: 'png', pixelRatio, backgroundColor: '#ffffff' }),
 				width: EXPORT_WIDTH,
 				height
 			};

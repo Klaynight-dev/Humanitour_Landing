@@ -43,6 +43,24 @@ export interface PosterTable {
 	readonly rows: readonly { readonly header: string; readonly cells: readonly string[] }[];
 }
 
+/**
+ * Les qualites d export proposees a l utilisateur.
+ *
+ * `scale` grandit le canvas final (`composePoster`), `pixelRatio` grandit la
+ * nettete du graphique source avant qu il n y soit colle (`EChart.toPng`) :
+ * sans les deux ensemble, une affiche « impression » agrandirait un
+ * graphique deja flou plutot que d en tirer un plus net.
+ */
+export type PosterQuality = 'ecran' | 'impression';
+
+export const POSTER_QUALITIES: Record<
+	PosterQuality,
+	{ readonly label: string; readonly scale: number; readonly pixelRatio: number }
+> = {
+	ecran: { label: 'Écran', scale: 1, pixelRatio: 2 },
+	impression: { label: 'Impression', scale: 2, pixelRatio: 3 }
+};
+
 export interface PosterContent {
 	readonly surveyTitle: string;
 	/** Libelle exact de la question. */
@@ -269,8 +287,18 @@ const SANS = "'Jost Variable', ui-sans-serif, system-ui, sans-serif";
  * Le texte est NOIR sur le degrade, jamais blanc : blanc sur l orange de la
  * charte ne donne que 2,69:1 (`app.css`). C est la seule combinaison lisible,
  * et elle vaut aussi en image.
+ *
+ * `scale` grandit la resolution du PNG sans rien changer a la mise en page :
+ * la mise en page reste en pixels logiques (`posterLayout` etc.), seul le
+ * canvas final est agrandi, comme un `devicePixelRatio` choisi a la main.
+ * Une affiche destinee a l impression en a besoin, une affiche partagee a
+ * l ecran non.
  */
-export async function composePoster(content: PosterContent, logoUrl?: string): Promise<Blob> {
+export async function composePoster(
+	content: PosterContent,
+	logoUrl?: string,
+	scale: number = 1
+): Promise<Blob> {
 	const canvas = document.createElement('canvas');
 	const ctx = canvas.getContext('2d');
 	if (!ctx) throw new Error("Le navigateur n'a pas fourni de contexte de dessin.");
@@ -289,8 +317,9 @@ export async function composePoster(content: PosterContent, logoUrl?: string): P
 			};
 
 	const layout = posterLayout(titleLines.length, footer.length, body);
-	canvas.width = layout.width;
-	canvas.height = layout.height;
+	canvas.width = Math.round(layout.width * scale);
+	canvas.height = Math.round(layout.height * scale);
+	ctx.scale(scale, scale);
 
 	ctx.fillStyle = '#ffffff';
 	ctx.fillRect(0, 0, layout.width, layout.height);

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { CodeExample } from '$shared/citation';
 	import { LICENSES } from '$shared/site';
+	import { POSTER_QUALITIES, type PosterQuality } from '$lib/poster';
 
 	/**
 	 * Citer, telecharger, rejouer.
@@ -24,10 +25,10 @@
 		apiUrl: string;
 		pageUrl: string;
 		/**
-		 * Compose l affiche PNG. Absent quand il n y a pas de graphique a
-		 * exporter : un tableau croise n est pas une image.
+		 * Compose l affiche PNG, a la qualite demandee. Absent quand il n y a pas
+		 * de graphique a exporter : un tableau croise n est pas une image.
 		 */
-		downloadImage: (() => Promise<void>) | null;
+		downloadImage: ((quality: PosterQuality) => Promise<void>) | null;
 	}
 
 	let { shortCitation, longCitation, codeExamples, csvUrl, apiUrl, pageUrl, downloadImage }: Props =
@@ -38,6 +39,8 @@
 	/** L affiche est en cours de composition : elle demande un rendu hors ecran. */
 	let composing = $state(false);
 	let imageError = $state('');
+	/** La qualite choisie pour le prochain export : ecran par defaut, l impression se demande. */
+	let quality = $state<PosterQuality>('ecran');
 
 	async function onImage(): Promise<void> {
 		if (!downloadImage || composing) return;
@@ -45,7 +48,7 @@
 		composing = true;
 		imageError = '';
 		try {
-			await downloadImage();
+			await downloadImage(quality);
 		} catch {
 			imageError = "L'image n'a pas pu être composée. Le téléchargement en CSV reste disponible.";
 		} finally {
@@ -106,6 +109,24 @@
 			>
 				{composing ? 'Composition…' : "Télécharger l'image"}
 			</button>
+			<!--
+				Ecran suffit a un partage ; l impression grandit le graphique et le
+				canvas final (`poster.ts`), donc le fichier pese plus lourd. Le choix
+				reste a cote du bouton plutot que dans un reglage cache : c est la
+				seule decision que ce telechargement demande.
+			-->
+			<label class="text-muted flex min-h-11 items-center gap-2 text-sm">
+				<span class="sr-only">Qualité de l'image</span>
+				<select
+					bind:value={quality}
+					disabled={composing}
+					class="border-ink/25 rounded-field bg-paper min-h-11 border px-3 py-2 text-sm disabled:opacity-50"
+				>
+					{#each Object.entries(POSTER_QUALITIES) as [value, { label }] (value)}
+						<option {value}>{label}</option>
+					{/each}
+				</select>
+			</label>
 		{/if}
 		{#if canCopy}
 			<button
