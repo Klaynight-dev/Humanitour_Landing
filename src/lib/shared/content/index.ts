@@ -95,9 +95,10 @@ export const CONTENT_PAGES: readonly {
 	},
 	{
 		key: 'ABOUT',
-		label: 'À propos',
+		label: "L'institut",
 		href: '/a-propos',
-		description: "Qui est l'association, son équipe, son identité déclarée et son incubateur."
+		description:
+			"Qui est l'institut : sa vision, ses valeurs, son équipe, son histoire et son identité déclarée."
 	},
 	{
 		key: 'TOUR',
