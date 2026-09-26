@@ -136,16 +136,24 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		appliedSort: sort,
 		appliedBasis: basis,
 		droppedMessage: describeDropped(prepared.dropped),
-		reading: {
-			weighted: prepared.weights !== null,
-			// La bascule ne s affiche que si la lecture redressee peut etre servie.
-			available: prepared.weighting?.fresh === true,
-			unavailableMessage: describeUnavailableWeighting(prepared),
-			weighting: prepared.weighting ? describeWeighting(prepared.weighting, filterable) : null
-		},
+		reading: describeReading(prepared, filterable),
 		share
 	};
 };
+
+/** La lecture servie, brute ou redressee, et de quoi proposer l autre. */
+function describeReading(
+	prepared: Awaited<ReturnType<typeof prepareExplore>> & object,
+	filterable: ReturnType<typeof filterableQuestions>
+) {
+	return {
+		weighted: prepared.weights !== null,
+		// La bascule ne s affiche que si la lecture redressee peut etre servie.
+		available: prepared.weighting?.fresh === true,
+		unavailableMessage: describeUnavailableWeighting(prepared),
+		weighting: prepared.weighting ? describeWeighting(prepared.weighting, filterable) : null
+	};
+}
 
 /** Ce qui est affiche, sous la forme que la page relit pour ecrire ses liens. */
 function describeSelection(

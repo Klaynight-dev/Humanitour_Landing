@@ -19,7 +19,8 @@ const BASE: ExploreParams = {
 	includeNonResponses: true,
 	filters: [],
 	sort: null,
-	basis: null
+	basis: null,
+	weighted: false
 };
 
 describe('parseExploreParams', () => {
@@ -117,6 +118,7 @@ describe('exploreSearch', () => {
 			includeNonResponses: false,
 			sort: 'effectif',
 			basis: 'colonne',
+			weighted: true,
 			filters: [
 				{ questionCode: 'region', modalityKeys: ['bre', 'nor'] },
 				{ questionCode: 'age', modalityKeys: ['18-24'] }
@@ -124,6 +126,22 @@ describe('exploreSearch', () => {
 		};
 
 		expect(parseExploreParams(new URLSearchParams(exploreSearch(params)))).toEqual(params);
+	});
+});
+
+describe('lecture redressee', () => {
+	it('est la lecture brute par defaut, et le lien ne l ecrit pas', () => {
+		expect(parseExploreParams(new URLSearchParams('x=priorite')).weighted).toBe(false);
+		expect(exploreSearch(BASE)).not.toContain('lecture=');
+	});
+
+	it('ne s active que sur la valeur exacte « redresse »', () => {
+		expect(parseExploreParams(new URLSearchParams('lecture=redresse')).weighted).toBe(true);
+		expect(parseExploreParams(new URLSearchParams('lecture=1')).weighted).toBe(false);
+	});
+
+	it('voyage dans le permalien', () => {
+		expect(exploreSearch({ ...BASE, weighted: true })).toContain('lecture=redresse');
 	});
 });
 

@@ -518,3 +518,53 @@ describe('buildPanels', () => {
 		expect(panels.some((panel) => panel.outcome.kind === 'crosstab')).toBe(true);
 	});
 });
+
+describe('lecture redressee', () => {
+	/** Les Bretons pesent double, les Normands moitie. */
+	const WEIGHTS = new Map([
+		['r1', 2],
+		['r2', 2],
+		['r3', 2],
+		['r4', 0.5],
+		['r5', 0.5],
+		['r6', 0.5]
+	]);
+
+	it('rend les parts ponderees, et garde le nombre reel de repondants comme base', () => {
+		const outcome = distributionOf({ weights: WEIGHTS });
+		if (outcome.kind !== 'distribution') throw new Error('distribution attendue');
+
+		const pouvoir = outcome.distribution.bars.find((bar) => bar.key === 'pouvoir-achat');
+		expect(pouvoir?.count).toBe(4);
+		expect(pouvoir?.share).toBeCloseTo(4 / 7.5, 6);
+		expect(outcome.distribution.respondents).toBe(6);
+	});
+
+	it('ne change rien sans poids', () => {
+		const outcome = distributionOf();
+		if (outcome.kind !== 'distribution') throw new Error('distribution attendue');
+
+		const pouvoir = outcome.distribution.bars.find((bar) => bar.key === 'pouvoir-achat');
+		expect(pouvoir?.count).toBe(2);
+		expect(pouvoir?.share).toBeCloseTo(2 / 6, 6);
+	});
+
+	it('ne rouvre pas une case masquee en brut', () => {
+		const outcome = distributionOf({ weights: WEIGHTS, threshold: 3 });
+		if (outcome.kind !== 'distribution') throw new Error('distribution attendue');
+
+		const pouvoir = outcome.distribution.bars.find((bar) => bar.key === 'pouvoir-achat');
+		expect(pouvoir?.suppressed).toBe(true);
+		expect(pouvoir?.count).toBeNull();
+		expect(pouvoir?.share).toBeNull();
+	});
+
+	it('pondere aussi les totaux d un croisement', () => {
+		const outcome = distributionOf({ y: Y, weights: WEIGHTS });
+		if (outcome.kind !== 'crosstab') throw new Error('croisement attendu');
+
+		expect(outcome.crosstab.rowTotals.get('pouvoir-achat')).toBeCloseTo(4, 6);
+		expect(outcome.crosstab.columnTotals.get('nor')).toBeCloseTo(1.5, 6);
+		expect(outcome.crosstab.cells.get('sante')?.get('nor')?.share).toBeCloseTo(1, 6);
+	});
+});

@@ -7,7 +7,13 @@
 	import ResultHeadline from '$components/explorer/ResultHeadline.svelte';
 	import ResultTable from '$components/explorer/ResultTable.svelte';
 	import ShareBar from '$components/explorer/ShareBar.svelte';
-	import { formatBase, formatCount, formatDate, formatFieldwork, formatShare } from '$shared/format';
+	import {
+		formatBase,
+		formatCount,
+		formatDate,
+		formatFieldwork,
+		formatShare
+	} from '$shared/format';
 	import {
 		composePoster,
 		POSTER_QUALITIES,
@@ -394,7 +400,8 @@
 									{:else}
 										Chaque répondant compte pour un, tel qu'il a été interrogé.
 									{/if}
-									<a href="#redressement" class="underline underline-offset-2">Comment c'est fait</a>
+									<a href="#redressement" class="underline underline-offset-2">Comment c'est fait</a
+									>
 								</span>
 							</div>
 							{#if data.reading.weighted}
@@ -993,8 +1000,8 @@
 					{/if}
 				</dl>
 				<p class="measure text-muted mt-3 text-xs leading-relaxed">
-					La taille effective est le nombre de répondants qu'il aurait fallu, sans redressement, pour
-					la même précision : redresser coûte de la précision, et ce chiffre dit combien.
+					La taille effective est le nombre de répondants qu'il aurait fallu, sans redressement,
+					pour la même précision : redresser coûte de la précision, et ce chiffre dit combien.
 				</p>
 
 				<div class="mt-8 grid gap-6 sm:grid-cols-2">

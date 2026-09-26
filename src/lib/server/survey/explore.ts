@@ -469,7 +469,7 @@ export function describeUnavailableWeighting(prepared: {
 	if (!prepared.weightingUnavailable) return null;
 
 	if (prepared.weighting && !prepared.weighting.fresh) {
-		return "La lecture redressée est en cours de mise à jour : des réponses sont arrivées depuis le dernier calcul des poids. Les chiffres affichés sont les données brutes.";
+		return 'La lecture redressée est en cours de mise à jour : des réponses sont arrivées depuis le dernier calcul des poids. Les chiffres affichés sont les données brutes.';
 	}
 
 	return "Ce lien demande la lecture redressée, mais aucun redressement n'est publié pour cette enquête. Les chiffres affichés sont les données brutes.";
