@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { SvelteSet } from 'svelte/reactivity';
 	import Dialog from '$components/admin/Dialog.svelte';
 	import EmptyState from '$components/admin/EmptyState.svelte';
 	import Flash from '$components/admin/Flash.svelte';
@@ -45,6 +46,33 @@
 	const fieldLabels = $derived(new Map(collectable.map((field) => [field.key, field.label])));
 
 	const mapped = $derived(data.questions.filter((question) => question.openformsKey).length);
+
+	/** Identifiant d'une question par son code, pour lier un rejet a sa fiche. */
+	const questionIdByCode = $derived(new Map(data.questions.map((question) => [question.code, question.id])));
+
+	const UNKNOWN_MODALITY = /^Modalité inconnue : « (.+) »\.$/;
+
+	/**
+	 * Correctif propose sous un rejet « modalite inconnue ».
+	 *
+	 * La quasi-totalite de ces rejets ne demandent aucune correction de donnees :
+	 * le formulaire distant a gagne une option que la question, ici, ne connait
+	 * pas encore. La declarer suffit — la ligne repart d'elle-meme au prochain
+	 * « Synchroniser », puisqu'elle n'a jamais ete enregistree.
+	 */
+	function missingModalityFix(rejection: { question: string; reason: string }) {
+		const match = UNKNOWN_MODALITY.exec(rejection.reason);
+		if (!match) return null;
+
+		const questionId = questionIdByCode.get(rejection.question);
+		if (!questionId) return null;
+
+		const label = match[1];
+		return { questionId, label, key: `${questionId}::${label}` };
+	}
+
+	/** Modalites ajoutees depuis cet ecran, pour ne pas reproposer le meme bouton. */
+	const addedModalities = new SvelteSet<string>();
 
 	/**
 	 * Suivi de la synchronisation, dans une fenetre.
@@ -472,11 +500,46 @@
 									<summary class="cursor-pointer text-xs font-semibold">Voir les motifs</summary>
 									<ul class="mt-2 flex flex-col gap-1">
 										{#each pass.errors as rejection (rejection.submission + rejection.field)}
+											{@const fix = missingModalityFix(rejection)}
 											<li class="text-muted text-xs">
 												<span class="font-semibold"
 													>{fieldLabels.get(rejection.field) ?? rejection.field}</span
 												>
 												= « {rejection.value} » — {rejection.reason}
+												{#if fix}
+													<!--
+														Corriger a la main demandait de deviner quelle
+														question editer, y aller, puis retaper le libelle
+														exact — trois occasions de se tromper pour une seule
+														option manquante. Le bouton poste directement sur la
+														fiche de la question, sans quitter cet ecran.
+													-->
+													{#if addedModalities.has(fix.key)}
+														<p class="mt-1 font-medium">
+															« {fix.label} » ajoutée — resynchronisez pour reprendre cette ligne.
+														</p>
+													{:else}
+														<form
+															method="POST"
+															action="/admin/sondages/{data.survey.id}/questions/{fix.questionId}?/addOption"
+															use:enhance={() => {
+																return async ({ result, update }) => {
+																	if (result.type === 'success') addedModalities.add(fix.key);
+																	await update();
+																};
+															}}
+															class="mt-1"
+														>
+															<input type="hidden" name="label" value={fix.label} />
+															<button
+																type="submit"
+																class="border-ink/25 press bg-paper rounded-pill inline-flex min-h-6 items-center border px-2 py-0.5 text-xs font-medium"
+															>
+																Ajouter « {fix.label} » comme modalité
+															</button>
+														</form>
+													{/if}
+												{/if}
 											</li>
 										{/each}
 									</ul>

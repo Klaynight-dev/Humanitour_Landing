@@ -204,7 +204,13 @@ export const load: PageServerLoad = async ({ params }) => {
 			created: sync.createdCount,
 			rejected: sync.rejectedCount,
 			message: sync.message,
-			errors: sync.errors as { submission: string; field: string; value: string; reason: string }[],
+			errors: sync.errors as {
+				submission: string;
+				question: string;
+				field: string;
+				value: string;
+				reason: string;
+			}[],
 			startedAt: sync.startedAt,
 			finishedAt: sync.finishedAt,
 			author: sync.triggeredBy?.displayName ?? null
