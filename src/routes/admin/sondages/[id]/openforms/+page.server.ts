@@ -203,6 +203,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			fetched: sync.fetchedCount,
 			created: sync.createdCount,
 			rejected: sync.rejectedCount,
+			newsletterSignups: sync.newsletterCount,
 			message: sync.message,
 			errors: sync.errors as {
 				submission: string;
@@ -629,13 +630,14 @@ export const actions: Actions = {
 
 		return {
 			message: `${outcome.fetched} soumission(s) lue(s), ${outcome.created} reprise(s)${rejected}.`,
-			// Les trois compteurs a part, et pas seulement dans la phrase : la
-			// fenetre de suivi les affiche un par un, et redecouper une phrase
-			// pour les retrouver serait une invitation a ce qu'ils divergent.
+			// Les compteurs a part, et pas seulement dans la phrase : la fenetre
+			// de suivi les affiche un par un, et redecouper une phrase pour les
+			// retrouver serait une invitation a ce qu'ils divergent.
 			outcome: {
 				fetched: outcome.fetched,
 				created: outcome.created,
-				rejected: outcome.rejected
+				rejected: outcome.rejected,
+				newsletterSignups: outcome.newsletterSignups
 			}
 		};
 	},

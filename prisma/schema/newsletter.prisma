@@ -6,6 +6,11 @@
 // identite. Rapprocher un abonne d'une opinion politique est donc impossible,
 // pas seulement interdit (AGENTS.md section 4).
 //
+// Trois entrees alimentent cette table, toutes sans lien vers `Response` :
+// le formulaire public `/infolettre`, l'import en lot du back-office, et un
+// champ email d'un formulaire Openforms relie a un sondage (compte dans
+// `OpenformsSync.newsletterCount`, voir `server/openforms/sync.ts`).
+//
 // Pas de colonne « confirme » ni de jeton de confirmation : rien n'envoie de
 // courriel dans ce depot aujourd'hui, et un double opt-in dont le second temps
 // n'existe pas ne protege personne — il ne fait qu'en donner l'air. La

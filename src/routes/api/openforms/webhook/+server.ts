@@ -74,6 +74,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 		synced: outcome.created,
 		fetched: outcome.fetched,
 		rejected: outcome.rejected,
+		newsletterSignups: outcome.newsletterSignups,
 		failure: outcome.failure
 	});
 };

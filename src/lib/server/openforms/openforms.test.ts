@@ -23,7 +23,7 @@ const { env } = await import('$env/dynamic/private');
 const { fetchForm, fetchPublicForm, fetchSubmissions, fetchSummary, listForms, submitResponse } =
 	await import('./api');
 const { isConfigured } = await import('./client');
-const { toRowSet } = await import('./rows');
+const { toRowSet, extractNewsletterEmails } = await import('./rows');
 
 /** Reponse HTTP simulee, au plus pres de ce que rend `fetch`. */
 function reply(body: unknown, status = 200): Response {
@@ -403,5 +403,40 @@ describe('toRowSet', () => {
 	it('rend une cellule indefinie pour une reponse absente, pas une erreur', () => {
 		const rowSet = toRowSet(FIELDS, [{ id: 'r1', submittedAt: new Date(), values: {} }]);
 		expect(rowSet.rows[0]).toEqual({ priorite: undefined, medias: undefined });
+	});
+});
+
+describe('extractNewsletterEmails', () => {
+	const FIELDS_WITH_EMAIL = [
+		{ key: 'priorite', type: 'radio', label: 'Priorité', required: false, options: [] },
+		{ key: 'courriel', type: 'email', label: 'Courriel', required: false, options: [] }
+	];
+
+	it("lit la valeur d'un champ de type email, absent de toRowSet", () => {
+		const submissions = [
+			{
+				id: 'r1',
+				submittedAt: new Date(),
+				values: { priorite: 'sante', courriel: 'alice@exemple.fr' }
+			}
+		];
+
+		expect(extractNewsletterEmails(FIELDS_WITH_EMAIL, submissions)).toEqual(['alice@exemple.fr']);
+		expect(toRowSet(FIELDS_WITH_EMAIL, submissions).columns).not.toContain('courriel');
+	});
+
+	it("rend une liste vide si le formulaire n'a aucun champ email", () => {
+		const submissions = [{ id: 'r1', submittedAt: new Date(), values: { priorite: 'sante' } }];
+		expect(extractNewsletterEmails([FIELDS_WITH_EMAIL[0]!], submissions)).toEqual([]);
+	});
+
+	it('ignore une valeur vide ou absente sans faire echouer les autres soumissions', () => {
+		const submissions = [
+			{ id: 'r1', submittedAt: new Date(), values: { courriel: '   ' } },
+			{ id: 'r2', submittedAt: new Date(), values: {} },
+			{ id: 'r3', submittedAt: new Date(), values: { courriel: 'bob@exemple.fr' } }
+		];
+
+		expect(extractNewsletterEmails(FIELDS_WITH_EMAIL, submissions)).toEqual(['bob@exemple.fr']);
 	});
 });

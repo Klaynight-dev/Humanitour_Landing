@@ -89,6 +89,7 @@
 		readonly fetched?: number;
 		readonly created?: number;
 		readonly rejected?: number;
+		readonly newsletterSignups?: number;
 	}
 
 	let syncing = $state(false);
@@ -411,7 +412,12 @@
 					if (result.type === 'success') {
 						const data = (result.data ?? {}) as {
 							message?: string;
-							outcome?: { fetched: number; created: number; rejected: number };
+							outcome?: {
+								fetched: number;
+								created: number;
+								rejected: number;
+								newsletterSignups: number;
+							};
 						};
 						syncReport = {
 							ok: true,
@@ -470,7 +476,8 @@
 				<th class="px-3 py-3 text-left">Issue</th>
 				<th class="px-3 py-3 text-right">Lues</th>
 				<th class="px-3 py-3 text-right">Reprises</th>
-				<th class="px-5 py-3 text-right">Refusées</th>
+				<th class="px-3 py-3 text-right">Refusées</th>
+				<th class="px-5 py-3 text-right">Infolettre</th>
 			{/snippet}
 
 			{#snippet body()}
@@ -489,7 +496,7 @@
 						</td>
 						<td class="tabular px-3 py-3 text-right text-sm">{formatCount(pass.fetched)}</td>
 						<td class="tabular px-3 py-3 text-right text-sm">{formatCount(pass.created)}</td>
-						<td class="tabular px-5 py-3 text-right text-sm">
+						<td class="tabular px-3 py-3 text-right text-sm">
 							{formatCount(pass.rejected)}
 							{#if pass.errors.length > 0}
 								<!--
@@ -546,6 +553,9 @@
 								</details>
 							{/if}
 						</td>
+						<td class="tabular px-5 py-3 text-right text-sm">
+							{formatCount(pass.newsletterSignups)}
+						</td>
 					</tr>
 				{/each}
 			{/snippet}
@@ -580,7 +590,7 @@
 			<p class={syncReport.ok ? '' : 'text-danger'}>{syncReport.message}</p>
 
 			{#if syncReport.fetched !== undefined}
-				<dl class="border-ink/12 mt-4 grid grid-cols-3 gap-3 border-t pt-4">
+				<dl class="border-ink/12 mt-4 grid grid-cols-2 gap-3 border-t pt-4 sm:grid-cols-4">
 					<div>
 						<dt class="text-muted text-xs">Lues chez Openforms</dt>
 						<dd class="font-display text-2xl">{formatCount(syncReport.fetched)}</dd>
@@ -592,6 +602,10 @@
 					<div>
 						<dt class="text-muted text-xs">Refusées</dt>
 						<dd class="font-display text-2xl">{formatCount(syncReport.rejected ?? 0)}</dd>
+					</div>
+					<div>
+						<dt class="text-muted text-xs">Ajoutées à l'infolettre</dt>
+						<dd class="font-display text-2xl">{formatCount(syncReport.newsletterSignups ?? 0)}</dd>
 					</div>
 				</dl>
 

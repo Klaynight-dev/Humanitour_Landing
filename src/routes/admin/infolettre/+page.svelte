@@ -66,13 +66,44 @@
 	</Panel>
 
 	<Panel title="Ce que la base retient">
-		<p class="text-sm">L'adresse, la date, et l'empreinte tronquée de l'adresse IP.</p>
+		<p class="text-sm">L'adresse, la date, et l'empreinte tronquée de l'adresse IP quand elle existe.</p>
 		<p class="text-muted mt-2 text-sm">
 			L'empreinte prouve le consentement et ne sort jamais de la base : ni à l'écran, ni à
-			l'export. Aucune relation ne relie un abonné à une réponse de sondage.
+			l'export. Aucune relation ne relie un abonné à une réponse de sondage — une adresse importée
+			ou reçue via un sondage ne porte pas d'empreinte, faute d'IP à prouver.
 		</p>
 	</Panel>
 </div>
+
+{#if data.manageable}
+	<div class="mb-6">
+		<Panel
+			title="Importer des adresses"
+			description="Collez une colonne copiée depuis un tableur, ou une liste tapée à la main : une adresse par ligne, ou séparées par une virgule."
+		>
+			<form method="POST" action="?/import" use:enhance class="flex flex-col gap-3">
+				<label class="flex flex-col gap-1.5">
+					<span class="sr-only">Adresses à importer</span>
+					<textarea
+						name="emails"
+						rows="4"
+						required
+						placeholder="alice@exemple.fr, bob@exemple.fr…"
+						class="border-ink/20 bg-paper rounded-field min-h-11 border px-3 py-2 text-sm"
+					></textarea>
+				</label>
+				<div>
+					<button
+						type="submit"
+						class="bg-ink text-paper press rounded-pill inline-flex min-h-11 items-center px-4 py-2 text-sm font-semibold"
+					>
+						Importer ces adresses
+					</button>
+				</div>
+			</form>
+		</Panel>
+	</div>
+{/if}
 
 <FilterBar active={data.search !== ''}>
 	<label class="flex flex-col gap-1.5">

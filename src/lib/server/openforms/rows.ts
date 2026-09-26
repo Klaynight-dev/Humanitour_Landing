@@ -48,3 +48,26 @@ export function toRowSet(
 		)
 	};
 }
+
+/**
+ * Valeurs saisies dans un champ de type courriel, telles que soumises.
+ *
+ * Le type « email » a `carriesAnswer: false` (AGENTS.md section 4) : il n
+ * entre donc jamais dans `toRowSet`, ni dans une reponse. Cette fonction lit
+ * la meme source pour un usage different, l inscription a l infolettre — sur
+ * `NewsletterSubscriber`, jamais reliee a la soumission dont l adresse vient.
+ */
+export function extractNewsletterEmails(
+	fields: readonly OpenformsField[],
+	submissions: readonly RemoteSubmission[]
+): readonly string[] {
+	const keys = fields.filter((field) => field.type === 'email').map((field) => field.key);
+	if (keys.length === 0) return [];
+
+	return submissions.flatMap((submission) =>
+		keys.flatMap((key) => {
+			const value = submission.values[key];
+			return typeof value === 'string' && value.trim() !== '' ? [value] : [];
+		})
+	);
+}

@@ -9,8 +9,12 @@ import type { Actions, PageServerLoad } from './$types';
 /**
  * Inscription a l'infolettre.
  *
- * Seul endroit du site public qui ecrit une adresse electronique en base. Trois
- * choses en decoulent, et aucune n'est optionnelle :
+ * Seul FORMULAIRE PUBLIC qui ecrit une adresse electronique en base : le
+ * back-office sait aussi en ajouter, par import en lot ou depuis un champ
+ * email d'un sondage relie (voir `admin/infolettre` et
+ * `server/openforms/sync.ts`), mais aucun des deux n'est un formulaire que le
+ * visiteur remplit ici. Trois choses decoulent de CELUI-CI, et aucune n'est
+ * optionnelle :
  *
  * 1. Le consentement est une case a cocher, decochee par defaut, sans laquelle
  *    l'action refuse. Une case pre-cochee n'est pas un consentement.

@@ -71,3 +71,49 @@ export function parseEmail(raw: string): EmailResult {
 
 	return { ok: true, email };
 }
+
+/** Le resultat d un import en lot : ce qui a ete retenu, ce qui a ete ecarte. */
+export interface EmailListResult {
+	/** Adresses valides, normalisees, sans doublon. */
+	readonly emails: readonly string[];
+	/** Entrees qui n ont pas passe `parseEmail`, telles que saisies. */
+	readonly invalid: readonly string[];
+	/** Adresses valides mais deja vues plus haut dans le meme lot. */
+	readonly duplicates: number;
+}
+
+/**
+ * Lit une liste d adresses collee depuis un tableur ou un fichier texte.
+ *
+ * Une colonne copiee depuis un tableur separe ses lignes par un retour a la
+ * ligne ; une liste tapee a la main les separe parfois par une virgule ou un
+ * point-virgule. Les trois sont acceptes, parce que distinguer les formats
+ * couterait plus qu accepter les trois.
+ */
+export function parseEmailList(raw: string): EmailListResult {
+	const seen = new Set<string>();
+	const emails: string[] = [];
+	const invalid: string[] = [];
+	let duplicates = 0;
+
+	const entries = raw
+		.split(/[\n\r,;]+/)
+		.map((entry) => entry.trim())
+		.filter((entry) => entry !== '');
+
+	for (const entry of entries) {
+		const parsed = parseEmail(entry);
+		if (!parsed.ok) {
+			invalid.push(entry);
+			continue;
+		}
+		if (seen.has(parsed.email)) {
+			duplicates += 1;
+			continue;
+		}
+		seen.add(parsed.email);
+		emails.push(parsed.email);
+	}
+
+	return { emails, invalid, duplicates };
+}

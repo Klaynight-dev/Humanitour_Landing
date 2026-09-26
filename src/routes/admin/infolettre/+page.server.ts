@@ -3,7 +3,7 @@ import { recordAudit } from '$lib/server/audit';
 import { prisma } from '$lib/server/db';
 import { readText } from '$lib/server/forms';
 import { requirePermission } from '$lib/server/rbac/guard';
-import { normalizeEmail } from '$lib/shared/newsletter';
+import { normalizeEmail, parseEmailList } from '$lib/shared/newsletter';
 import { can } from '$lib/shared/permissions';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -18,11 +18,18 @@ import type { Actions, PageServerLoad } from './$types';
  *    quelqu'un a sa place.
  * 2. La consultation est paginee et jamais exhaustive par defaut : on ne charge
  *    pas dix mille adresses dans une page pour le plaisir de les avoir.
- * 3. L'export et la desinscription sont journalises nominativement. Qui a sorti
- *    la liste des adresses doit pouvoir etre dit.
+ * 3. L'export, la desinscription et l'import sont journalises. Qui a sorti la
+ *    liste, ou qui l'a agrandie, doit pouvoir etre dit.
  *
  * Rien ici n'envoie de courriel : aucun expediteur n'est branche dans ce depot,
  * et la redaction d'une campagne attend ce choix.
+ *
+ * Deux entrees alimentent la table en dehors du formulaire public : l'import
+ * en lot ci-dessous, et un champ email d'un formulaire Openforms relie a un
+ * sondage (`server/openforms/sync.ts`). Aucune des deux ne cree de lien vers
+ * une reponse : l'infolettre reste la seule table nominative du depot, et
+ * `NewsletterSubscriber` n'a et ne peut avoir aucune cle vers `Response`
+ * (AGENTS.md section 4).
  */
 
 /** Une page de cinquante lignes : assez pour travailler, trop peu pour aspirer la liste. */
@@ -101,5 +108,54 @@ export const actions: Actions = {
 		});
 
 		return { message: `« ${email} » ne recevra plus l'infolettre.` };
+	},
+
+	/**
+	 * Import en lot, colle depuis un tableur ou une liste.
+	 *
+	 * Pas d'upload de fichier : une colonne de tableur se colle telle quelle, et
+	 * ca evite de faire revivre un analyseur de fichier pour un besoin qu'un
+	 * `<textarea>` couvre deja (AGENTS.md section 2, sur le registre de formats
+	 * d'import retire). `createMany` avec `skipDuplicates` fait qu'une adresse
+	 * deja abonnee ne s'ecrase pas et ne remet pas sa date d'inscription a zero.
+	 */
+	import: async ({ locals, request }) => {
+		const user = requirePermission(locals.user, 'newsletter.manage');
+
+		const form = await request.formData();
+		const { emails, invalid } = parseEmailList(readText(form, 'emails'));
+
+		if (emails.length === 0) {
+			return fail(400, {
+				message:
+					invalid.length > 0
+						? `Aucune adresse valide dans ce que vous avez collé : ${invalid.length} entrée(s) rejetée(s).`
+						: 'Collez au moins une adresse.'
+			});
+		}
+
+		const already = await prisma.newsletterSubscriber.findMany({
+			where: { email: { in: [...emails] } },
+			select: { email: true }
+		});
+		const knownCount = already.length;
+
+		const { count: created } = await prisma.newsletterSubscriber.createMany({
+			data: emails.map((email) => ({ email })),
+			skipDuplicates: true
+		});
+
+		await recordAudit({
+			actorId: user.id,
+			action: 'newsletter.import',
+			entity: 'NewsletterSubscriber',
+			metadata: { submitted: emails.length, created, alreadySubscribed: knownCount, invalid: invalid.length }
+		});
+
+		const invalidNote = invalid.length > 0 ? ` ${invalid.length} entrée(s) invalide(s) ignorée(s).` : '';
+
+		return {
+			message: `${created} adresse(s) ajoutée(s) à l'infolettre. ${knownCount} l'étaient déjà.${invalidNote}`
+		};
 	}
 };

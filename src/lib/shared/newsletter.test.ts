@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EMAIL_MAX_LENGTH, normalizeEmail, parseEmail } from './newsletter';
+import { EMAIL_MAX_LENGTH, normalizeEmail, parseEmail, parseEmailList } from './newsletter';
 
 describe('normalizeEmail', () => {
 	it('rogne les espaces et rabat la casse', () => {
@@ -53,5 +53,37 @@ describe('parseEmail', () => {
 		expect(parseEmail('alice@localhost').ok).toBe(false);
 		expect(parseEmail('alice@.fr').ok).toBe(false);
 		expect(parseEmail('alice@exemple.').ok).toBe(false);
+	});
+});
+
+describe('parseEmailList', () => {
+	it('separe une colonne de tableur, une par ligne', () => {
+		const result = parseEmailList('alice@exemple.fr\nBob@Exemple.FR\ncarole@exemple.fr');
+		expect(result).toEqual({
+			emails: ['alice@exemple.fr', 'bob@exemple.fr', 'carole@exemple.fr'],
+			invalid: [],
+			duplicates: 0
+		});
+	});
+
+	it('accepte aussi la virgule et le point-virgule comme separateurs', () => {
+		const result = parseEmailList('alice@exemple.fr, bob@exemple.fr; carole@exemple.fr');
+		expect(result.emails).toEqual(['alice@exemple.fr', 'bob@exemple.fr', 'carole@exemple.fr']);
+	});
+
+	it('deduplique en respectant la normalisation de casse', () => {
+		const result = parseEmailList('alice@exemple.fr\nAlice@Exemple.FR');
+		expect(result.emails).toEqual(['alice@exemple.fr']);
+		expect(result.duplicates).toBe(1);
+	});
+
+	it('ecarte les entrees invalides sans faire echouer les autres', () => {
+		const result = parseEmailList('alice@exemple.fr\npas-une-adresse\nbob@exemple.fr');
+		expect(result.emails).toEqual(['alice@exemple.fr', 'bob@exemple.fr']);
+		expect(result.invalid).toEqual(['pas-une-adresse']);
+	});
+
+	it('rend des listes vides sur une saisie vide', () => {
+		expect(parseEmailList('   \n  ')).toEqual({ emails: [], invalid: [], duplicates: 0 });
 	});
 });

@@ -290,6 +290,10 @@ model OpenformsSync {
   /// Soumissions refusees par la normalisation, avec leur motif dans `errors`.
   rejectedCount Int @default(0)
 
+  /// Adresses ajoutees a `NewsletterSubscriber` depuis un champ email du
+  /// formulaire, s'il en a un. Sans lien vers `Response` : voir newsletter.prisma.
+  newsletterCount Int @default(0)
+
   /// Motifs de refus, soumission par soumission. Une synchronisation ne masque
   /// jamais un rejet, exactement comme l'import de fichiers ne le faisait pas.
   errors Json @default("[]")
