@@ -4,6 +4,7 @@ import { rake } from './weighting';
 import {
 	buildUnits,
 	canCalibrateOn,
+	describeWeighting,
 	marginReport,
 	parseTargetsForm,
 	readDiagnostics,
@@ -186,5 +187,155 @@ describe('lecture des colonnes JSON', () => {
 
 	it('rend null pour un diagnostic absent', () => {
 		expect(readDiagnostics(null)).toBeNull();
+	});
+});
+
+describe('marginReport', () => {
+	const units = buildUnits(
+		['a', 'b', 'c', 'd'],
+		[
+			{ responseId: 'a', questionCode: 'sexe', modalityKey: 'f' },
+			{ responseId: 'b', questionCode: 'sexe', modalityKey: 'f' },
+			{ responseId: 'c', questionCode: 'sexe', modalityKey: 'h' }
+		]
+	);
+
+	it('compte a part les repondants sans modalite, sans les meler aux parts', () => {
+		const { rows, unknown } = marginReport(units, null, 'sexe', SEXE.modalities, null);
+
+		expect(unknown).toBe(1);
+		// Trois repondants classes, pas quatre : deux femmes sur trois.
+		expect(rows.find((row) => row.key === 'f')?.observed).toBeCloseTo(2 / 3, 6);
+	});
+
+	it('ne donne aucune part redressee tant qu il n y a pas de poids', () => {
+		const { rows } = marginReport(units, null, 'sexe', SEXE.modalities, null);
+
+		expect(rows.every((row) => row.weighted === null)).toBe(true);
+	});
+
+	it('ne donne aucune cible quand elle n est pas fixee', () => {
+		const { rows } = marginReport(units, null, 'sexe', SEXE.modalities, null);
+
+		expect(rows.every((row) => row.target === null)).toBe(true);
+	});
+
+	it('ne rend pas de part observee quand personne n est classe', () => {
+		const vides = buildUnits(['a'], []);
+		const { rows, unknown } = marginReport(vides, null, 'sexe', SEXE.modalities, null);
+
+		expect(unknown).toBe(1);
+		expect(rows.every((row) => row.observed === null)).toBe(true);
+	});
+
+	it('n inscrit pas la non-reponse parmi les lignes de calage', () => {
+		const { rows } = marginReport(units, null, 'sexe', SEXE.modalities, null);
+
+		expect(rows.map((row) => row.key)).not.toContain(NON_RESPONSE_KEY);
+	});
+});
+
+describe('describeWeighting', () => {
+	const computedAt = new Date('2026-09-20T10:00:00.000Z');
+	const diagnostics = {
+		iterations: 12,
+		converged: true,
+		maxDeviation: 0.0004,
+		minWeight: 0.61,
+		maxWeight: 2.4,
+		effectiveSampleSize: 712.5,
+		respondents: 985,
+		warnings: []
+	};
+
+	it('rend les variables en libelles lisibles', () => {
+		const description = describeWeighting(
+			{
+				version: 2,
+				computedAt,
+				source: 'INSEE, recensement 2021',
+				variables: [{ questionCode: 'sexe', targets: { f: 0.52, h: 0.48 } }],
+				diagnostics
+			},
+			[SEXE, AGE]
+		);
+
+		expect(description.variables).toEqual([
+			{
+				code: 'sexe',
+				label: 'Sexe',
+				targets: [
+					{ key: 'f', label: 'Femme', share: 0.52 },
+					{ key: 'h', label: 'Homme', share: 0.48 }
+				]
+			}
+		]);
+	});
+
+	it('garde la version, la date et la source telles quelles', () => {
+		const description = describeWeighting(
+			{ version: 3, computedAt, source: null, variables: [], diagnostics: null },
+			[SEXE]
+		);
+
+		expect(description.version).toBe(3);
+		expect(description.computedAt).toBe(computedAt);
+		expect(description.source).toBeNull();
+	});
+
+	it('retombe sur le code quand la question a disparu de l enquete', () => {
+		const description = describeWeighting(
+			{
+				version: 1,
+				computedAt,
+				source: null,
+				variables: [{ questionCode: 'retiree', targets: { x: 1 } }],
+				diagnostics: null
+			},
+			[SEXE]
+		);
+
+		expect(description.variables[0]?.label).toBe('retiree');
+		expect(description.variables[0]?.targets[0]?.label).toBe('x');
+	});
+
+	it('retombe sur la cle quand une modalite a disparu', () => {
+		const description = describeWeighting(
+			{
+				version: 1,
+				computedAt,
+				source: null,
+				variables: [{ questionCode: 'sexe', targets: { autre: 1 } }],
+				diagnostics: null
+			},
+			[SEXE]
+		);
+
+		expect(description.variables[0]?.targets[0]?.label).toBe('autre');
+	});
+
+	it('publie les diagnostics sans le detail interne des iterations', () => {
+		const description = describeWeighting(
+			{ version: 1, computedAt, source: null, variables: [], diagnostics },
+			[SEXE]
+		);
+
+		expect(description.diagnostics).toEqual({
+			converged: true,
+			maxDeviation: 0.0004,
+			minWeight: 0.61,
+			maxWeight: 2.4,
+			effectiveSampleSize: 712.5,
+			respondents: 985
+		});
+	});
+
+	it('laisse les diagnostics absents quand il n y en a pas', () => {
+		const description = describeWeighting(
+			{ version: 1, computedAt, source: null, variables: [], diagnostics: null },
+			[SEXE]
+		);
+
+		expect(description.diagnostics).toBeNull();
 	});
 });

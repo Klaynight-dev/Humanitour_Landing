@@ -20,6 +20,10 @@ export default defineConfig({
 				'src/lib/server/db.ts',
 				'src/lib/server/survey/queries.ts',
 				'src/lib/server/survey/export-query.ts',
+				// Meme cas : il lit les marges et ecrit `Response.weight`. Le calage
+				// lui-meme (`rake`) et la preparation du plan vivent dans
+				// `weighting.ts` et `weighting-plan.ts`, couverts a part.
+				'src/lib/server/survey/weighting-store.ts',
 				'src/lib/server/media/queries.ts',
 				// Orchestration de la synchronisation Openforms : base, reseau et
 				// minuterie. La seule regle qu'elle portait — la mise a plat des

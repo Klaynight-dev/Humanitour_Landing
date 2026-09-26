@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { NON_RESPONSE_KEY, type ModalityDescriptor } from '$shared/questions';
 import type { AnswerRow } from './aggregate';
-import { buildOutcome, type Axis } from './explore';
+import { buildOutcome, buildPanels, type Axis } from './explore';
 import { everyone } from './population';
-import { resultToCsv } from './result-csv';
+import { panelsToCsv, resultToCsv } from './result-csv';
 
 const PRIORITE: readonly ModalityDescriptor[] = [
 	{ key: 'pouvoir-achat', label: "Le pouvoir d'achat", isNonResponse: false },
@@ -109,5 +109,79 @@ describe('export du resultat affiche', () => {
 		);
 
 		expect(linesOf(csv)).toHaveLength(1);
+	});
+});
+
+/**
+ * Decoupage en petits multiples. Deux sous-populations de deux repondants, dont
+ * l une porte un libelle a virgule : c est le cas ou l echappement compte, la
+ * colonne `panneau` etant la premiere de chaque ligne.
+ */
+const GENRE: Axis = {
+	code: 'genre',
+	label: 'Genre',
+	modalities: [
+		{ key: 'f', label: 'Femme', isNonResponse: false },
+		{ key: 'h', label: 'Homme, ou autre', isNonResponse: false }
+	],
+	rows: [
+		{ responseId: 'r1', modalityKey: 'f' },
+		{ responseId: 'r3', modalityKey: 'f' },
+		{ responseId: 'r2', modalityKey: 'h' },
+		{ responseId: 'r4', modalityKey: 'h' }
+	]
+};
+
+function panelsCsv(threshold: number): string {
+	return panelsToCsv(
+		buildPanels(
+			{ x: X, y: null, population: everyone(4), threshold, includeNonResponses: true },
+			GENRE
+		)
+	);
+}
+
+describe('export en petits multiples', () => {
+	it('garde le BOM et les fins de ligne du tableur', () => {
+		const csv = panelsCsv(1);
+
+		expect(csv.startsWith('\uFEFF')).toBe(true);
+		expect(csv.endsWith('\r\n')).toBe(true);
+	});
+
+	it('ajoute une colonne panneau en tete de l en-tete ordinaire', () => {
+		expect(linesOf(panelsCsv(1))[0]).toBe(
+			'panneau,modalite,libelle,non_reponse,effectif,part,masque'
+		);
+	});
+
+	it('prefixe chaque ligne du libelle de son panneau', () => {
+		const lines = linesOf(panelsCsv(1)).slice(1);
+
+		expect(lines.filter((row) => row.startsWith('Femme,'))).toHaveLength(3);
+	});
+
+	it('echappe un libelle de panneau contenant une virgule', () => {
+		const lines = linesOf(panelsCsv(1)).slice(1);
+
+		expect(lines.filter((row) => row.startsWith('"Homme, ou autre",'))).toHaveLength(3);
+	});
+
+	it('reste plat : une seule ligne d en-tete pour tous les panneaux', () => {
+		const lines = linesOf(panelsCsv(1));
+
+		expect(lines.filter((row) => row.startsWith('panneau,'))).toHaveLength(1);
+	});
+
+	it('ne publie aucune ligne pour un panneau sous le seuil', () => {
+		// Seuil a 3 : chaque panneau n a que deux repondants, rien ne sort.
+		const lines = linesOf(panelsCsv(3));
+
+		expect(lines).toHaveLength(1);
+		expect(lines[0]).toBe('panneau,modalite,libelle,effectif,part,masque');
+	});
+
+	it('rend un en-tete seul quand il n y a aucun panneau', () => {
+		expect(linesOf(panelsToCsv([]))).toEqual(['panneau']);
 	});
 });
