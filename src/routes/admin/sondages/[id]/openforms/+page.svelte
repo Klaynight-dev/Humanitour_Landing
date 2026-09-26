@@ -34,6 +34,16 @@
 	 */
 	const collectable = $derived(data.live?.fields ?? []);
 
+	/**
+	 * Intitule d'un champ distant, par sa cle opaque.
+	 *
+	 * Le journal des rejets ne connait que la cle (« champ_mru80mbk_1 ») : c'est
+	 * elle qu'Openforms renvoie, et c'est elle qu'il faut pour ecrire en base.
+	 * Mais elle ne dit rien a l'operateur, qui doit retrouver a quelle question
+	 * du formulaire elle correspond. `collectable` porte deja le libelle.
+	 */
+	const fieldLabels = $derived(new Map(collectable.map((field) => [field.key, field.label])));
+
 	const mapped = $derived(data.questions.filter((question) => question.openformsKey).length);
 
 	/**
@@ -463,7 +473,9 @@
 									<ul class="mt-2 flex flex-col gap-1">
 										{#each pass.errors as rejection (rejection.submission + rejection.field)}
 											<li class="text-muted text-xs">
-												<span class="font-semibold">{rejection.field}</span>
+												<span class="font-semibold"
+													>{fieldLabels.get(rejection.field) ?? rejection.field}</span
+												>
 												= « {rejection.value} » — {rejection.reason}
 											</li>
 										{/each}
