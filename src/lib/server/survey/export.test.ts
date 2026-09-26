@@ -187,3 +187,36 @@ describe('exportableQuestions, type inconnu', () => {
 		expect(exportableQuestions([PRIORITE, orphan]).map((q) => q.code)).toEqual(['priorite']);
 	});
 });
+
+describe('poids de redressement', () => {
+	const weighted = { ...response('r1', { priorite: 'sante' }), weight: 1.234567891 };
+
+	it('n ajoute aucune colonne sans redressement publie', () => {
+		const header = toCsv([weighted], [PRIORITE]).replace('\uFEFF', '').split('\r\n')[0];
+
+		expect(header).toBe('reponse_id,date_collecte,priorite');
+	});
+
+	it('ajoute la colonne poids, juste apres la date, a six decimales', () => {
+		const [header, row] = toCsv([weighted], [PRIORITE], { weighted: true })
+			.replace('\uFEFF', '')
+			.split('\r\n');
+
+		expect(header).toBe('reponse_id,date_collecte,poids,priorite');
+		expect(row?.split(',')[2]).toBe('1.234568');
+	});
+
+	it('porte le poids et l explique dans l export JSON', () => {
+		const survey = {
+			slug: 's',
+			title: 'S',
+			methodology: null,
+			fieldworkStart: null,
+			fieldworkEnd: null
+		};
+		const output = toJson(survey, [weighted], [PRIORITE], { weighted: true });
+
+		expect(output.responses[0]?.poids).toBeCloseTo(1.234567891, 9);
+		expect(output.notice).toMatch(/poids/);
+	});
+});

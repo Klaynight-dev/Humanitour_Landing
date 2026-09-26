@@ -14,6 +14,7 @@ export async function loadExportableResponses(surveyId: string): Promise<Exporta
 		select: {
 			id: true,
 			collectedAt: true,
+			weight: true,
 			answers: { select: { modalityKey: true, question: { select: { code: true } } } }
 		}
 	});
@@ -21,6 +22,7 @@ export async function loadExportableResponses(surveyId: string): Promise<Exporta
 	return responses.map((response) => ({
 		id: response.id,
 		collectedAt: response.collectedAt,
+		weight: response.weight,
 		answers: response.answers.map((answer) => ({
 			questionCode: answer.question.code,
 			modalityKey: answer.modalityKey

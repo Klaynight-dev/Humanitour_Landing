@@ -21,7 +21,23 @@ import type { PublicQuestion } from './queries';
 export interface ExportableResponse {
 	readonly id: string;
 	readonly collectedAt: Date;
+	/** Poids de redressement. `null` sans redressement publie. */
+	readonly weight?: number | null;
 	readonly answers: readonly { readonly questionCode: string; readonly modalityKey: string }[];
+}
+
+export interface ExportOptions {
+	/**
+	 * Ajoute la colonne `poids`. Seulement quand un redressement est publie : le
+	 * poids de chaque repondant est ce qui permet a un tiers de refaire nos
+	 * chiffres redresses, au lieu de nous croire sur parole.
+	 */
+	readonly weighted?: boolean;
+}
+
+/** Six decimales : assez pour refaire nos parts a la decimale pres. */
+function weightCell(weight: number | null | undefined): string {
+	return weight === null || weight === undefined ? '' : weight.toFixed(6);
 }
 
 /** Questions retenues a l export : tout sauf ce qui ne peut pas etre anonymise. */
@@ -73,15 +89,23 @@ export function escapeCsv(value: string): string {
 
 export function toCsv(
 	responses: readonly ExportableResponse[],
-	questions: readonly PublicQuestion[]
+	questions: readonly PublicQuestion[],
+	options: ExportOptions = {}
 ): string {
-	const columns = ['reponse_id', 'date_collecte', ...questions.map((question) => question.code)];
+	const weighted = options.weighted === true;
+	const columns = [
+		'reponse_id',
+		'date_collecte',
+		...(weighted ? ['poids'] : []),
+		...questions.map((question) => question.code)
+	];
 	const lines = [columns.map(escapeCsv).join(',')];
 
 	for (const response of responses) {
 		const cells = [
 			response.id,
 			response.collectedAt.toISOString().slice(0, 10),
+			...(weighted ? [weightCell(response.weight)] : []),
 			...cellsFor(response, questions)
 		];
 		lines.push(cells.map(escapeCsv).join(','));
@@ -115,6 +139,10 @@ export const EXPORT_NOTICE =
 	'Effectifs bruts, sans pondération ni redressement. Les non-réponses sont comptées comme une modalité. ' +
 	"Les valeurs numériques sont regroupées en tranches et les verbatims sont exclus, pour empêcher la réidentification.";
 
+export const WEIGHT_NOTICE =
+	'La colonne « poids » donne le poids de redressement de chaque répondant (calage sur marges, publié sur la page de l’enquête). ' +
+	'Les effectifs bruts ne l’utilisent pas : pour les retrouver, ignorez-la.';
+
 export const EXPORT_LICENSE = "ODbL 1.0 : attribution à Humanitour et partage à l'identique.";
 
 export function toJson(
@@ -126,8 +154,11 @@ export function toJson(
 		fieldworkEnd: Date | null;
 	},
 	responses: readonly ExportableResponse[],
-	questions: readonly PublicQuestion[]
+	questions: readonly PublicQuestion[],
+	options: ExportOptions = {}
 ): JsonExport {
+	const weighted = options.weighted === true;
+
 	return {
 		survey: {
 			slug: survey.slug,
@@ -136,7 +167,7 @@ export function toJson(
 			fieldworkStart: survey.fieldworkStart?.toISOString() ?? null,
 			fieldworkEnd: survey.fieldworkEnd?.toISOString() ?? null
 		},
-		notice: EXPORT_NOTICE,
+		notice: weighted ? `${EXPORT_NOTICE} ${WEIGHT_NOTICE}` : EXPORT_NOTICE,
 		license: EXPORT_LICENSE,
 		questions: questions.map((question) => ({
 			code: question.code,
@@ -153,6 +184,8 @@ export function toJson(
 				reponse_id: response.id,
 				date_collecte: response.collectedAt.toISOString().slice(0, 10)
 			};
+
+			if (weighted) row.poids = response.weight ?? null;
 
 			questions.forEach((question, index) => {
 				row[question.code] = cells[index];
