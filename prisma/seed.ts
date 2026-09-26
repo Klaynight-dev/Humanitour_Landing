@@ -72,8 +72,16 @@ const ROLES = [
 	{
 		slug: 'analyse',
 		name: 'Analyse',
-		description: 'Relie les formulaires Openforms, construit les questionnaires et les cartes.',
-		permissions: ['survey.read', 'survey.write', 'survey.sync', 'card.write', 'media.read'],
+		description:
+			'Relie les formulaires Openforms, construit les questionnaires et les cartes, redresse les enquêtes.',
+		permissions: [
+			'survey.read',
+			'survey.write',
+			'survey.sync',
+			'survey.weight',
+			'card.write',
+			'media.read'
+		],
 		isSystem: false
 	},
 	{

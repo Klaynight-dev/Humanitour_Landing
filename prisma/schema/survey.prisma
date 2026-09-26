@@ -130,6 +130,7 @@ model Survey {
   responses Response[]
   syncs     OpenformsSync[]
   cards     SurveyCard[]
+  weighting SurveyWeighting?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -228,6 +229,11 @@ model Response {
   syncId String?
   sync   OpenformsSync? @relation(fields: [syncId], references: [id], onDelete: SetNull)
 
+  /// Poids de redressement, ecrit par le dernier calage (`SurveyWeighting`).
+  /// `null` = jamais calcule, ou arrivee apres le dernier calcul : le calage est
+  /// alors perime, et la lecture redressee n'est plus proposee au public.
+  weight Float?
+
   answers Answer[]
 
   createdAt DateTime @default(now())
@@ -300,6 +306,42 @@ model OpenformsSync {
   finishedAt DateTime?
 
   @@index([surveyId, startedAt])
+}
+
+/// Redressement d'une enquete : les marges cibles saisies par un analyste, et le
+/// diagnostic du dernier calage (`src/lib/server/survey/weighting.ts`).
+///
+/// Une ligne par enquete. L'historique des versions vit dans le journal d'audit,
+/// qui recoit les cibles et le diagnostic complets a chaque calcul.
+model SurveyWeighting {
+  surveyId String @id
+  survey   Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  /// Variables de calage : `[{ questionCode, targets: { modalityKey: part } }]`.
+  /// Les parts sont entre 0 et 1, normalisees a l'enregistrement.
+  variables Json @default("[]")
+
+  /// Origine des marges, publiee avec les chiffres : « Insee, recensement 2021 ».
+  source String?
+
+  minWeight Float @default(0.2)
+  maxWeight Float @default(5)
+
+  /// Incremente a chaque calcul. Affiche en public : « redressement v3 ».
+  version Int @default(0)
+
+  /// Diagnostic du dernier calage. `null` = jamais calcule.
+  diagnostics  Json?
+  computedAt   DateTime?
+  computedById String?
+  computedBy   User?     @relation(fields: [computedById], references: [id], onDelete: SetNull)
+
+  /// La lecture redressee est-elle proposee au public ? Jamais par defaut, et
+  /// meme publiee, la lecture brute reste celle qu'on affiche en premier.
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+
+  updatedAt DateTime @updatedAt
 }
 
 /// Carte de visualisation publiee par le back-office : un croisement fige,

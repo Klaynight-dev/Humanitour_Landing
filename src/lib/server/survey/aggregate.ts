@@ -237,8 +237,19 @@ export interface CrosstabResult {
 	readonly rowTotals: ReadonlyMap<string, number | null>;
 	readonly columnTotals: ReadonlyMap<string, number | null>;
 	readonly respondents: number;
+	/**
+	 * Totaux et base redresses. `null` sans redressement. Un total masque en
+	 * brut l est aussi ici, pour la meme raison que les cases.
+	 */
+	readonly weighted: WeightedTotals | null;
 	readonly threshold: number;
 	readonly suppressedCount: number;
+}
+
+export interface WeightedTotals {
+	readonly rowTotals: ReadonlyMap<string, number | null>;
+	readonly columnTotals: ReadonlyMap<string, number | null>;
+	readonly respondents: number;
 }
 
 /**
@@ -297,22 +308,42 @@ function collectPairs(
 }
 
 /**
- * Totaux de ligne redresses.
+ * Totaux de ligne et de colonne redresses.
  *
  * Recalcules ici plutot que rendus par la protection : celle-ci raisonne en
  * effectifs bruts, c est son role. La part redressee se lit donc sur une base
  * redressee — melanger les deux donnerait des pourcentages qui ne somment a
- * rien.
+ * rien. Comme les totaux bruts, ils ne somment que les modalites retenues : une
+ * non-reponse retiree de l affichage ne doit pas gonfler le denominateur d un
+ * seul des deux cotes.
  */
-function weightedRowTotals(weighted: Map<string, number>): Map<string, number> {
-	const totals = new Map<string, number>();
+function weightedLineTotals(
+	weighted: Map<string, number>,
+	xKeys: readonly string[],
+	yKeys: readonly string[]
+): { rows: Map<string, number>; columns: Map<string, number> } {
+	const rows = new Map<string, number>();
+	const columns = new Map<string, number>();
 
-	for (const [key, value] of weighted) {
-		const xKey = key.split('\u0000')[0] ?? '';
-		totals.set(xKey, (totals.get(xKey) ?? 0) + value);
+	for (const xKey of xKeys) {
+		for (const yKey of yKeys) {
+			const value = weighted.get(`${xKey}\u0000${yKey}`) ?? 0;
+			rows.set(xKey, (rows.get(xKey) ?? 0) + value);
+			columns.set(yKey, (columns.get(yKey) ?? 0) + value);
+		}
 	}
 
-	return totals;
+	return { rows, columns };
+}
+
+/** Un total redresse, masque des que son homologue brut l est. */
+function maskLike(
+	raw: ReadonlyMap<string, number | null>,
+	weighted: Map<string, number>
+): Map<string, number | null> {
+	return new Map(
+		[...raw].map(([key, value]) => [key, value === null ? null : (weighted.get(key) ?? 0)])
+	);
 }
 
 /**
@@ -341,10 +372,10 @@ function weighCell(
 
 function indexCells(
 	table: ProtectedTable,
-	weighted: Map<string, number> | null
+	weighted: Map<string, number> | null,
+	weightedTotals: Map<string, number> | null
 ): Map<string, Map<string, CrosstabCell>> {
 	const rows = new Map<string, Map<string, CrosstabCell>>();
-	const weightedTotals = weighted ? weightedRowTotals(weighted) : null;
 
 	for (const cell of table.cells) {
 		const row = rows.get(cell.xKey) ?? new Map<string, CrosstabCell>();
@@ -395,18 +426,40 @@ export function crosstab(
 	);
 
 	const sharedResponses = new Set(xAnswers.map((answer) => answer.responseId));
-	const respondents = new Set(
+	const crossed = new Set(
 		yAnswers.map((answer) => answer.responseId).filter((id) => sharedResponses.has(id))
-	).size;
+	);
+
+	const lineTotals = weighted
+		? weightedLineTotals(
+				weighted,
+				xModalities.map((modality) => modality.key),
+				yModalities.map((modality) => modality.key)
+			)
+		: null;
 
 	return {
 		xModalities,
 		yModalities,
-		cells: indexCells(table, weighted),
+		cells: indexCells(table, weighted, lineTotals?.rows ?? null),
 		rowTotals: table.rowTotals,
 		columnTotals: table.columnTotals,
-		respondents,
+		respondents: crossed.size,
+		weighted:
+			lineTotals && options.weights
+				? {
+						rowTotals: maskLike(table.rowTotals, lineTotals.rows),
+						columnTotals: maskLike(table.columnTotals, lineTotals.columns),
+						respondents: sumWeights(crossed, options.weights)
+					}
+				: null,
 		threshold: table.threshold,
 		suppressedCount: table.suppressedCount
 	};
+}
+
+function sumWeights(ids: Iterable<string>, weights: ReadonlyMap<string, number>): number {
+	let total = 0;
+	for (const id of ids) total += weights.get(id) ?? 1;
+	return total;
 }

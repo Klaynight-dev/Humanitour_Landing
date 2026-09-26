@@ -49,6 +49,13 @@ export const PERMISSIONS = {
 		description: 'Supprimer definitivement une enquete et toutes ses reponses.',
 		sensitive: true
 	},
+	'survey.weight': {
+		group: 'Sondages',
+		label: 'Redresser un sondage',
+		description:
+			'Saisir les marges cibles, lancer le calage des poids et proposer la lecture redressee au public, a cote de la lecture brute.',
+		sensitive: true
+	},
 	'card.write': {
 		group: 'Sondages',
 		label: 'Gerer les cartes de visualisation',

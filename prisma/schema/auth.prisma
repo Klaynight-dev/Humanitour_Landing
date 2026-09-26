@@ -33,6 +33,7 @@ model User {
   contentPages      ContentPage[]
   notifications     Notification[]
   notificationRead  NotificationRead?
+  weightings        SurveyWeighting[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

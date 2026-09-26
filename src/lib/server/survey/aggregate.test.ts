@@ -316,6 +316,41 @@ describe('redressement', () => {
 		expect(cell?.weightedShare).toBeCloseTo(1, 6);
 	});
 
+	it('rend des totaux redresses coherents avec les cases, et masques comme les bruts', () => {
+		const rows: AnswerRow[] = [
+			{ responseId: 'a', modalityKey: 'oui' },
+			{ responseId: 'b', modalityKey: 'non' },
+			{ responseId: 'c', modalityKey: 'non' }
+		];
+		const region: AnswerRow[] = [
+			{ responseId: 'a', modalityKey: 'bretagne' },
+			{ responseId: 'b', modalityKey: 'bretagne' },
+			{ responseId: 'c', modalityKey: 'normandie' }
+		];
+		const weights = new Map([
+			['a', 2],
+			['b', 0.5],
+			['c', 0.5]
+		]);
+
+		const table = crosstab(rows, region, YES_NO, [modality('bretagne'), modality('normandie')], {
+			threshold: 1,
+			weights
+		});
+
+		expect(table.weighted?.rowTotals.get('oui')).toBeCloseTo(2, 6);
+		expect(table.weighted?.rowTotals.get('non')).toBeCloseTo(1, 6);
+		expect(table.weighted?.columnTotals.get('bretagne')).toBeCloseTo(2.5, 6);
+		expect(table.weighted?.respondents).toBeCloseTo(3, 6);
+		// La base brute ne bouge pas.
+		expect(table.respondents).toBe(3);
+	});
+
+	it('ne rend aucun total redresse sans poids', () => {
+		const table = crosstab(answers('oui', 3), answers('oui', 3), YES_NO, YES_NO, { threshold: 1 });
+		expect(table.weighted).toBeNull();
+	});
+
 	it('compte le repondant sans poids connu pour 1, jamais pour 0', () => {
 		// Un repondant arrive apres le calcul des poids ne doit pas disparaitre du
 		// total : il pese 1, comme avant tout redressement.
