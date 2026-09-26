@@ -19,6 +19,19 @@ const DATE_FORMAT = new Intl.DateTimeFormat('fr-FR', {
 	year: 'numeric'
 });
 
+/*
+ * Le lundi d une semaine, sans l annee.
+ *
+ * En UTC : le lundi est calcule a minuit UTC (`survey/timeline.ts`). Formate en
+ * heure locale, il deviendrait le dimanche soir sur un serveur a l ouest de
+ * Greenwich, et l axe d une meme courbe changerait selon l hebergeur.
+ */
+const WEEK_FORMAT = new Intl.DateTimeFormat('fr-FR', {
+	day: 'numeric',
+	month: 'short',
+	timeZone: 'UTC'
+});
+
 /** Texte affiche a la place d un chiffre masque par le seuil d anonymat. */
 export const SUPPRESSED_LABEL = 'Effectif insuffisant';
 
@@ -69,4 +82,9 @@ export function formatFieldwork(start: Date | string | null, end: Date | string 
 	if (from) return `Terrain depuis le ${from}`;
 	if (to) return `Terrain jusqu'au ${to}`;
 	return '';
+}
+
+/** Libelle court d une semaine, par son lundi : « 17 août ». */
+export function formatWeek(start: Date): string {
+	return WEEK_FORMAT.format(start);
 }

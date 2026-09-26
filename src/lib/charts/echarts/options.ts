@@ -1,8 +1,22 @@
 import type { CrosstabResult, DistributionResult } from '$lib/server/survey/aggregate';
-import { formatCount, formatShare, SUPPRESSED_LABEL } from '$shared/format';
+import type { TimelineResult, TimelineSeries } from '$lib/server/survey/timeline';
+import { formatCount, formatShare, formatWeek, SUPPRESSED_LABEL } from '$shared/format';
 import { maxCellValue, readCell, type CellBasis } from '../crosstab-cell';
-import { colorFor, SEQUENTIAL, SUPPRESSED_COLOR } from '../palette';
-import { categoryAxis, chartBase, CHART_MUTED, endLabel, valueAxis } from './theme';
+import {
+	CATEGORICAL,
+	colorFor,
+	NON_RESPONSE_COLOR,
+	SEQUENTIAL,
+	SUPPRESSED_COLOR
+} from '../palette';
+import {
+	categoryAxis,
+	chartBase,
+	CHART_INK,
+	CHART_MUTED,
+	endLabel,
+	valueAxis
+} from './theme';
 
 /**
  * Constructeurs d options ECharts.
@@ -317,6 +331,212 @@ export function heatmapOption(table: CrosstabResult, context: ChartContext): Bui
 					itemStyle: { borderColor: '#ffffff', borderWidth: 2, borderRadius: 4 }
 				}
 			]
+		}
+	};
+}
+
+/**
+ * Nombre de courbes NOMMEES avant le repli dans « Autres ».
+ *
+ * La palette validee compte huit teintes (`palette.ts`). Au-dela, `colorFor`
+ * rend du gris : vingt-quatre courbes grises indiscernables, et confondues avec
+ * la non-reponse, qui est grise aussi. La regle est donc celle de toute la
+ * visualisation du projet : une neuvieme serie ne recoit jamais une teinte
+ * inventee, elle rejoint « Autres ». Sept courbes nommees, la huitieme place
+ * revenant a « Autres ».
+ */
+export const TIMELINE_NAMED_MAX = CATEGORICAL.length - 1;
+
+/** Cle de la serie « Autres » produite par le repli. */
+export const OTHERS_KEY = '__autres__';
+
+/** Moyenne des parts publiees, pour classer les modalites. */
+function meanShare(series: TimelineSeries): number {
+	const publiees = series.shares.filter((share): share is number => share !== null);
+	if (publiees.length === 0) return 0;
+	return publiees.reduce((total, share) => total + share, 0) / publiees.length;
+}
+
+/** Somme des parts repliees sur une periode, ou `null` des qu une manque. */
+function sumAt(repliees: readonly TimelineSeries[], index: number): number | null {
+	let somme = 0;
+	for (const entry of repliees) {
+		const part = entry.shares[index];
+		if (part === null || part === undefined) return null;
+		somme += part;
+	}
+	return somme;
+}
+
+/**
+ * Replie les modalites au-dela de la palette dans une serie « Autres ».
+ *
+ * Les modalites conservees sont les PLUS PRESENTES sur l ensemble du terrain,
+ * pas les premieres declarees : pour le premier tour, l ordre declare est celui
+ * d une liste de partis, et en garder les sept premiers pourrait ne montrer que
+ * des candidatures marginales.
+ *
+ * La part d « Autres » est la somme des modalites repliees, periode par
+ * periode. Des qu UNE d entre elles est masquee sur une periode, la somme
+ * devient `null` : elle serait sinon sous-estimee, et une courbe « Autres » qui
+ * plonge une semaine parce qu une case est cachee raconterait une evolution qui
+ * n a pas eu lieu.
+ *
+ * La non-reponse n est jamais repliee : c est une modalite de plein droit, et la
+ * fondre dans « Autres » l effacerait precisement la ou on la montre.
+ */
+export function foldTimeline(series: readonly TimelineSeries[]): {
+	named: TimelineSeries[];
+	others: TimelineSeries | null;
+} {
+	const reponses = series.filter((entry) => !entry.isNonResponse);
+	const nonReponses = series.filter((entry) => entry.isNonResponse);
+
+	if (reponses.length <= TIMELINE_NAMED_MAX + 1) {
+		return { named: [...reponses, ...nonReponses], others: null };
+	}
+
+	const gardees = new Set(
+		[...reponses]
+			.sort((a, b) => meanShare(b) - meanShare(a))
+			.slice(0, TIMELINE_NAMED_MAX)
+			.map((entry) => entry.key)
+	);
+	const repliees = reponses.filter((entry) => !gardees.has(entry.key));
+	const periodes = series[0]?.shares.length ?? 0;
+
+	return {
+		// L ordre declare est conserve parmi les gardees : le tri par presence ne
+		// sert qu a choisir, pas a ordonner la legende.
+		named: [...reponses.filter((entry) => gardees.has(entry.key)), ...nonReponses],
+		others: {
+			key: OTHERS_KEY,
+			label: `Autres (${repliees.length} réponses)`,
+			isNonResponse: false,
+			color: null,
+			shares: Array.from({ length: periodes }, (_, index) => sumAt(repliees, index))
+		}
+	};
+}
+
+/** Teinte d une courbe : figee sur l ordre declare, sauf en repli. */
+function lineColor(
+	entry: TimelineSeries,
+	rang: number,
+	repli: boolean,
+	context: ChartContext
+): string {
+	if (entry.isNonResponse) return NON_RESPONSE_COLOR;
+	// En repli, la teinte suit le rang parmi les courbes gardees : les
+	// emplacements figes sur l ordre declare depasseraient la palette.
+	if (repli) return CATEGORICAL[rang] ?? NON_RESPONSE_COLOR;
+	return colorOf(context, entry);
+}
+
+/** Un point de courbe, avec son infobulle composee ici. */
+function timelinePoint(
+	share: number | null,
+	semaine: string,
+	label: string,
+	respondents: number | null
+) {
+	if (share === null) {
+		return {
+			value: null,
+			tooltip: { formatter: `Semaine du ${semaine}<br/>${label} : ${SUPPRESSED_LABEL}` }
+		};
+	}
+	return {
+		value: percent(share),
+		tooltip: {
+			formatter: `Semaine du ${semaine}<br/>${label} : <b>${formatShare(share)}</b> (base : ${formatCount(respondents)} répondants)`
+		}
+	};
+}
+
+/**
+ * Evolution d une question, une courbe par modalite.
+ *
+ * Trois partis pris, chacun contre une erreur de lecture precise.
+ *
+ * 1. Une semaine masquee est un TROU. `connectNulls: false` : la courbe
+ *    s interrompt au lieu de relier ses voisines d un trait qui ferait croire a
+ *    une evolution reguliere pendant une semaine dont on ne sait rien.
+ * 2. L axe des parts part de zero et n est pas plafonne a 100 %. Plafonne, des
+ *    courbes qui oscillent entre 10 et 25 % s ecraseraient en bas du cadre ;
+ *    sans plancher a zero, un ecart de deux points paraitrait un effondrement.
+ * 3. Aucun chiffre sur chaque point. L etiquette directe est posee a la fin de
+ *    chaque courbe, et seulement jusqu a quatre courbes : au-dela, elles se
+ *    chevauchent, et la legende prend le relais.
+ *
+ * L infobulle est composee point par point, ici, et non par un gabarit
+ * d ECharts : elle doit rester serialisable et ecrire « 30,4 % », pas « 30.4 ».
+ */
+export function timelineOption(result: TimelineResult, context: ChartContext): BuiltChart {
+	const { named, others } = foldTimeline(result.series);
+	const semaines = result.periods.map((period) => formatWeek(period.start));
+	const repli = others !== null;
+
+	const tracees = named.map((entry, rang) => ({
+		series: entry,
+		color: lineColor(entry, rang, repli, context),
+		dashed: false
+	}));
+
+	if (others) {
+		// « Autres » se distingue par son TRAIT, pas par une teinte de plus : la
+		// palette n en a pas de neuvieme, et une couleur inventee casserait sa
+		// validation daltonienne.
+		tracees.push({ series: others, color: CHART_MUTED, dashed: true });
+	}
+
+	const etiquettesDirectes = tracees.length <= 4;
+
+	return {
+		height: 340,
+		option: {
+			...chartBase(),
+			grid: {
+				left: 8,
+				right: etiquettesDirectes ? 120 : 24,
+				top: 16,
+				bottom: 56,
+				containLabel: true
+			},
+			legend: crossLegend(),
+			xAxis: {
+				...categoryAxis(semaines),
+				boundaryGap: false,
+				// Le reticule : une ligne verticale qui suit le survol et aligne
+				// l oeil sur la semaine lue, d une courbe a l autre.
+				axisPointer: {
+					show: true,
+					type: 'line',
+					lineStyle: { color: CHART_MUTED, type: 'dashed' }
+				}
+			},
+			yAxis: { ...valueAxis({ percent: true }), min: 0 },
+			series: tracees.map(({ series, color, dashed }) => ({
+				type: 'line',
+				name: series.label,
+				connectNulls: false,
+				symbol: 'circle',
+				symbolSize: 8,
+				showSymbol: true,
+				lineStyle: { width: 2, color, type: dashed ? 'dashed' : 'solid' },
+				itemStyle: { color, borderColor: '#ffffff', borderWidth: 2 },
+				endLabel: etiquettesDirectes
+					? { show: true, color: CHART_INK, fontSize: 12, formatter: series.label }
+					: { show: false },
+				data: series.shares.map((share, index) =>
+					timelinePoint(
+						share,
+						semaines[index] ?? '',
+						series.label,
+						result.periods[index]?.respondents ?? null
+					)
+				)
+			}))
 		}
 	};
 }

@@ -5,6 +5,7 @@ import {
 	formatDate,
 	formatFieldwork,
 	formatShare,
+	formatWeek,
 	SUPPRESSED_SYMBOL
 } from './format';
 
@@ -98,5 +99,16 @@ describe('formatFieldwork', () => {
 
 	it('rend une chaine vide quand rien n est renseigne', () => {
 		expect(formatFieldwork(null, null)).toBe('');
+	});
+});
+
+describe('formatWeek', () => {
+	it('designe une semaine par son lundi, sans annee', () => {
+		expect(formatWeek(new Date('2026-08-17T00:00:00Z'))).toBe('17 août');
+	});
+
+	it('reste le lundi quel que soit le fuseau du serveur', () => {
+		// Minuit UTC : en heure locale a l ouest de Greenwich, ce serait dimanche.
+		expect(formatWeek(new Date('2026-08-31T00:00:00Z'))).toBe('31 août');
 	});
 });
