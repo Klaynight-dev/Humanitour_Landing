@@ -145,6 +145,33 @@ export const actions: Actions = {
 		return { message: `${target.displayName} est ${isActive ? 'reactive' : 'desactive'}.` };
 	},
 
+	deleteAccount: async ({ request, locals }) => {
+		const user = requirePermission(locals.user, 'user.manage');
+
+		const form = await request.formData();
+		const id = readText(form, 'id');
+
+		const target = await prisma.user.findUnique({ where: { id } });
+		if (!target) return fail(404, { message: 'Compte introuvable.' });
+
+		// Se supprimer soi-meme fermerait la porte de l'interieur, meme raison
+		// que pour la desactivation.
+		if (target.id === user.id) {
+			return fail(400, { message: 'Vous ne pouvez pas supprimer votre propre compte.' });
+		}
+
+		await prisma.user.delete({ where: { id } });
+		await recordAudit({
+			actorId: user.id,
+			action: 'user.delete',
+			entity: 'User',
+			entityId: id,
+			metadata: { email: target.email }
+		});
+
+		return { message: `Le compte de ${target.displayName} a ete supprime.` };
+	},
+
 	revokeInvitation: async ({ request, locals }) => {
 		const user = requirePermission(locals.user, 'user.manage');
 

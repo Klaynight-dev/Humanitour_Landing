@@ -11,6 +11,9 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const manager = $derived(can(data.user, 'user.manage'));
+
+	/** Confirmation par ligne : personne ne se fait supprimer au premier clic. */
+	let confirmingDelete: string | null = $state(null);
 </script>
 
 <svelte:head><title>Équipe, back-office</title></svelte:head>
@@ -47,7 +50,10 @@
 				</label>
 				<label class="flex flex-col gap-1.5">
 					<span class="text-sm font-semibold">Rôle</span>
-					<select name="roleId" class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11">
+					<select
+						name="roleId"
+						class="border-ink/20 bg-paper rounded-field border px-3 py-2 min-h-11"
+					>
 						{#each data.roles as role (role.id)}
 							<option value={role.id}>{role.name}</option>
 						{/each}
@@ -67,7 +73,9 @@
 		<Panel title="Invitations en attente">
 			<ul class="flex flex-col gap-2">
 				{#each data.invitations as invitation (invitation.id)}
-					<li class="border-ink/20 flex flex-wrap items-center justify-between gap-3 rounded-field border p-3 min-h-11">
+					<li
+						class="border-ink/20 flex flex-wrap items-center justify-between gap-3 rounded-field border p-3 min-h-11"
+					>
 						<div>
 							<p class="text-sm font-medium">{invitation.email}</p>
 							<p class="text-muted text-xs">
@@ -122,7 +130,10 @@
 										{/each}
 									</select>
 									<noscript>
-										<button type="submit" class="border-ink/20 rounded-field border px-2 text-xs min-h-11">
+										<button
+											type="submit"
+											class="border-ink/20 rounded-field border px-2 text-xs min-h-11"
+										>
 											OK
 										</button>
 									</noscript>
@@ -136,15 +147,52 @@
 						</td>
 						<td class="py-2.5 pl-3 text-right">
 							{#if manager && member.id !== data.user.id}
-								<form method="POST" action="?/toggleActive" use:enhance>
-									<input type="hidden" name="id" value={member.id} />
-									<button
-										type="submit"
-										class="border-ink/25 press bg-paper rounded-pill border px-3 py-1.5 text-xs font-medium min-h-11 inline-flex items-center justify-center"
-									>
-										{member.isActive ? 'Désactiver' : 'Réactiver'}
-									</button>
-								</form>
+								{#if confirmingDelete === member.id}
+									<div class="inline-flex flex-wrap justify-end gap-2">
+										<form
+											method="POST"
+											action="?/deleteAccount"
+											use:enhance={() => {
+												confirmingDelete = null;
+												return async ({ update }) => update();
+											}}
+										>
+											<input type="hidden" name="id" value={member.id} />
+											<button
+												type="submit"
+												class="bg-danger text-paper press rounded-pill inline-flex min-h-11 items-center px-3 py-1.5 text-xs font-semibold"
+											>
+												Confirmer
+											</button>
+										</form>
+										<button
+											type="button"
+											onclick={() => (confirmingDelete = null)}
+											class="border-ink/25 bg-paper press rounded-pill inline-flex min-h-11 items-center border px-3 py-1.5 text-xs"
+										>
+											Annuler
+										</button>
+									</div>
+								{:else}
+									<div class="inline-flex flex-wrap justify-end gap-2">
+										<form method="POST" action="?/toggleActive" use:enhance>
+											<input type="hidden" name="id" value={member.id} />
+											<button
+												type="submit"
+												class="border-ink/25 press bg-paper rounded-pill border px-3 py-1.5 text-xs font-medium min-h-11 inline-flex items-center justify-center"
+											>
+												{member.isActive ? 'Désactiver' : 'Réactiver'}
+											</button>
+										</form>
+										<button
+											type="button"
+											onclick={() => (confirmingDelete = member.id)}
+											class="border-ink/25 text-danger bg-paper press rounded-pill border px-3 py-1.5 text-xs font-medium min-h-11 inline-flex items-center justify-center"
+										>
+											Supprimer
+										</button>
+									</div>
+								{/if}
 							{:else}
 								<span class="text-muted text-xs">
 									{member.isActive ? 'Actif' : 'Désactivé'}
