@@ -36,6 +36,12 @@ export interface ExploreInputs {
 	readonly population: Population;
 	readonly threshold: number;
 	readonly includeNonResponses: boolean;
+	/**
+	 * Poids par repondant. Present = lecture redressee : les effectifs et les
+	 * parts rendus sont ponderes. Le masquage, lui, se decide toujours sur les
+	 * effectifs bruts (`aggregate.ts`).
+	 */
+	readonly weights?: ReadonlyMap<string, number> | null;
 }
 
 /**
@@ -100,24 +106,82 @@ export function buildOutcome(inputs: ExploreInputs): ExploreOutcome {
 	if (isTooSmall(population, threshold)) return { kind: 'too-small' };
 
 	const xRows = within(inputs.x.rows, population);
-	const options = { threshold, includeNonResponses };
+	const weights = inputs.weights ?? undefined;
+	const options = { threshold, includeNonResponses, weights };
 
-	if (!inputs.y) {
+	const outcome: ExploreOutcome = inputs.y
+		? {
+				kind: 'crosstab',
+				crosstab: crosstab(
+					xRows,
+					within(inputs.y.rows, population),
+					inputs.x.modalities,
+					inputs.y.modalities,
+					options
+				)
+			}
+		: { kind: 'distribution', distribution: distribution(xRows, inputs.x.modalities, options) };
+
+	return weights ? weightedReading(outcome) : outcome;
+}
+
+/** Deux decimales : un effectif pondere n a pas de sens au-dela. */
+function roundWeighted(value: number | null): number | null {
+	return value === null ? null : Math.round(value * 100) / 100;
+}
+
+/**
+ * La lecture redressee d un resultat.
+ *
+ * Les cases portent les effectifs et parts ponderes a la place des bruts, pour
+ * que les graphiques, le tableau, les constats et les exports n aient qu une
+ * seule forme a lire. Deux choses ne bougent pas :
+ *
+ *   - le masquage, decide en brut : une case masquee a un redresse `null` ;
+ *   - `respondents`, qui reste le nombre de PERSONNES. C est la base qu on
+ *     cite, et une base « 48,3 repondants » ne designe personne.
+ */
+export function weightedReading(outcome: ExploreOutcome): ExploreOutcome {
+	if (outcome.kind === 'too-small') return outcome;
+
+	if (outcome.kind === 'distribution') {
+		const result = outcome.distribution;
 		return {
 			kind: 'distribution',
-			distribution: distribution(xRows, inputs.x.modalities, options)
+			distribution: {
+				...result,
+				bars: result.bars.map((bar) => ({
+					...bar,
+					count: roundWeighted(bar.weightedCount),
+					share: bar.weightedShare
+				}))
+			}
 		};
 	}
 
+	const table = outcome.crosstab;
+	if (!table.weighted) return outcome;
+
+	const cells = new Map(
+		[...table.cells].map(([xKey, row]) => [
+			xKey,
+			new Map(
+				[...row].map(([yKey, cell]) => [
+					yKey,
+					{ ...cell, count: roundWeighted(cell.weightedCount), share: cell.weightedShare }
+				])
+			)
+		])
+	);
+
 	return {
 		kind: 'crosstab',
-		crosstab: crosstab(
-			xRows,
-			within(inputs.y.rows, population),
-			inputs.x.modalities,
-			inputs.y.modalities,
-			options
-		)
+		crosstab: {
+			...table,
+			cells,
+			rowTotals: table.weighted.rowTotals,
+			columnTotals: table.weighted.columnTotals
+		}
 	};
 }
 
@@ -391,6 +455,24 @@ function flattenCells(table: CrosstabResult): readonly JsonCell[] {
 	}
 
 	return cells;
+}
+
+/**
+ * La lecture redressee demandee par le lien, et pourquoi on ne la sert pas.
+ *
+ * Retomber sur le brut en silence ferait citer un chiffre brut comme redresse.
+ */
+export function describeUnavailableWeighting(prepared: {
+	readonly weightingUnavailable: boolean;
+	readonly weighting: { readonly fresh: boolean } | null;
+}): string | null {
+	if (!prepared.weightingUnavailable) return null;
+
+	if (prepared.weighting && !prepared.weighting.fresh) {
+		return "La lecture redressée est en cours de mise à jour : des réponses sont arrivées depuis le dernier calcul des poids. Les chiffres affichés sont les données brutes.";
+	}
+
+	return "Ce lien demande la lecture redressée, mais aucun redressement n'est publié pour cette enquête. Les chiffres affichés sont les données brutes.";
 }
 
 /** Filtres non appliques, mis en mots pour l avertissement affiche au visiteur. */

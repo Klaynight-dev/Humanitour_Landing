@@ -10,11 +10,13 @@ import {
 	buildOutcome,
 	buildPanels,
 	describeDropped,
+	describeUnavailableWeighting,
 	resolveSort,
 	shapeOf,
 	sortOutcome
 } from '$lib/server/survey/explore';
 import { renderChartSvg } from '$lib/server/charts';
+import { describeWeighting } from '$lib/server/survey/weighting-plan';
 import { insightsOf } from '$lib/server/survey/insights';
 import {
 	filterableQuestions,
@@ -65,7 +67,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		y: prepared.y,
 		population: prepared.population,
 		threshold: prepared.threshold,
-		includeNonResponses: requested.includeNonResponses
+		includeNonResponses: requested.includeNonResponses,
+		weights: prepared.weights
 	};
 
 	const outcome = sortOutcome(buildOutcome(inputs), sort);
@@ -133,6 +136,13 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		appliedSort: sort,
 		appliedBasis: basis,
 		droppedMessage: describeDropped(prepared.dropped),
+		reading: {
+			weighted: prepared.weights !== null,
+			// La bascule ne s affiche que si la lecture redressee peut etre servie.
+			available: prepared.weighting?.fresh === true,
+			unavailableMessage: describeUnavailableWeighting(prepared),
+			weighting: prepared.weighting ? describeWeighting(prepared.weighting, filterable) : null
+		},
 		share
 	};
 };
@@ -154,7 +164,8 @@ function describeSelection(
 		includeNonResponses: requested.includeNonResponses,
 		filters: requested.filters,
 		sort: requested.sort,
-		basis: requested.basis
+		basis: requested.basis,
+		weighted: requested.weighted
 	};
 }
 

@@ -211,6 +211,51 @@ function readQuestionTargets(
 	};
 }
 
+/**
+ * Le redressement tel qu on le publie : tout ce qui a servi a le faire, en
+ * libelles lisibles. Page et API en donnent exactement la meme description.
+ */
+export function describeWeighting(
+	weighting: {
+		readonly version: number;
+		readonly computedAt: Date;
+		readonly source: string | null;
+		readonly variables: readonly StoredVariable[];
+		readonly diagnostics: WeightingDiagnostics | null;
+	},
+	questions: readonly CalibrationQuestion[]
+) {
+	const diagnostics = weighting.diagnostics;
+
+	return {
+		version: weighting.version,
+		computedAt: weighting.computedAt,
+		source: weighting.source,
+		variables: weighting.variables.map((variable) => {
+			const question = questions.find((candidate) => candidate.code === variable.questionCode);
+			return {
+				code: variable.questionCode,
+				label: question?.label ?? variable.questionCode,
+				targets: Object.entries(variable.targets).map(([key, share]) => ({
+					key,
+					label: question?.modalities.find((modality) => modality.key === key)?.label ?? key,
+					share
+				}))
+			};
+		}),
+		diagnostics: diagnostics && {
+			converged: diagnostics.converged,
+			maxDeviation: diagnostics.maxDeviation,
+			minWeight: diagnostics.minWeight,
+			maxWeight: diagnostics.maxWeight,
+			effectiveSampleSize: diagnostics.effectiveSampleSize,
+			respondents: diagnostics.respondents
+		}
+	};
+}
+
+export type WeightingDescription = ReturnType<typeof describeWeighting>;
+
 /** Une ligne du rapport de calage : ce qu on avait, ce qu on visait, ce qu on a obtenu. */
 export interface MarginRow {
 	readonly key: string;

@@ -4,9 +4,15 @@ import {
 	buildOutcome,
 	buildPanels,
 	describeDropped,
+	describeUnavailableWeighting,
 	outcomeToJson
 } from '$lib/server/survey/explore';
-import { getPublishedSurvey, prepareExplore } from '$lib/server/survey/queries';
+import {
+	filterableQuestions,
+	getPublishedSurvey,
+	prepareExplore
+} from '$lib/server/survey/queries';
+import { describeWeighting } from '$lib/server/survey/weighting-plan';
 import type { Axis } from '$lib/server/survey/explore';
 import type { RequestHandler } from './$types';
 
@@ -75,7 +81,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		y: prepared.y,
 		population: prepared.population,
 		threshold: prepared.threshold,
-		includeNonResponses: requested.includeNonResponses
+		includeNonResponses: requested.includeNonResponses,
+		weights: prepared.weights
 	};
 
 	const outcome = buildOutcome(inputs);
@@ -86,6 +93,12 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	return publicJson({
 		sondage: { slug: survey.slug, titre: survey.title },
 		selection: describeSelection(prepared, requested),
+		// La lecture servie, toujours explicite : un script qui recupere des
+		// chiffres redresses doit le savoir sans relire l adresse qu il a appelee.
+		lecture: prepared.weights ? 'redressee' : 'brute',
+		redressement: prepared.weighting
+			? describeWeighting(prepared.weighting, filterableQuestions(survey))
+			: null,
 		population: {
 			// L effectif d une sous-population sous le seuil est lui-meme un
 			// agregat identifiant : il ne sort pas (AGENTS.md section 4).
@@ -98,6 +111,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		panneaux: panels,
 		avertissements: [
 			describeDropped(prepared.dropped),
+			describeUnavailableWeighting(prepared),
 			tooSmall
 				? `Cette combinaison porte sur moins de ${prepared.threshold} répondants : publier un chiffre ici permettrait d'identifier une personne.`
 				: null

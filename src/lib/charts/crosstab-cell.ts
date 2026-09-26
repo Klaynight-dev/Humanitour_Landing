@@ -43,7 +43,8 @@ export interface CellReading {
 function denominator(table: CrosstabResult, xKey: string, yKey: string, basis: CellBasis): number {
 	if (basis === 'ligne') return table.rowTotals.get(xKey) ?? 0;
 	if (basis === 'colonne') return table.columnTotals.get(yKey) ?? 0;
-	return table.respondents;
+	// En lecture redressee, les cases sont ponderees : leur base totale aussi.
+	return table.weighted?.respondents ?? table.respondents;
 }
 
 /**

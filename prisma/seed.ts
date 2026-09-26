@@ -56,7 +56,7 @@ const ROLES = [
 	{
 		slug: 'administration',
 		name: 'Administration',
-		description: "Accès complet, y compris les réglages et la gestion des comptes.",
+		description: 'Accès complet, y compris les réglages et la gestion des comptes.',
 		// Le role systeme porte la liste complete : il n'existe pas de joker dans
 		// la resolution des permissions (voir shared/permissions.ts).
 		permissions: [...PERMISSION_KEYS],
@@ -113,7 +113,12 @@ async function seedAdmin() {
 	const password = process.env.SEED_ADMIN_PASSWORD ?? 'humanitour-dev-2026';
 
 	const role = await prisma.role.findUniqueOrThrow({ where: { slug: 'administration' } });
-	const passwordHash = await hash(password, { algorithm: 2, memoryCost: 19_456, timeCost: 2, parallelism: 1 });
+	const passwordHash = await hash(password, {
+		algorithm: 2,
+		memoryCost: 19_456,
+		timeCost: 2,
+		parallelism: 1
+	});
 
 	await prisma.user.upsert({
 		where: { email },
@@ -137,7 +142,12 @@ async function seedExtraAccount() {
 	if (!email || !password) return;
 
 	const role = await prisma.role.findUniqueOrThrow({ where: { slug: 'administration' } });
-	const passwordHash = await hash(password, { algorithm: 2, memoryCost: 19_456, timeCost: 2, parallelism: 1 });
+	const passwordHash = await hash(password, {
+		algorithm: 2,
+		memoryCost: 19_456,
+		timeCost: 2,
+		parallelism: 1
+	});
 
 	await prisma.user.upsert({
 		where: { email },
@@ -204,7 +214,7 @@ const QUESTIONS: QuestionSeed[] = [
 			{ code: 'extreme_droite', label: "Un candidat d'extrême droite" },
 			{ code: 'blanc', label: 'Vote blanc ou nul' },
 			{ code: 'abstention', label: 'Je ne compte pas voter' },
-			{ code: 'indecis', label: "Je ne sais pas encore", isNonResponse: true }
+			{ code: 'indecis', label: 'Je ne sais pas encore', isNonResponse: true }
 		]
 	},
 	{
@@ -362,36 +372,155 @@ async function seedSurvey() {
 
 /** Priorites, ponderees par categorie socioprofessionnelle. */
 const PRIORITY_BY_CSP: Record<string, readonly (readonly [string, number])[]> = {
-	ouvrier: [['pouvoir_achat', 45], ['securite', 15], ['sante', 12], ['immigration', 14], ['ecologie', 4], ['education', 6], ['',4]],
-	employe: [['pouvoir_achat', 38], ['sante', 18], ['securite', 12], ['education', 12], ['ecologie', 8], ['immigration', 8], ['',4]],
-	cadre: [['ecologie', 24], ['education', 20], ['sante', 16], ['pouvoir_achat', 18], ['securite', 8], ['immigration', 6], ['',8]],
-	retraite: [['sante', 34], ['securite', 20], ['pouvoir_achat', 22], ['immigration', 10], ['ecologie', 6], ['education', 4], ['',4]],
-	etudiant: [['ecologie', 30], ['education', 26], ['pouvoir_achat', 20], ['sante', 8], ['securite', 6], ['immigration', 4], ['',6]],
-	agriculteur: [['pouvoir_achat', 34], ['ecologie', 14], ['securite', 16], ['sante', 14], ['immigration', 14], ['education', 4], ['',4]]
+	ouvrier: [
+		['pouvoir_achat', 45],
+		['securite', 15],
+		['sante', 12],
+		['immigration', 14],
+		['ecologie', 4],
+		['education', 6],
+		['', 4]
+	],
+	employe: [
+		['pouvoir_achat', 38],
+		['sante', 18],
+		['securite', 12],
+		['education', 12],
+		['ecologie', 8],
+		['immigration', 8],
+		['', 4]
+	],
+	cadre: [
+		['ecologie', 24],
+		['education', 20],
+		['sante', 16],
+		['pouvoir_achat', 18],
+		['securite', 8],
+		['immigration', 6],
+		['', 8]
+	],
+	retraite: [
+		['sante', 34],
+		['securite', 20],
+		['pouvoir_achat', 22],
+		['immigration', 10],
+		['ecologie', 6],
+		['education', 4],
+		['', 4]
+	],
+	etudiant: [
+		['ecologie', 30],
+		['education', 26],
+		['pouvoir_achat', 20],
+		['sante', 8],
+		['securite', 6],
+		['immigration', 4],
+		['', 6]
+	],
+	agriculteur: [
+		['pouvoir_achat', 34],
+		['ecologie', 14],
+		['securite', 16],
+		['sante', 14],
+		['immigration', 14],
+		['education', 4],
+		['', 4]
+	]
 };
 
 const DEFAULT_PRIORITY: readonly (readonly [string, number])[] = [
-	['pouvoir_achat', 32], ['sante', 18], ['securite', 14], ['ecologie', 14], ['education', 10], ['immigration', 8], ['',4]
+	['pouvoir_achat', 32],
+	['sante', 18],
+	['securite', 14],
+	['ecologie', 14],
+	['education', 10],
+	['immigration', 8],
+	['', 4]
 ];
 
 const VOTE_BY_PRIORITY: Record<string, readonly (readonly [string, number])[]> = {
-	ecologie: [['gauche', 48], ['centre', 20], ['droite', 10], ['extreme_droite', 4], ['blanc', 6], ['abstention', 6], ['',6]],
-	education: [['gauche', 38], ['centre', 22], ['droite', 16], ['extreme_droite', 8], ['blanc', 6], ['abstention', 4], ['',6]],
-	sante: [['gauche', 28], ['centre', 20], ['droite', 22], ['extreme_droite', 14], ['blanc', 6], ['abstention', 4], ['',6]],
-	pouvoir_achat: [['gauche', 22], ['centre', 12], ['droite', 16], ['extreme_droite', 28], ['blanc', 8], ['abstention', 8], ['',6]],
-	securite: [['droite', 30], ['extreme_droite', 34], ['centre', 14], ['gauche', 8], ['blanc', 4], ['abstention', 4], ['',6]],
-	immigration: [['extreme_droite', 52], ['droite', 22], ['centre', 8], ['gauche', 4], ['blanc', 4], ['abstention', 4], ['',6]]
+	ecologie: [
+		['gauche', 48],
+		['centre', 20],
+		['droite', 10],
+		['extreme_droite', 4],
+		['blanc', 6],
+		['abstention', 6],
+		['', 6]
+	],
+	education: [
+		['gauche', 38],
+		['centre', 22],
+		['droite', 16],
+		['extreme_droite', 8],
+		['blanc', 6],
+		['abstention', 4],
+		['', 6]
+	],
+	sante: [
+		['gauche', 28],
+		['centre', 20],
+		['droite', 22],
+		['extreme_droite', 14],
+		['blanc', 6],
+		['abstention', 4],
+		['', 6]
+	],
+	pouvoir_achat: [
+		['gauche', 22],
+		['centre', 12],
+		['droite', 16],
+		['extreme_droite', 28],
+		['blanc', 8],
+		['abstention', 8],
+		['', 6]
+	],
+	securite: [
+		['droite', 30],
+		['extreme_droite', 34],
+		['centre', 14],
+		['gauche', 8],
+		['blanc', 4],
+		['abstention', 4],
+		['', 6]
+	],
+	immigration: [
+		['extreme_droite', 52],
+		['droite', 22],
+		['centre', 8],
+		['gauche', 4],
+		['blanc', 4],
+		['abstention', 4],
+		['', 6]
+	]
 };
 
 const Regions: readonly (readonly [string, number])[] = [
-	['idf', 18], ['aura', 13], ['nouvelle_aquitaine', 10], ['occitanie', 10], ['hauts_de_france', 9],
-	['grand_est', 9], ['paca', 8], ['pays_de_la_loire', 6], ['bretagne', 6], ['normandie', 5],
-	['bfc', 4], ['cvl', 4]
+	['idf', 18],
+	['aura', 13],
+	['nouvelle_aquitaine', 10],
+	['occitanie', 10],
+	['hauts_de_france', 9],
+	['grand_est', 9],
+	['paca', 8],
+	['pays_de_la_loire', 6],
+	['bretagne', 6],
+	['normandie', 5],
+	['bfc', 4],
+	['cvl', 4]
 ];
 
 const CSPS: readonly (readonly [string, number])[] = [
-	['retraite', 22], ['employe', 18], ['cadre', 14], ['ouvrier', 13], ['intermediaire', 12],
-	['etudiant', 7], ['artisan', 5], ['sans_emploi', 5], ['agriculteur', 3], ['',1]
+	['retraite', 22],
+	['employe', 18],
+	['cadre', 14],
+	['ouvrier', 13],
+	['intermediaire', 12],
+	['etudiant', 7],
+	['artisan', 5],
+	['sans_emploi', 5],
+	['agriculteur', 3],
+	['', 1]
 ];
 
 const RESPONSE_COUNT = 900;
@@ -480,12 +609,33 @@ async function seedResponses(surveyId: string) {
 			tour1: vote,
 			region,
 			age,
-			genre: pick([['femme', 50], ['homme', 47], ['autre', 1], ['', 2]]),
-			territoire: pick([['urbain', 45], ['periurbain', 32], ['rural', 23]]),
+			genre: pick([
+				['femme', 50],
+				['homme', 47],
+				['autre', 1],
+				['', 2]
+			]),
+			territoire: pick([
+				['urbain', 45],
+				['periurbain', 32],
+				['rural', 23]
+			]),
 			tour2_jamais: pick(
 				vote === 'extreme_droite'
-					? [['gauche', 55], ['centre', 15], ['aucun', 12], ['droite', 8], ['', 10]]
-					: [['extreme_droite', 58], ['droite', 12], ['aucun', 10], ['gauche', 8], ['', 12]]
+					? [
+							['gauche', 55],
+							['centre', 15],
+							['aucun', 12],
+							['droite', 8],
+							['', 10]
+						]
+					: [
+							['extreme_droite', 58],
+							['droite', 12],
+							['aucun', 10],
+							['gauche', 8],
+							['', 12]
+						]
 			),
 			confiance_sondages: 1 + Math.floor(random() * 10)
 		};
@@ -510,7 +660,6 @@ async function seedResponses(surveyId: string) {
 	console.warn(`  reponses : ${RESPONSE_COUNT}`);
 }
 
-
 // --- Mediatheque de demonstration ------------------------------------------
 
 interface MediaSeed {
@@ -531,9 +680,9 @@ const MEDIA: MediaSeed[] = [
 		kind: 'ARTICLE',
 		title: 'Pourquoi nous publions les données brutes',
 		excerpt:
-			"Aucun institut privé ne diffuse ses réponses ligne à ligne. Voici pourquoi nous le faisons, et ce que cela nous oblige à changer dans notre façon de compter.",
+			'Aucun institut privé ne diffuse ses réponses ligne à ligne. Voici pourquoi nous le faisons, et ce que cela nous oblige à changer dans notre façon de compter.',
 		body: [
-			"Un chiffre sans ses données est une affirmation, pas une mesure.",
+			'Un chiffre sans ses données est une affirmation, pas une mesure.',
 			"Quand un institut annonce qu'un candidat est à 28 %, personne ne peut vérifier combien de personnes ont été interrogées dans chaque région, combien n'ont pas voulu répondre, ni quel redressement a été appliqué entre le comptage et la publication. Le lecteur doit croire sur parole.",
 			"Nous publions donc l'intégralité du matériau. Chaque enquête expose son export complet, en CSV et en JSON, sans compte ni inscription. Quiconque veut refaire nos calculs le peut.",
 			"Cette promesse nous coûte quelque chose, et c'est tant mieux. Elle nous interdit de pondérer nos résultats pour les rendre plus présentables. Elle nous oblige à compter les non-réponses au lieu de les faire disparaître. Elle nous force à écrire noir sur blanc les limites de notre échantillon : rencontrer les gens dehors surreprésente celles et ceux qui sortent.",
@@ -551,12 +700,12 @@ const MEDIA: MediaSeed[] = [
 		kind: 'ARTICLE',
 		title: "Étape 12 : le pouvoir d'achat arrive en tête, partout",
 		excerpt:
-			"Douze étapes, plus de neuf cents entretiens. Une priorité domine dans toutes les régions traversées, mais pas pour les mêmes raisons.",
+			'Douze étapes, plus de neuf cents entretiens. Une priorité domine dans toutes les régions traversées, mais pas pour les mêmes raisons.',
 		body: [
 			"Sur les douze premières étapes, une réponse revient plus que toutes les autres à la question de la priorité pour la France : le pouvoir d'achat.",
 			"Le croisement avec la catégorie socioprofessionnelle raconte pourtant deux histoires différentes. Chez les ouvriers et les employés, la réponse arrive largement en tête. Chez les cadres, elle passe derrière l'écologie et l'éducation.",
 			"La part de personnes qui ne se prononcent pas mérite autant d'attention que les autres. Nous la comptons et nous l'affichons, parce qu'un refus de répondre est une information politique, pas un trou dans le tableau.",
-			"Vous pouvez refaire ce croisement vous-même depuis la page des données."
+			'Vous pouvez refaire ce croisement vous-même depuis la page des données.'
 		],
 		publishedAt: '2026-08-18',
 		tags: ['resultats', 'le tour'],
@@ -567,7 +716,7 @@ const MEDIA: MediaSeed[] = [
 		kind: 'VIDEO',
 		title: 'Sur la route, entre deux marchés',
 		excerpt:
-			"Quinze minutes de rencontres filmées entre deux étapes, là où les panels en ligne ne vont jamais.",
+			'Quinze minutes de rencontres filmées entre deux étapes, là où les panels en ligne ne vont jamais.',
 		publishedAt: '2026-08-05',
 		tags: ['reportage', 'le tour'],
 		data: { sourceUrl: 'https://framatube.org/w/abcdefgh12345678' }
@@ -575,7 +724,7 @@ const MEDIA: MediaSeed[] = [
 	{
 		slug: 'episode-1-on-ne-me-demande-jamais-mon-avis',
 		kind: 'PODCAST',
-		title: "Épisode 1 : « On ne me demande jamais mon avis »",
+		title: 'Épisode 1 : « On ne me demande jamais mon avis »',
 		excerpt:
 			"Premier épisode des échanges enregistrés sur le terrain. Une heure de conversation avec des personnes que les sondages n'appellent pas.",
 		publishedAt: '2026-07-22',

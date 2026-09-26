@@ -8,6 +8,7 @@ import { prisma } from '../db';
 import { pickThreshold } from './anonymity';
 import type { AnswerRow } from './aggregate';
 import { selectAxes, type Axis } from './explore';
+import { loadPublishedWeighting, loadWeights, type PublicWeighting } from './weighting-store';
 import {
 	everyone,
 	matchClauses,
@@ -278,6 +279,12 @@ export interface PreparedExplore {
 	readonly population: Population;
 	readonly dropped: readonly DroppedClause[];
 	readonly threshold: number;
+	/** Le redressement publie, qu il soit demande ou non : la page propose la bascule. */
+	readonly weighting: PublicWeighting | null;
+	/** Poids a appliquer. `null` = lecture brute, demandee ou imposee. */
+	readonly weights: ReadonlyMap<string, number> | null;
+	/** La lecture redressee a ete demandee mais ne peut pas etre servie. */
+	readonly weightingUnavailable: boolean;
 }
 
 /**
@@ -302,13 +309,19 @@ export async function prepareExplore(
 	} = selectAxes(crossableQuestions(survey), params);
 	if (!xQuestion) return null;
 
-	const [threshold, populated, x, y, z] = await Promise.all([
+	const [threshold, populated, x, y, z, weighting] = await Promise.all([
 		resolveThreshold(survey),
 		resolvePopulation(survey, params.filters),
 		loadAxis(xQuestion),
 		yQuestion ? loadAxis(yQuestion) : null,
-		zQuestion ? loadAxis(zQuestion) : null
+		zQuestion ? loadAxis(zQuestion) : null,
+		loadPublishedWeighting(survey.id)
 	]);
+
+	// Un redressement perime ne sert pas : des reponses sans poids compteraient
+	// pour 1 a cote de reponses calees, et la lecture melangerait deux
+	// populations. On retombe alors sur le brut, et on le dit.
+	const servable = params.weighted && weighting?.fresh === true;
 
 	return {
 		xQuestion,
@@ -318,7 +331,10 @@ export async function prepareExplore(
 		z,
 		population: populated.population,
 		dropped: populated.dropped,
-		threshold
+		threshold,
+		weighting,
+		weights: servable ? await loadWeights(survey.id) : null,
+		weightingUnavailable: params.weighted && !servable
 	};
 }
 

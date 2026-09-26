@@ -7,7 +7,7 @@
 	import ResultHeadline from '$components/explorer/ResultHeadline.svelte';
 	import ResultTable from '$components/explorer/ResultTable.svelte';
 	import ShareBar from '$components/explorer/ShareBar.svelte';
-	import { formatBase, formatCount, formatFieldwork } from '$shared/format';
+	import { formatBase, formatCount, formatDate, formatFieldwork, formatShare } from '$shared/format';
 	import {
 		composePoster,
 		POSTER_QUALITIES,
@@ -19,8 +19,10 @@
 		exploreSearch,
 		filterValue,
 		PARAM_FILTER,
+		PARAM_READING,
 		parseFilterValues,
 		parseSort,
+		WEIGHTED_READING,
 		type ExploreParams,
 		type SortMode
 	} from '$shared/explore';
@@ -47,7 +49,8 @@
 		includeNonResponses: data.selection.includeNonResponses,
 		filters: data.selection.filters,
 		sort: data.selection.sort,
-		basis: data.selection.basis
+		basis: data.selection.basis,
+		weighted: data.reading.weighted
 	});
 
 	/** Adresse de l explorateur ou un seul aspect change. Les autres survivent. */
@@ -99,7 +102,8 @@
 			includeNonResponses: fields.getAll('nr').includes('1'),
 			filters: parseFilterValues(fields.getAll(PARAM_FILTER).map(String)),
 			sort: parseSort(textOf(fields.get('tri'))),
-			basis: parseCellBasis(textOf(fields.get('base')))
+			basis: parseCellBasis(textOf(fields.get('base'))),
+			weighted: fields.get(PARAM_READING) === WEIGHTED_READING
 		};
 	}
 
@@ -355,6 +359,49 @@
 					aria-label="Réglages de l'explorateur"
 				>
 					<div class="flex flex-col gap-5 p-5">
+						{#if data.reading.available}
+							<!--
+								La bascule brut / redresse. Le brut vient en premier et reste
+								la lecture par defaut : le redresse est une seconde lecture,
+								jamais un remplacement (AGENTS.md section 6).
+							-->
+							<div class="flex min-w-0 flex-col gap-2">
+								<span class="font-semibold" id="lecture-label">Lecture</span>
+								<div
+									class="bg-cream rounded-pill grid grid-cols-2 gap-1 p-1"
+									role="group"
+									aria-labelledby="lecture-label"
+								>
+									{#each [{ weighted: false, label: 'Données brutes' }, { weighted: true, label: 'Données redressées' }] as option (option.label)}
+										{@const active = data.reading.weighted === option.weighted}
+										<a
+											href={exploreUrl({ weighted: option.weighted })}
+											data-sveltekit-noscroll
+											data-sveltekit-keepfocus
+											aria-current={active ? 'true' : undefined}
+											class="rounded-pill inline-flex min-h-11 items-center justify-center px-3 py-2 text-center text-sm font-semibold {active
+												? 'bg-ink text-paper'
+												: 'text-ink-soft hover:text-ink'}"
+										>
+											{option.label}
+										</a>
+									{/each}
+								</div>
+								<span class="text-muted text-xs leading-relaxed">
+									{#if data.reading.weighted}
+										Chaque répondant est pondéré pour que l'échantillon rejoigne la structure de la
+										population.
+									{:else}
+										Chaque répondant compte pour un, tel qu'il a été interrogé.
+									{/if}
+									<a href="#redressement" class="underline underline-offset-2">Comment c'est fait</a>
+								</span>
+							</div>
+							{#if data.reading.weighted}
+								<input type="hidden" name={PARAM_READING} value={WEIGHTED_READING} />
+							{/if}
+						{/if}
+
 						<label class="flex min-w-0 flex-col gap-2">
 							<span class="font-semibold">Question</span>
 							<select
@@ -541,6 +588,14 @@
 							{data.droppedMessage}
 						</p>
 					{/if}
+					{#if data.reading.unavailableMessage}
+						<p
+							class="border-coral-ink bg-coral-wash rounded-field mb-4 border-l-4 px-4 py-3 text-sm leading-relaxed"
+							role="status"
+						>
+							{data.reading.unavailableMessage}
+						</p>
+					{/if}
 
 					<!--
 						Aucun filet decoratif en tete : un trait colore qui ne porte pas
@@ -596,7 +651,15 @@
 											Découpé par « {data.selection.zLabel} ».
 										{/if}
 										{formatFieldwork(data.survey.fieldworkStart, data.survey.fieldworkEnd)}.
-										Effectifs bruts, sans pondération ni redressement.
+										{#if data.reading.weighted && data.reading.weighting}
+											<strong class="text-ink font-semibold">Données redressées</strong> (calage
+											version {data.reading.weighting.version} sur {data.reading.weighting.variables
+												.map((variable) => variable.label.toLowerCase())
+												.join(', ')}) : effectifs pondérés, arrondis à l'unité. Les bases citées
+											restent le nombre réel de répondants.
+										{:else}
+											Effectifs bruts, sans pondération ni redressement.
+										{/if}
 									</p>
 								</div>
 
@@ -878,6 +941,83 @@
 				<p class="measure text-ink-soft mt-5 leading-relaxed whitespace-pre-line">
 					{data.survey.methodology}
 				</p>
+			</section>
+		{/if}
+
+		{#if data.reading.weighting}
+			{@const weighting = data.reading.weighting}
+			<!--
+				Le redressement publie en entier : variables, marges, source, et le
+				cout en precision. Un redressement dont on ne dit pas comment il est
+				fait est exactement ce que l institut reproche aux autres.
+			-->
+			<section class="bg-cream rounded-block mt-8 p-8 sm:p-12" aria-labelledby="redressement">
+				<h2 id="redressement">Comment les données sont redressées</h2>
+				<p class="measure text-ink-soft mt-5 leading-relaxed">
+					L'échantillon ne reproduit jamais exactement la population. Le redressement donne à chaque
+					répondant un poids, calculé par calage sur marges, pour que la part de chaque catégorie
+					rejoigne celle de la population. Il ne crée aucune opinion : une catégorie absente de
+					l'échantillon le reste. Les données brutes restent la référence, et vous pouvez passer de
+					l'une à l'autre dans l'explorateur.
+				</p>
+
+				<dl class="mt-6 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+					<div>
+						<dt class="text-muted">Version</dt>
+						<dd class="font-semibold">
+							{weighting.version}, calculée le {formatDate(weighting.computedAt)}
+						</dd>
+					</div>
+					<div>
+						<dt class="text-muted">Source des marges</dt>
+						<dd class="font-semibold">{weighting.source ?? 'Non précisée'}</dd>
+					</div>
+					{#if weighting.diagnostics}
+						<div>
+							<dt class="text-muted">Taille effective de l'échantillon</dt>
+							<dd class="font-semibold">
+								{formatCount(weighting.diagnostics.effectiveSampleSize)} sur {formatCount(
+									weighting.diagnostics.respondents
+								)} répondants
+							</dd>
+						</div>
+						<div>
+							<dt class="text-muted">Écart restant aux marges</dt>
+							<dd class="font-semibold">
+								{formatShare(weighting.diagnostics.maxDeviation)} au plus{weighting.diagnostics
+									.converged
+									? ''
+									: ', le calage n’a pas pleinement convergé'}
+							</dd>
+						</div>
+					{/if}
+				</dl>
+				<p class="measure text-muted mt-3 text-xs leading-relaxed">
+					La taille effective est le nombre de répondants qu'il aurait fallu, sans redressement, pour
+					la même précision : redresser coûte de la précision, et ce chiffre dit combien.
+				</p>
+
+				<div class="mt-8 grid gap-6 sm:grid-cols-2">
+					{#each weighting.variables as variable (variable.code)}
+						<table class="w-full text-sm">
+							<caption class="mb-2 text-left font-semibold">{variable.label}</caption>
+							<thead class="text-muted text-left text-xs">
+								<tr>
+									<th scope="col" class="py-1 pr-3 font-semibold">Modalité</th>
+									<th scope="col" class="py-1 text-right font-semibold">Part visée</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each variable.targets as target (target.key)}
+									<tr class="border-ink/12 border-t">
+										<td class="py-1.5 pr-3">{target.label}</td>
+										<td class="tabular py-1.5 text-right">{formatShare(target.share)}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					{/each}
+				</div>
 			</section>
 		{/if}
 

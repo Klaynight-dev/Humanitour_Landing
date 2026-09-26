@@ -19,21 +19,21 @@ model User {
   isActive Boolean @default(true)
 
   /// TOTP, optionnel, propose aux comptes disposant de `user.manage`.
-  totpSecret     String?
-  totpEnabledAt  DateTime?
+  totpSecret    String?
+  totpEnabledAt DateTime?
 
   lastLoginAt DateTime?
 
-  sessions          Session[]
-  invitationsSent   Invitation[]  @relation("InvitationCreatedBy")
-  openformsSyncs    OpenformsSync[]
-  mediaItems        MediaItem[]
-  auditEvents       AuditEvent[]
-  settingsUpdated   AppSetting[]
-  contentPages      ContentPage[]
-  notifications     Notification[]
-  notificationRead  NotificationRead?
-  weightings        SurveyWeighting[]
+  sessions         Session[]
+  invitationsSent  Invitation[]      @relation("InvitationCreatedBy")
+  openformsSyncs   OpenformsSync[]
+  mediaItems       MediaItem[]
+  auditEvents      AuditEvent[]
+  settingsUpdated  AppSetting[]
+  contentPages     ContentPage[]
+  notifications    Notification[]
+  notificationRead NotificationRead?
+  weightings       SurveyWeighting[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -55,8 +55,8 @@ model Session {
   userAgent String?
   ipHash    String?
 
-  createdAt      DateTime @default(now())
-  lastSeenAt     DateTime @default(now())
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
 
   @@index([userId])
   @@index([expiresAt])

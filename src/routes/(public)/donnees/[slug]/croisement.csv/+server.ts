@@ -27,7 +27,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		y: prepared.y,
 		population: prepared.population,
 		threshold: prepared.threshold,
-		includeNonResponses: requested.includeNonResponses
+		includeNonResponses: requested.includeNonResponses,
+		weights: prepared.weights
 	};
 
 	// Decoupe en panneaux, le fichier gagne une colonne plutot qu une structure
@@ -39,7 +40,10 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	// Le nom du fichier porte le croisement : trois exports dans un dossier de
 	// telechargements doivent rester distinguables sans etre ouverts.
 	const axes = [prepared.x.code, prepared.y?.code, prepared.z?.code].filter(Boolean).join('-par-');
-	const filename = `humanitour-${survey.slug}-${axes}.csv`;
+	// Un fichier redresse ne doit pas pouvoir passer pour le brut une fois
+	// sorti de son contexte : la lecture est dans le nom.
+	const reading = prepared.weights ? '-redresse' : '';
+	const filename = `humanitour-${survey.slug}-${axes}${reading}.csv`;
 
 	return new Response(csv, {
 		headers: {

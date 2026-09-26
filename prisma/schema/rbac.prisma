@@ -6,9 +6,9 @@
 // (CLAUDE.md, decision 17).
 
 model Role {
-  id   String @id @default(cuid())
-  slug String @unique
-  name String
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
   description String?
 
   /// Cles issues du registre de permissions. Une cle inconnue est ignoree a la
