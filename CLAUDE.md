@@ -56,6 +56,7 @@ images de tiers, pas celles de l'association.
 | `humanitour.fr` | La plateforme — **ce dépôt** | |
 | `forms.humanitour.fr` | **Collecte des réponses — canal unique** | SvelteKit également ; code ouvert : `Klaynight/Openforms` (MIT). Toute réponse publiée ici vient de là, sans exception |
 | HelloAsso | Dons et adhésions | Lien sortant |
+| `api.insee.fr/melodi` | Marges de référence du redressement (recensement de la population) | Appelée **par le serveur seulement**, depuis l'onglet Marges du redressement : accès public, sans clé, quota de 30 requêtes par minute. Trois requêtes par chargement, gardées 24 h en mémoire (`src/lib/server/insee/`). Aucune part n'est écrite en dur : elles sont recalculées des effectifs publiés |
 
 ---
 
@@ -258,7 +259,7 @@ raison, pas une préférence.
 | Licence du fond de carte | `static/carte-du-tour.jpg` est le tracé de l'association sur un fond de carte **DILA** (mention « © DILA 2026 » incrustée). La licence de ce fond est **à confirmer** avant mise en production. Le schéma hexagonal qu'il remplace le 20 septembre 2026 n'avait, lui, aucun problème de droits |
 | Cookie tiers Polarsteps | Le carnet de route est encadré en `iframe` sur `/le-tour` : Polarsteps dépose un cookie `session` et charge ses scripts. Dérogation tranchée par le porteur du projet le 20 septembre 2026 ; **la politique de confidentialité doit le nommer** |
 | Jeu de démonstration | `prisma/seed.ts` porte encore trois questions, pas les quatre de la plaquette |
-| Pondération | La plaquette annonce « pondérer les résultats », `AGENTS.md` § 6 l'interdit. À trancher |
+| Pondération | Tranchée le 20 septembre 2026 (`AGENTS.md` § 6) : calage sur marges explicite, publié à côté du brut. Le back-office (`/admin/sondages/[id]/redressement`, cinq onglets) lit ses marges dans le recensement via Melodi, exige des sommes à exactement 100 %, publie une note méthodologique et exporte les poids. **Pas encore fait** : des profils de marges réutilisables d'une enquête à l'autre (chaque enquête porte les siennes) |
 | Portrait de Mareva Vaucher | Extrait de la plaquette en 210 px : nettement plus doux que les trois autres, à remplacer par un original |
 | Photographies de terrain | `static/photos/` ne contient que deux images, extraites de la plaquette et plafonnant à 480×640. **À remplacer par les originaux** (le compte Instagram `humanitour.france` en héberge d'autres, mais il est derrière un mur de connexion et rien ne peut en être récupéré automatiquement) |
 | Infolettre | Le formulaire existe (`/infolettre`, `/infolettre/desinscription`, table `NewsletterSubscriber`), **mais rien ne peut encore envoyer un courriel** : aucun expediteur n'est branche dans le depot. Il manque donc le double opt-in, le lien de desinscription signe, et une page du back-office pour lire la liste. L'inscription est en simple opt-in, la desinscription se fait par saisie de l'adresse |

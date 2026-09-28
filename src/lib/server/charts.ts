@@ -30,6 +30,11 @@ import type { BuiltChart } from '$charts';
  */
 const REFERENCE_WIDTH = 760;
 
+/** Ce que `EChart.svelte` attend : les options, la hauteur et le SVG deja rendu. */
+export function renderedChart(built: BuiltChart) {
+	return { option: built.option, height: built.height, svg: renderChartSvg(built) };
+}
+
 export function renderChartSvg(built: BuiltChart): string {
 	const chart = echarts.init(null, null, {
 		renderer: 'svg',

@@ -1,10 +1,12 @@
 import { getQuestionType, type ModalityDescriptor } from '$lib/shared/questions';
 import { prisma } from '../db';
 import { Prisma } from '../prisma-client/client';
-import { rake, type WeightingDiagnostics } from './weighting';
+import { rake, type WeightingDiagnostics, type WeightingSettings } from './weighting';
 import {
 	buildUnits,
 	canCalibrateOn,
+	checkIntegrity,
+	integrityBlocker,
 	readDiagnostics,
 	readVariables,
 	toWeightingVariables,
@@ -48,6 +50,39 @@ function modalitiesOf(question: QuestionRow): readonly ModalityDescriptor[] {
 export async function calibrationQuestions(
 	surveyId: string
 ): Promise<(CalibrationQuestion & { id: string })[]> {
+	const questions = await crossableQuestionRows(surveyId);
+
+	return questions
+		.filter((question) => canCalibrateOn(question.type))
+		.map((question) => ({
+			id: question.id,
+			code: question.code,
+			label: question.label,
+			modalities: modalitiesOf(question)
+		}))
+		.filter((question) => question.modalities.some((modality) => !modality.isNonResponse));
+}
+
+/**
+ * Les questions dont on peut comparer la lecture brute et la lecture
+ * redressee : toutes les questions croisables, choix multiples compris.
+ */
+export async function interestQuestions(
+	surveyId: string
+): Promise<(CalibrationQuestion & { id: string })[]> {
+	const questions = await crossableQuestionRows(surveyId);
+
+	return questions
+		.filter((question) => getQuestionType(question.type)?.crossable ?? false)
+		.map((question) => ({
+			id: question.id,
+			code: question.code,
+			label: question.label,
+			modalities: modalitiesOf(question)
+		}));
+}
+
+async function crossableQuestionRows(surveyId: string) {
 	const questions = await prisma.question.findMany({
 		where: { surveyId },
 		orderBy: { position: 'asc' },
@@ -64,15 +99,7 @@ export async function calibrationQuestions(
 		}
 	});
 
-	return questions
-		.filter((question) => question.isCrossable && canCalibrateOn(question.type))
-		.map((question) => ({
-			id: question.id,
-			code: question.code,
-			label: question.label,
-			modalities: modalitiesOf(question)
-		}))
-		.filter((question) => question.modalities.some((modality) => !modality.isNonResponse));
+	return questions.filter((question) => question.isCrossable);
 }
 
 /** Repondants et reponses aux questions de calage, en une passe. */
@@ -120,7 +147,8 @@ export type ComputeResult =
  */
 export async function computeSurveyWeights(
 	surveyId: string,
-	actorId: string
+	actorId: string,
+	run: { readonly settings: WeightingSettings; readonly missingAcknowledged: boolean }
 ): Promise<ComputeResult> {
 	const weighting = await prisma.surveyWeighting.findUnique({ where: { surveyId } });
 	if (!weighting) return { ok: false, message: 'Aucune marge enregistrée pour cette enquête.' };
@@ -149,10 +177,13 @@ export async function computeSurveyWeights(
 	const { units } = await loadCalibrationData(surveyId, used);
 	if (units.length === 0) return { ok: false, message: 'Aucune réponse à redresser.' };
 
-	const result = rake(units, variables, {
-		minWeight: weighting.minWeight,
-		maxWeight: weighting.maxWeight
-	});
+	const blocker = integrityBlocker(
+		checkIntegrity(units, stored, used),
+		run.missingAcknowledged
+	);
+	if (blocker) return { ok: false, message: blocker };
+
+	const result = rake(units, variables, run.settings);
 
 	const ids = [...result.weights.keys()];
 	const values = ids.map((id) => result.weights.get(id) ?? 1);
@@ -168,7 +199,14 @@ export async function computeSurveyWeights(
 			where: { surveyId },
 			data: {
 				version: { increment: 1 },
-				diagnostics: JSON.parse(JSON.stringify(result.diagnostics)),
+				// Les bornes gardent leur colonne : c est la que les lisait la
+				// premiere version, et le journal d audit les y cherche encore.
+				minWeight: run.settings.minWeight,
+				maxWeight: run.settings.maxWeight,
+				// Les marges utilisees voyagent avec le diagnostic : si l analyste
+				// les modifie ensuite, l ecart se voit (`sameMargins`) et la
+				// publication de poids cales sur les anciennes est refusee.
+				diagnostics: JSON.parse(JSON.stringify({ ...result.diagnostics, variables: stored })),
 				computedAt: new Date(),
 				computedById: actorId
 			}

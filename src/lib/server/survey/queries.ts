@@ -338,6 +338,23 @@ export async function prepareExplore(
 	};
 }
 
+/**
+ * Date de recueil de chaque repondant, pour l evolution au fil du terrain.
+ *
+ * Chargee A PART, et seulement quand l evolution est demandee : la repartition
+ * et le croisement n en ont pas besoin, et un millier de dates par affichage
+ * pour rien serait un cout sans usage. L index `(surveyId, collectedAt)` sert
+ * cette requete telle quelle.
+ */
+export async function loadCollectionDates(surveyId: string): Promise<Map<string, Date>> {
+	const responses = await prisma.response.findMany({
+		where: { surveyId },
+		select: { id: true, collectedAt: true }
+	});
+
+	return new Map(responses.map((response) => [response.id, response.collectedAt]));
+}
+
 /** Questions proposables au panneau de filtres, avec leurs modalites. */
 export function filterableQuestions(survey: PublicSurvey) {
 	return crossableQuestions(survey).map((question) => ({

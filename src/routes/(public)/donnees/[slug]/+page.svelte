@@ -6,6 +6,7 @@
 	import EChart from '$components/explorer/EChart.svelte';
 	import ResultHeadline from '$components/explorer/ResultHeadline.svelte';
 	import ResultTable from '$components/explorer/ResultTable.svelte';
+	import TimelineTable from '$components/explorer/TimelineTable.svelte';
 	import ShareBar from '$components/explorer/ShareBar.svelte';
 	import {
 		formatBase,
@@ -814,7 +815,20 @@
 									{/if}
 								</div>
 
-								{#if data.outcome.kind === 'distribution' && !data.chartIsTabular && !data.panels}
+								{#if data.timeline}
+									<!-- Le tableau de la courbe, qui montre aussi les modalites que la
+									     courbe replie dans « Autres ». -->
+									<details class="border-ink/12 rounded-field mt-6 border">
+										<summary
+											class="flex min-h-11 cursor-pointer items-center px-4 py-2.5 text-sm font-semibold"
+										>
+											Voir les chiffres en tableau
+										</summary>
+										<div class="overflow-x-auto px-4 pt-1 pb-4">
+											<TimelineTable data={data.timeline} question={data.selection.xLabel} />
+										</div>
+									</details>
+								{:else if data.outcome.kind === 'distribution' && !data.chartIsTabular && !data.panels}
 									<!-- La couleur ne porte jamais seule l information : trois teintes
 									     de la palette passent sous 3:1 contre le papier, et le tableau
 									     est la compensation retenue (`charts/palette.ts`). -->

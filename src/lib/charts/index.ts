@@ -1,5 +1,6 @@
 import type { Component } from 'svelte';
 import type { CrosstabResult, DistributionResult } from '$lib/server/survey/aggregate';
+import type { TimelineResult } from '$lib/server/survey/timeline';
 import CrosstabTable from './CrosstabTable.svelte';
 import {
 	barsOption,
@@ -7,6 +8,7 @@ import {
 	groupedOption,
 	heatmapOption,
 	stackedOption,
+	timelineOption,
 	type BuiltChart,
 	type ChartContext
 } from './echarts/options';
@@ -28,7 +30,13 @@ import {
  * sa navigation au clavier.
  */
 
-export type ChartShape = 'distribution' | 'crosstab';
+/**
+ * `timeline` : une question seule, suivie semaine par semaine
+ * (`survey/timeline.ts`). Ce n est pas une variante de `distribution` : la
+ * donnee n a pas la meme forme, une serie de parts par periode au lieu d une
+ * part par modalite.
+ */
+export type ChartShape = 'distribution' | 'crosstab' | 'timeline';
 
 export type ChartRender =
 	| {
@@ -82,6 +90,14 @@ const REGISTERED: readonly ChartDef[] = [
 		render: { kind: 'echarts', build: donutOption }
 	},
 	{
+		key: 'timeline',
+		label: 'Évolution',
+		description: "Évolution d'une question semaine par semaine, sur toute la durée du terrain.",
+		shape: 'timeline',
+		tabular: false,
+		render: { kind: 'echarts', build: timelineOption }
+	},
+	{
 		key: 'stacked',
 		label: 'Barres empilées',
 		description: 'Croisement de deux questions, chaque barre valant 100 % de sa ligne.',
@@ -127,6 +143,32 @@ export function chartsFor(shape: ChartShape): readonly ChartDef[] {
 }
 
 /**
+ * Visualisations proposees pour une selection de l explorateur.
+ *
+ * Une question seule se lit en repartition OU en evolution : l evolution n est
+ * qu une autre lecture de la meme question, elle est donc proposee avec les
+ * repartitions. Elle ne l est plus des qu un second axe ou un decoupage
+ * s ajoute : une courbe par modalite ET par sous-population ne se lirait plus,
+ * et la montrer en ignorant l axe demande tairait un choix du lecteur.
+ */
+export function chartsForSelection(selection: {
+	readonly crossed: boolean;
+	readonly split: boolean;
+}): readonly ChartDef[] {
+	if (selection.crossed) return chartsFor('crosstab');
+	if (selection.split) return chartsFor('distribution');
+	return [...chartsFor('distribution'), ...chartsFor('timeline')];
+}
+
+/** Vrai si la selection doit etre lue comme une evolution. */
+export function wantsTimeline(
+	requestedChart: string,
+	selection: { readonly crossed: boolean; readonly split: boolean }
+): boolean {
+	return getChart(requestedChart)?.shape === 'timeline' && !selection.crossed && !selection.split;
+}
+
+/**
  * Visualisation a utiliser, avec repli.
  *
  * Une carte enregistree avec une visualisation retiree depuis retombe sur la
@@ -152,7 +194,7 @@ export function resolveChart(key: string, shape: ChartShape): ChartDef {
  */
 export function buildChart(
 	chart: ChartDef,
-	data: DistributionResult | CrosstabResult,
+	data: DistributionResult | CrosstabResult | TimelineResult,
 	context: ChartContext
 ): BuiltChart | null {
 	if (chart.render.kind !== 'echarts') return null;

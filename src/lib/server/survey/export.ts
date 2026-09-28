@@ -116,6 +116,34 @@ export function toCsv(
 	return `\uFEFF${lines.join('\r\n')}\r\n`;
 }
 
+/**
+ * Les poids d un redressement, pour l analyste : un repondant par ligne, sa
+ * modalite sur chaque variable de calage, et son poids.
+ *
+ * Reserve au back-office. Contrairement a l export public, il sort aussi des
+ * poids non publies : c est le fichier qui permet de verifier un calcul avant
+ * de decider de le publier. Les modalites sont ecrites par leur CODE, stable,
+ * et non par leur libelle : ce fichier se relit dans R ou Python, pas a l oeil.
+ */
+export function weightsCsv(
+	units: readonly { readonly id: string; readonly modalities: ReadonlyMap<string, string> }[],
+	weights: ReadonlyMap<string, number>,
+	variableCodes: readonly string[]
+): string {
+	const lines = [['reponse_id', ...variableCodes, 'poids'].map(escapeCsv).join(',')];
+
+	for (const unit of units) {
+		const cells = [
+			unit.id,
+			...variableCodes.map((code) => unit.modalities.get(code) ?? ''),
+			weightCell(weights.get(unit.id))
+		];
+		lines.push(cells.map(escapeCsv).join(','));
+	}
+
+	return `﻿${lines.join('\r\n')}\r\n`;
+}
+
 export interface JsonExport {
 	readonly survey: {
 		readonly slug: string;

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { NON_RESPONSE_KEY } from '$lib/shared/questions';
-import { escapeCsv, exportableQuestions, toCsv, toJson, type ExportableResponse } from './export';
+import {
+	escapeCsv,
+	exportableQuestions,
+	toCsv,
+	toJson,
+	weightsCsv,
+	type ExportableResponse
+} from './export';
 import type { PublicQuestion } from './queries';
 
 function question(partial: Partial<PublicQuestion> & { code: string }): PublicQuestion {
@@ -185,6 +192,27 @@ describe('exportableQuestions, type inconnu', () => {
 		const orphan = question({ code: 'orpheline', type: 'type_supprime' });
 
 		expect(exportableQuestions([PRIORITE, orphan]).map((q) => q.code)).toEqual(['priorite']);
+	});
+});
+
+describe('weightsCsv', () => {
+	const units = [
+		{ id: 'r1', modalities: new Map([['sexe', 'f'], ['age', 'a18']]) },
+		{ id: 'r2', modalities: new Map([['sexe', 'h']]) },
+		{ id: 'r3', modalities: new Map<string, string>() }
+	];
+
+	it('ecrit une ligne par repondant, codes de modalite et poids a six decimales', () => {
+		const csv = weightsCsv(units, new Map([['r1', 1.23456789], ['r2', 0.5]]), ['sexe', 'age']);
+
+		expect(csv.startsWith('﻿')).toBe(true);
+		expect(csv.slice(1).split('\r\n')).toEqual([
+			'reponse_id,sexe,age,poids',
+			'r1,f,a18,1.234568',
+			'r2,h,,0.500000',
+			'r3,,,',
+			''
+		]);
 	});
 });
 

@@ -3,7 +3,9 @@ import {
 	formatBase,
 	formatCount,
 	formatDate,
+	formatDecimal,
 	formatFieldwork,
+	formatPoints,
 	formatShare,
 	formatWeek,
 	SUPPRESSED_SYMBOL
@@ -47,6 +49,34 @@ describe('formatShare', () => {
 
 	it('affiche le symbole de masquage pour une part masquee', () => {
 		expect(formatShare(null)).toBe(SUPPRESSED_SYMBOL);
+	});
+});
+
+describe('formatDecimal', () => {
+	it('ecrit a la francaise, sans zero inutile', () => {
+		expect(formatDecimal(3.5)).toBe('3,5');
+		expect(formatDecimal(0.0001, 4)).toBe('0,0001');
+		expect(formatDecimal(1.23456)).toBe('1,23');
+	});
+
+	it('rend le symbole des valeurs absentes', () => {
+		expect(formatDecimal(null)).toBe(SUPPRESSED_SYMBOL);
+		expect(formatDecimal(Number.NaN)).toBe(SUPPRESSED_SYMBOL);
+	});
+});
+
+describe('formatPoints', () => {
+	it('signe l ecart en points, a une decimale', () => {
+		expect(formatPoints(0.024)).toBe('+2,4 pt');
+		expect(formatPoints(-0.008)).toBe('−0,8 pt');
+	});
+
+	it('ne signe pas un ecart qui s arrondit a zero', () => {
+		expect(formatPoints(0.0004)).toBe('0,0 pt');
+	});
+
+	it('rend le symbole des valeurs absentes', () => {
+		expect(formatPoints(null)).toBe(SUPPRESSED_SYMBOL);
 	});
 });
 

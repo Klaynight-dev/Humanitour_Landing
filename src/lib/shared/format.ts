@@ -32,6 +32,40 @@ const WEEK_FORMAT = new Intl.DateTimeFormat('fr-FR', {
 	timeZone: 'UTC'
 });
 
+const DECIMAL_FORMATS = new Map<number, Intl.NumberFormat>();
+
+/**
+ * Nombre decimal a la francaise : « 3,5 », « 0,0001 ».
+ *
+ * Pour les grandeurs qui ne sont ni des effectifs ni des parts : poids, effet
+ * de plan, seuils. Les zeros inutiles sont retires, jamais la precision.
+ */
+export function formatDecimal(value: number | null, maximumFractionDigits = 2): string {
+	if (value === null || !Number.isFinite(value)) return SUPPRESSED_SYMBOL;
+
+	let format = DECIMAL_FORMATS.get(maximumFractionDigits);
+	if (!format) {
+		format = new Intl.NumberFormat('fr-FR', { maximumFractionDigits });
+		DECIMAL_FORMATS.set(maximumFractionDigits, format);
+	}
+	return format.format(value);
+}
+
+/** Ecart entre deux parts, en points signes : « +2,4 pt », « −0,8 pt ». */
+export function formatPoints(delta: number | null): string {
+	if (delta === null || !Number.isFinite(delta)) return SUPPRESSED_SYMBOL;
+
+	const points = delta * 100;
+	if (Math.abs(points) < 0.05) return '0,0 pt';
+	const sign = points > 0 ? '+' : '−';
+	return `${sign}${ONE_DECIMAL.format(Math.abs(points))} pt`;
+}
+
+const ONE_DECIMAL = new Intl.NumberFormat('fr-FR', {
+	minimumFractionDigits: 1,
+	maximumFractionDigits: 1
+});
+
 /** Texte affiche a la place d un chiffre masque par le seuil d anonymat. */
 export const SUPPRESSED_LABEL = 'Effectif insuffisant';
 

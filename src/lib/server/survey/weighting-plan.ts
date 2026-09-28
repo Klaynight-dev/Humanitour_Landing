@@ -1,8 +1,13 @@
 import { z } from 'zod';
 import { getQuestionType, NON_RESPONSE_KEY, type ModalityDescriptor } from '$lib/shared/questions';
 import {
+	DEFAULT_MAX_ITERATIONS,
+	DEFAULT_MAX_WEIGHT,
+	DEFAULT_MIN_WEIGHT,
+	DEFAULT_TOLERANCE,
 	normalizeTargets,
 	type WeightingDiagnostics,
+	type WeightingSettings,
 	type WeightingUnit,
 	type WeightingVariable
 } from './weighting';
@@ -15,17 +20,49 @@ import {
  * d un chiffre publie doit se tester sans serveur.
  */
 
+/**
+ * D ou viennent les cibles d une variable, quand elles viennent de l Insee.
+ *
+ * Ecrit avec la variable, donc versionne avec elle dans le journal d audit.
+ * `censusTargets` garde les parts telles que le recensement les donnait, et
+ * `edited` dit si l analyste les a retouchees : une marge « Insee » corrigee a
+ * la main doit pouvoir se reconnaitre comme telle.
+ */
+export interface MarginOrigin {
+	readonly provider: 'insee-melodi';
+	readonly datasets: readonly string[];
+	readonly period: string;
+	readonly geo: string;
+	readonly dimension: string;
+	readonly fetchedAt: string;
+	readonly censusTargets: Readonly<Record<string, number>>;
+	readonly edited: boolean;
+}
+
 /** Une variable de calage telle qu elle est ecrite dans `SurveyWeighting.variables`. */
 export interface StoredVariable {
 	readonly questionCode: string;
 	/** Parts cibles entre 0 et 1, de somme 1, par cle de modalite. */
 	readonly targets: Readonly<Record<string, number>>;
+	/** Absent pour des marges saisies a la main. */
+	readonly origin?: MarginOrigin;
 }
+
+const originSchema = z.object({
+	provider: z.literal('insee-melodi'),
+	datasets: z.array(z.string()),
+	period: z.string(),
+	geo: z.string(),
+	dimension: z.string(),
+	fetchedAt: z.string(),
+	censusTargets: z.record(z.string(), z.number())
+});
 
 const variablesSchema = z.array(
 	z.object({
 		questionCode: z.string().min(1),
-		targets: z.record(z.string(), z.number())
+		targets: z.record(z.string(), z.number()),
+		origin: originSchema.extend({ edited: z.boolean() }).optional()
 	})
 );
 
@@ -33,6 +70,64 @@ const variablesSchema = z.array(
 export function readVariables(raw: unknown): StoredVariable[] {
 	const parsed = variablesSchema.safeParse(raw);
 	return parsed.success ? parsed.data : [];
+}
+
+/**
+ * Les marges avec lesquelles le dernier calcul a tourne, lues dans son
+ * diagnostic. `null` pour un calcul anterieur a leur enregistrement.
+ */
+export function readUsedVariables(diagnostics: unknown): StoredVariable[] | null {
+	if (typeof diagnostics !== 'object' || diagnostics === null || !('variables' in diagnostics)) {
+		return null;
+	}
+	return readVariables(diagnostics.variables);
+}
+
+/** Memes variables, memes cibles a un demi-centieme de point pres. La provenance ne compte pas. */
+export function sameMargins(
+	a: readonly StoredVariable[],
+	b: readonly StoredVariable[]
+): boolean {
+	if (a.length !== b.length) return false;
+
+	return a.every((variable) => {
+		const other = b.find((candidate) => candidate.questionCode === variable.questionCode);
+		if (!other) return false;
+		const keys = new Set([...Object.keys(variable.targets), ...Object.keys(other.targets)]);
+		return [...keys].every(
+			(key) => Math.abs((variable.targets[key] ?? 0) - (other.targets[key] ?? 0)) <= SUM_TOLERANCE
+		);
+	});
+}
+
+/**
+ * Parts arrondies a `decimals` decimales de pourcentage, de somme EXACTEMENT 100.
+ *
+ * Methode du plus fort reste : on tronque, puis on distribue les centiemes
+ * manquants aux parts dont le reste est le plus grand. Sans elle, trois tiers
+ * arrondis feraient 99,99 %, et le formulaire, qui exige 100 %, refuserait la
+ * proposition de l Insee.
+ */
+export function roundPercentages(shares: readonly number[], decimals = 2): number[] {
+	const scale = 10 ** decimals;
+	const total = shares.reduce((sum, share) => sum + share, 0);
+	if (total <= 0) return shares.map(() => 0);
+
+	const exact = shares.map((share) => (share / total) * 100 * scale);
+	const floors = exact.map(Math.floor);
+	let missing = 100 * scale - floors.reduce((sum, value) => sum + value, 0);
+
+	const order = exact
+		.map((value, index) => ({ index, rest: value - Math.floor(value) }))
+		.sort((a, b) => b.rest - a.rest);
+
+	for (const { index } of order) {
+		if (missing <= 0) break;
+		floors[index]! += 1;
+		missing -= 1;
+	}
+
+	return floors.map((value) => value / scale);
 }
 
 /**
@@ -165,13 +260,21 @@ export interface CalibrationQuestion {
 }
 
 /**
- * Tolerance sur la somme des parts saisies.
+ * Tolerance sur la somme des parts saisies : un demi-centieme de point.
  *
- * Des pourcentages recopies et arrondis font 99,8 % : on normalise. Mais 87 %
- * n est pas un arrondi, c est une ligne oubliee, et normaliser en silence
- * gonflerait toutes les autres cibles d un septieme.
+ * La somme doit faire EXACTEMENT 100 %. Une version precedente acceptait
+ * 99,8 % et normalisait, au motif que des pourcentages recopies sont arrondis.
+ * Depuis que l ecran affiche le total en direct et que les marges peuvent
+ * venir de l Insee a la decimale pres, l excuse ne tient plus : normaliser
+ * 99,8 % deplace chaque cible sans que personne ne l ait decide. La marge
+ * laissee ici n absorbe que l arithmetique flottante de deux decimales.
  */
-const SUM_TOLERANCE = 0.02;
+const SUM_TOLERANCE = 0.00005;
+
+/** Champ cache portant la proposition du recensement pour une question. */
+export function originField(questionCode: string): string {
+	return `origine:${questionCode}`;
+}
 
 export type ParsedTargets =
 	| { readonly ok: true; readonly variables: StoredVariable[] }
@@ -239,20 +342,215 @@ function readQuestionTargets(
 
 	const sum = [...raw.values()].reduce((acc, share) => acc + share, 0);
 	if (Math.abs(sum - 1) > SUM_TOLERANCE) {
-		const percent = (sum * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+		const percent = (sum * 100).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
 		return {
 			ok: false,
-			message: `Les cibles de « ${question.label} » totalisent ${percent} % au lieu de 100 % : une modalité a sans doute été oubliée.`
+			message: `Les cibles de « ${question.label} » totalisent ${percent} % : la somme doit faire exactement 100 %.`
+		};
+	}
+
+	const targets = Object.fromEntries(normalizeTargets(raw));
+	const origin = readOrigin(form.get(originField(question.code)), targets);
+
+	return {
+		ok: true,
+		variable: origin
+			? { questionCode: question.code, targets, origin }
+			: { questionCode: question.code, targets }
+	};
+}
+
+/**
+ * La provenance Insee postee avec le formulaire, confrontee aux cibles saisies.
+ *
+ * Illisible ou absente : pas de provenance, la variable est tenue pour saisie
+ * a la main. Ecart de plus d un demi-centieme de point sur une modalite, ou
+ * modalite ajoutee ou retiree : la marge est marquee retouchee.
+ */
+function readOrigin(
+	raw: FormDataEntryValue | null,
+	targets: Readonly<Record<string, number>>
+): MarginOrigin | null {
+	if (typeof raw !== 'string' || raw === '') return null;
+
+	let json: unknown;
+	try {
+		json = JSON.parse(raw);
+	} catch {
+		return null;
+	}
+
+	const parsed = originSchema.safeParse(json);
+	if (!parsed.success) return null;
+
+	const census = parsed.data.censusTargets;
+	const keys = new Set([...Object.keys(census), ...Object.keys(targets)]);
+	const edited = [...keys].some(
+		(key) => Math.abs((census[key] ?? 0) - (targets[key] ?? 0)) > SUM_TOLERANCE
+	);
+
+	return { ...parsed.data, edited };
+}
+
+/** Un nombre saisi, a virgule ou a point, dans un intervalle. `null` sinon. */
+function readNumber(form: FormData, name: string, min: number, max: number): number | null {
+	const raw = String(form.get(name) ?? '')
+		.replace(',', '.')
+		.trim();
+	const value = Number(raw);
+	if (raw === '' || !Number.isFinite(value) || value < min || value > max) return null;
+	return value;
+}
+
+export type ParsedSettings =
+	| {
+			readonly ok: true;
+			readonly settings: WeightingSettings;
+			readonly missingAcknowledged: boolean;
+	  }
+	| { readonly ok: false; readonly message: string };
+
+/**
+ * Les parametres du calcul, tels que saisis dans l onglet « Calcul ».
+ *
+ * Les bornes ne sont exigees que si la troncature est cochee : sans elle, le
+ * calage est un raking ratio pur et les champs de bornes ne servent a rien.
+ * Les bornes par defaut sont alors gardees, pour qu une case recochee
+ * retrouve des valeurs sensees.
+ */
+export function parseSettingsForm(form: FormData): ParsedSettings {
+	const tolerance = readNumber(form, 'tolerance', 1e-8, 0.05);
+	if (tolerance === null) {
+		return {
+			ok: false,
+			message: 'Seuil de convergence : saisissez un nombre entre 0,00000001 et 0,05.'
+		};
+	}
+
+	const maxIterations = readNumber(form, 'maxIterations', 1, 1000);
+	if (maxIterations === null || !Number.isInteger(maxIterations)) {
+		return { ok: false, message: 'Itérations : saisissez un nombre entier entre 1 et 1 000.' };
+	}
+
+	const trim = form.get('trim') === 'on';
+	const minWeight = readNumber(form, 'minWeight', 0.01, 1);
+	const maxWeight = readNumber(form, 'maxWeight', 1, 50);
+	if (trim && (minWeight === null || maxWeight === null)) {
+		return {
+			ok: false,
+			message: 'Bornes des poids : la borne basse doit être entre 0,01 et 1, la borne haute entre 1 et 50.'
 		};
 	}
 
 	return {
 		ok: true,
-		variable: {
-			questionCode: question.code,
-			targets: Object.fromEntries(normalizeTargets(raw))
-		}
+		settings: {
+			tolerance,
+			maxIterations,
+			trim,
+			minWeight: minWeight ?? DEFAULT_MIN_WEIGHT,
+			maxWeight: maxWeight ?? DEFAULT_MAX_WEIGHT
+		},
+		missingAcknowledged: form.get('acceptMissing') === 'on'
 	};
+}
+
+/**
+ * Les parametres a proposer dans le formulaire : ceux du dernier calcul, sinon
+ * les valeurs par defaut, avec les bornes lues dans leurs colonnes.
+ */
+export function currentSettings(
+	diagnostics: WeightingDiagnostics | null,
+	columns: { readonly minWeight: number; readonly maxWeight: number } | null
+): WeightingSettings {
+	if (diagnostics?.settings) return diagnostics.settings;
+
+	return {
+		tolerance: DEFAULT_TOLERANCE,
+		maxIterations: DEFAULT_MAX_ITERATIONS,
+		trim: true,
+		minWeight: columns?.minWeight ?? DEFAULT_MIN_WEIGHT,
+		maxWeight: columns?.maxWeight ?? DEFAULT_MAX_WEIGHT
+	};
+}
+
+/** Ce qui empeche, ou devrait faire hesiter, un calcul sur une variable. */
+export interface IntegrityReport {
+	readonly questionCode: string;
+	readonly label: string;
+	/** Repondants sans modalite (non-reponse ou question sautee). */
+	readonly missing: number;
+	/** Modalites portees par des repondants mais sans cible : bloquant. */
+	readonly untargeted: readonly { key: string; label: string; count: number }[];
+}
+
+/**
+ * Controle d integrite des variables de calage, avant tout calcul.
+ *
+ * Deux defauts, traites differemment :
+ *
+ *   - une modalite OBSERVEE sans cible bloque le calcul : ses repondants
+ *     garderaient leur poids pendant que les autres sont ramenes a 100 % du
+ *     total, et le calage ne pourrait pas converger ;
+ *   - une valeur MANQUANTE (le repondant n a pas repondu) n est pas un defaut
+ *     de saisie mais un fait du terrain. CALMAR exige des variables de calage
+ *     completes ; ici, on ne supprime pas un repondant pour une case vide
+ *     (`buildUnits`), il garde son poids sur cette variable. Le calcul exige
+ *     donc que l analyste l ait constate, et la note de methode le dit.
+ */
+export function checkIntegrity(
+	units: readonly WeightingUnit[],
+	variables: readonly StoredVariable[],
+	questions: readonly CalibrationQuestion[]
+): IntegrityReport[] {
+	return variables.map((variable) => {
+		const question = questions.find((candidate) => candidate.code === variable.questionCode);
+		const counts = new Map<string, number>();
+		let missing = 0;
+
+		for (const unit of units) {
+			const key = unit.modalities.get(variable.questionCode);
+			if (key === undefined) missing += 1;
+			else counts.set(key, (counts.get(key) ?? 0) + 1);
+		}
+
+		const untargeted = [...counts]
+			.filter(([key]) => !((variable.targets[key] ?? 0) > 0))
+			.map(([key, count]) => ({
+				key,
+				label: question?.modalities.find((modality) => modality.key === key)?.label ?? key,
+				count
+			}));
+
+		return {
+			questionCode: variable.questionCode,
+			label: question?.label ?? variable.questionCode,
+			missing,
+			untargeted
+		};
+	});
+}
+
+/** Le message qui bloque le calcul, ou `null` si rien ne s y oppose. */
+export function integrityBlocker(
+	reports: readonly IntegrityReport[],
+	missingAcknowledged: boolean
+): string | null {
+	const untargeted = reports.find((report) => report.untargeted.length > 0);
+	if (untargeted) {
+		const names = untargeted.untargeted
+			.map((modality) => `« ${modality.label} » (${modality.count})`)
+			.join(', ');
+		return `« ${untargeted.label} » : ${names} ont des répondants mais aucune cible. Donnez-leur une part, même petite, ou retirez la variable.`;
+	}
+
+	const missing = reports.filter((report) => report.missing > 0);
+	if (missing.length > 0 && !missingAcknowledged) {
+		const names = missing.map((report) => `« ${report.label} » (${report.missing})`).join(', ');
+		return `Valeurs manquantes sur ${names}. Cochez la case qui confirme que ces répondants gardent un poids neutre sur la variable, ou retirez-la du calage.`;
+	}
+
+	return null;
 }
 
 /**

@@ -1,5 +1,11 @@
 import { error } from '@sveltejs/kit';
-import { buildChart, chartsFor, colorSlots, resolveChart } from '$charts';
+import {
+	buildChart,
+	chartsForSelection,
+	colorSlots,
+	resolveChart,
+	wantsTimeline
+} from '$charts';
 import { exploreSearch, parseExploreParams } from '$shared/explore';
 import { codeExamples, longCitation, shortCitation } from '$shared/citation';
 import { getQuestionType } from '$shared/questions';
@@ -18,9 +24,11 @@ import {
 import { renderChartSvg } from '$lib/server/charts';
 import { describeWeighting } from '$lib/server/survey/weighting-plan';
 import { insightsOf } from '$lib/server/survey/insights';
+import { buildTimeline, type TimelineResult } from '$lib/server/survey/timeline';
 import {
 	filterableQuestions,
 	getPublishedSurvey,
+	loadCollectionDates,
 	prepareExplore
 } from '$lib/server/survey/queries';
 import type { CellBasis } from '$charts/crosstab-cell';
@@ -48,8 +56,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const prepared = await prepareExplore(survey, requested);
 	if (!prepared) error(500, { message: 'Cette enquete ne comporte aucune question exploitable.' });
 
-	const shape = shapeOf({ y: prepared.y });
-	const chart = resolveChart(requested.chart, shape);
+	const { selection, timelineMode, chart } = resolveView(requested.chart, prepared);
 
 	// Le tri depend du TYPE de la question portee en abscisse : une echelle
 	// garde son ordre, une liste de choix se classe par effectif.
@@ -88,7 +95,15 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const filterable = filterableQuestions(survey);
 	const base = baseOf(outcome);
 
-	const built = paintChart(chart, outcome, prepared, basis);
+	const { timeline, built } = await paintMain({
+		timelineMode,
+		chart,
+		outcome,
+		inputs,
+		prepared,
+		basis,
+		surveyId: survey.id
+	});
 
 	const share = buildShare({ survey, requested, prepared, filterable, base, origin: url.origin });
 
@@ -115,7 +130,11 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		questions: filterable.map(({ code, label }) => ({ code, label })),
 		filterGroups: buildFilterGroups(filterable, requested.filters),
 		selection: describeSelection(prepared, chart.key, requested),
-		charts: chartsFor(shape).map(({ key, label, description }) => ({ key, label, description })),
+		charts: chartsForSelection(selection).map(({ key, label, description }) => ({
+			key,
+			label,
+			description
+		})),
 		chart: built
 			? { key: chart.key, option: built.option, height: built.height, svg: renderChartSvg(built) }
 			: null,
@@ -129,6 +148,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			restricted: prepared.population.restricted
 		},
 		outcome,
+		timeline,
 		panels,
 		// Un constat porte sur UN resultat. Decoupe en panneaux, la page en
 		// afficherait un par panneau, ce qui noierait ce qu ils servent a dire.
@@ -238,6 +258,66 @@ function paintChart(
 		crossedWith: prepared.y?.label,
 		colorSlots: colorSlots(painted.modalities),
 		basis
+	});
+}
+
+/**
+ * La visualisation a servir, et si c est l evolution qui est demandee.
+ *
+ * L evolution n est proposee que sur une question seule : ni second axe, ni
+ * decoupage (`charts/index.ts`, `chartsForSelection`).
+ */
+function resolveView(requestedChart: string, prepared: { y: Axis | null; z: Axis | null }) {
+	const selection = { crossed: prepared.y !== null, split: prepared.z !== null };
+	const timelineMode = wantsTimeline(requestedChart, selection);
+	const shape = timelineMode ? 'timeline' : shapeOf({ y: prepared.y });
+
+	return { selection, timelineMode, chart: resolveChart(requestedChart, shape) };
+}
+
+/**
+ * Le graphique principal, et l evolution quand elle est demandee.
+ *
+ * L evolution est calculee A COTE du resultat d ensemble, pas a sa place : la
+ * base citee, les constats et la citation continuent de porter sur toute la
+ * periode, et la courbe montre comment on y est arrive. Sous le seuil pour
+ * l ensemble, aucune semaine ne pourrait le passer : on ne calcule rien.
+ */
+async function paintMain(input: {
+	timelineMode: boolean;
+	chart: ReturnType<typeof resolveChart>;
+	outcome: ReturnType<typeof buildOutcome>;
+	inputs: Parameters<typeof buildOutcome>[0];
+	prepared: Parameters<typeof paintChart>[2];
+	basis: CellBasis;
+	surveyId: string;
+}) {
+	const { chart, outcome, prepared } = input;
+
+	if (!input.timelineMode || outcome.kind === 'too-small') {
+		return { timeline: null, built: paintChart(chart, outcome, prepared, input.basis) };
+	}
+
+	const timeline = buildTimeline(input.inputs, await loadCollectionDates(input.surveyId));
+	return { timeline, built: paintTimeline(chart, timeline, prepared) };
+}
+
+/**
+ * La courbe d evolution.
+ *
+ * Memes emplacements de couleur que la repartition de la meme question : passer
+ * des barres a la courbe ne doit pas repeindre les modalites, sinon le lecteur
+ * perd la correspondance d un affichage a l autre (`charts/palette.ts`).
+ */
+function paintTimeline(
+	chart: ReturnType<typeof resolveChart>,
+	timeline: TimelineResult,
+	prepared: { x: { label: string; modalities: readonly { key: string }[] } }
+) {
+	return buildChart(chart, timeline, {
+		question: prepared.x.label,
+		colorSlots: colorSlots(prepared.x.modalities),
+		basis: 'ligne'
 	});
 }
 
