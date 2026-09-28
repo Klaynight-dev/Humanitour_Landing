@@ -188,6 +188,41 @@ describe('lecture des colonnes JSON', () => {
 	it('rend null pour un diagnostic absent', () => {
 		expect(readDiagnostics(null)).toBeNull();
 	});
+
+	it('relit un diagnostic ancien en deduisant l effet de plan et le rapport des poids', () => {
+		const old = readDiagnostics({
+			iterations: 8,
+			converged: true,
+			maxDeviation: 0.0002,
+			minWeight: 0.5,
+			maxWeight: 2,
+			effectiveSampleSize: 800,
+			respondents: 1000,
+			warnings: []
+		});
+
+		expect(old?.designEffect).toBeCloseTo(1.25, 10);
+		expect(old?.coefficientOfVariation).toBeCloseTo(0.5, 10);
+		expect(old?.weightRatio).toBe(4);
+		expect(old?.history).toEqual([]);
+		expect(old?.settings).toBeNull();
+	});
+
+	it('ne divise pas par zero sur un ancien diagnostic vide', () => {
+		const old = readDiagnostics({
+			iterations: 0,
+			converged: true,
+			maxDeviation: 0,
+			minWeight: 0,
+			maxWeight: 0,
+			effectiveSampleSize: 0,
+			respondents: 0,
+			warnings: []
+		});
+
+		expect(old?.designEffect).toBe(1);
+		expect(old?.weightRatio).toBeNull();
+	});
 });
 
 describe('marginReport', () => {
@@ -244,8 +279,14 @@ describe('describeWeighting', () => {
 		minWeight: 0.61,
 		maxWeight: 2.4,
 		effectiveSampleSize: 712.5,
+		designEffect: 985 / 712.5,
+		coefficientOfVariation: Math.sqrt(985 / 712.5 - 1),
+		weightRatio: 2.4 / 0.61,
+		atBounds: 0,
 		respondents: 985,
-		warnings: []
+		warnings: [],
+		history: [{ iteration: 1, maxDeviation: 0.0004 }],
+		settings: null
 	};
 
 	it('rend les variables en libelles lisibles', () => {
@@ -326,6 +367,7 @@ describe('describeWeighting', () => {
 			minWeight: 0.61,
 			maxWeight: 2.4,
 			effectiveSampleSize: 712.5,
+			designEffect: 985 / 712.5,
 			respondents: 985
 		});
 	});

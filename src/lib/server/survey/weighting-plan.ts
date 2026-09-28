@@ -35,6 +35,13 @@ export function readVariables(raw: unknown): StoredVariable[] {
 	return parsed.success ? parsed.data : [];
 }
 
+/**
+ * Le diagnostic tel qu il est ecrit en base.
+ *
+ * Les champs ajoutes le 28 septembre 2026 (effet de plan, trace, parametres)
+ * sont facultatifs : un calcul plus ancien se relit, et ce qui peut se deduire
+ * de ce qu il contient est recalcule plutot que laisse vide.
+ */
 const diagnosticsSchema = z.object({
 	iterations: z.number(),
 	converged: z.boolean(),
@@ -42,15 +49,52 @@ const diagnosticsSchema = z.object({
 	minWeight: z.number(),
 	maxWeight: z.number(),
 	effectiveSampleSize: z.number(),
+	designEffect: z.number().optional(),
+	coefficientOfVariation: z.number().optional(),
+	weightRatio: z.number().nullable().optional(),
+	atBounds: z.number().optional(),
 	respondents: z.number(),
 	warnings: z.array(
 		z.object({ questionCode: z.string(), modalityKey: z.string(), reason: z.string() })
-	)
+	),
+	history: z.array(z.object({ iteration: z.number(), maxDeviation: z.number() })).optional(),
+	settings: z
+		.object({
+			tolerance: z.number(),
+			maxIterations: z.number(),
+			trim: z.boolean(),
+			minWeight: z.number(),
+			maxWeight: z.number()
+		})
+		.nullable()
+		.optional()
 });
 
 export function readDiagnostics(raw: unknown): WeightingDiagnostics | null {
 	const parsed = diagnosticsSchema.safeParse(raw);
-	return parsed.success ? parsed.data : null;
+	if (!parsed.success) return null;
+
+	const data = parsed.data;
+	// n / n_eff : l effet de plan se deduit des deux chiffres qu un ancien
+	// calcul a toujours enregistres.
+	const designEffect =
+		data.designEffect ??
+		(data.effectiveSampleSize > 0 ? data.respondents / data.effectiveSampleSize : 1);
+
+	return {
+		...data,
+		designEffect,
+		coefficientOfVariation: data.coefficientOfVariation ?? Math.sqrt(Math.max(0, designEffect - 1)),
+		weightRatio:
+			data.weightRatio !== undefined
+				? data.weightRatio
+				: data.minWeight > 0
+					? data.maxWeight / data.minWeight
+					: null,
+		atBounds: data.atBounds ?? 0,
+		history: data.history ?? [],
+		settings: data.settings ?? null
+	};
 }
 
 /**
@@ -249,6 +293,7 @@ export function describeWeighting(
 			minWeight: diagnostics.minWeight,
 			maxWeight: diagnostics.maxWeight,
 			effectiveSampleSize: diagnostics.effectiveSampleSize,
+			designEffect: diagnostics.designEffect,
 			respondents: diagnostics.respondents
 		}
 	};
