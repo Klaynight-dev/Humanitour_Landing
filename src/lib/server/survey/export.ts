@@ -141,7 +141,7 @@ export function weightsCsv(
 		lines.push(cells.map(escapeCsv).join(','));
 	}
 
-	return `﻿${lines.join('\r\n')}\r\n`;
+	return `\uFEFF${lines.join('\r\n')}\r\n`;
 }
 
 export interface JsonExport {

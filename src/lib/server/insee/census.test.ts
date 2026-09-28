@@ -106,7 +106,7 @@ describe('loadCensusReference', () => {
 			const dataset = url.pathname.split('/').at(-1);
 			const geos = url.searchParams.getAll('GEO');
 
-			let observations: MelodiObservation[] = [];
+			let observations: MelodiObservation[];
 			if (dataset === 'DS_RP_TD_POPULATION_AGESEX_PRINC' && geos[0] === 'FRANCE-FM') {
 				observations = metropole();
 			} else if (dataset === 'DS_RP_TD_POPULATION_AGESEX_PRINC') {

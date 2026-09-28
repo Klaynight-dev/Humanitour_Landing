@@ -45,8 +45,7 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 
 	// Les marges du CALCUL, pas celles saisies depuis : on juge des poids avec
 	// les cibles qui les ont produits.
-	const variables =
-		readUsedVariables(weighting?.diagnostics) ?? readVariables(weighting?.variables);
+	const variables = usedVariables(weighting);
 	const used = candidates.filter((question) =>
 		variables.some((variable) => variable.questionCode === question.code)
 	);
@@ -87,55 +86,74 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 		interests[0] ??
 		null;
 
-	let impact = null;
-	if (interest) {
-		const [answers, threshold] = await Promise.all([
-			getAnswerRows(interest.id),
-			// L enquete introuvable est deja un 404 du gabarit ; ici, le seuil par defaut.
-			resolveThreshold(survey ?? { kAnonymityThreshold: null })
-		]);
-		// Seuil d anonymat applique ici aussi : une capture de cet ecran finit
-		// souvent dans un rapport, et une case sous le seuil n en sort pas.
-		const result = distribution(answers, interest.modalities, { weights, threshold });
-		const rows = result.bars.map((bar) => ({
-			label: bar.label,
-			raw: bar.share,
-			weighted: bar.weightedShare,
-			suppressed: bar.suppressed
-		}));
-
-		impact = {
-			code: interest.code,
-			label: interest.label,
-			respondents: result.respondents,
-			rows,
-			chart: renderedChart(impactOption(rows.filter((row) => !row.suppressed)))
-		};
-	}
+	const impact = interest
+		? await computeImpact(interest, weights, survey ?? { kAnonymityThreshold: null })
+		: null;
 
 	return {
 		quality: {
-		metrics: { ...metrics, respondents: values.length, atBounds: diagnostics.atBounds },
-		alert: metrics.designEffect > DESIGN_EFFECT_ALERT,
-		alertThreshold: DESIGN_EFFECT_ALERT,
-		convergence: {
-			converged: diagnostics.converged,
-			iterations: diagnostics.iterations,
-			maxDeviation: diagnostics.maxDeviation
-		},
-		settings: diagnostics.settings,
-		warnings: diagnostics.warnings,
-		histogram: {
-			chart: renderedChart(weightHistogramOption(bins)),
-			rows: histogramRows(bins, values.length)
-		},
-		margins,
-		interests: interests.map((question) => ({
-			code: question.code,
-			label: question.label,
-			calibrated: calibrated.has(question.code)
-		})),
-		impact
+			metrics: { ...metrics, respondents: values.length, atBounds: diagnostics.atBounds },
+			alert: metrics.designEffect > DESIGN_EFFECT_ALERT,
+			alertThreshold: DESIGN_EFFECT_ALERT,
+			convergence: {
+				converged: diagnostics.converged,
+				iterations: diagnostics.iterations,
+				maxDeviation: diagnostics.maxDeviation
+			},
+			settings: diagnostics.settings,
+			warnings: diagnostics.warnings,
+			histogram: {
+				chart: renderedChart(weightHistogramOption(bins)),
+				rows: histogramRows(bins, values.length)
+			},
+			margins,
+			interests: interests.map((question) => ({
+				code: question.code,
+				label: question.label,
+				calibrated: calibrated.has(question.code)
+			})),
+			impact
 		}
 	};
 };
+
+/**
+ * Les marges avec lesquelles le dernier calcul a tourne, si elles ont ete
+ * enregistrees, sinon les marges saisies : c est le meilleur qu on ait.
+ */
+function usedVariables(weighting: { diagnostics: unknown; variables: unknown } | null) {
+	return readUsedVariables(weighting?.diagnostics) ?? readVariables(weighting?.variables);
+}
+
+/**
+ * Ce que le redressement change a une question d interet : sa repartition
+ * brute et redressee, cote a cote.
+ *
+ * Le seuil d anonymat s applique ici aussi : une capture de cet ecran finit
+ * souvent dans un rapport, et une case sous le seuil n en sort pas.
+ */
+async function computeImpact(
+	interest: Awaited<ReturnType<typeof interestQuestions>>[number],
+	weights: ReadonlyMap<string, number>,
+	survey: { kAnonymityThreshold: number | null }
+) {
+	const [answers, threshold] = await Promise.all([
+		getAnswerRows(interest.id),
+		resolveThreshold(survey)
+	]);
+	const result = distribution(answers, interest.modalities, { weights, threshold });
+	const rows = result.bars.map((bar) => ({
+		label: bar.label,
+		raw: bar.share,
+		weighted: bar.weightedShare,
+		suppressed: bar.suppressed
+	}));
+
+	return {
+		code: interest.code,
+		label: interest.label,
+		respondents: result.respondents,
+		rows,
+		chart: renderedChart(impactOption(rows.filter((row) => !row.suppressed)))
+	};
+}
