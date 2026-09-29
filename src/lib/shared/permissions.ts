@@ -125,6 +125,32 @@ export const PERMISSIONS = {
 		description: 'Exporter la liste et desabonner une adresse.',
 		sensitive: true
 	},
+	'newsletter.send': {
+		group: 'Infolettre',
+		label: 'Rediger et diffuser les campagnes',
+		description:
+			'Ecrire une campagne, s en envoyer un essai et la diffuser a toutes les adresses confirmees.',
+		sensitive: true
+	},
+
+	/*
+	 * Messagerie. Aucune de ces permissions ne donne a lire une boite : on lit
+	 * sa boite personnelle et celles dont on est membre, rien d'autre.
+	 * Administrer les boites, c'est les creer et en choisir les membres.
+	 */
+	'mail.use': {
+		group: 'Messagerie',
+		label: 'Utiliser la messagerie',
+		description:
+			'Lire, envoyer et classer le courrier de sa boite personnelle et des boites partagees dont on est membre.'
+	},
+	'mail.admin': {
+		group: 'Messagerie',
+		label: 'Gerer les boites',
+		description:
+			'Creer une boite partagee ou personnelle, choisir ses membres, designer la boite qui recoit le courrier sans destinataire.',
+		sensitive: true
+	},
 
 	'user.read': {
 		group: 'Equipe',
@@ -206,13 +232,19 @@ export function can(holder: PermissionHolder | null, permission: Permission): bo
 }
 
 /** Vrai si le porteur detient au moins une des permissions demandees. */
-export function canAny(holder: PermissionHolder | null, permissions: readonly Permission[]): boolean {
+export function canAny(
+	holder: PermissionHolder | null,
+	permissions: readonly Permission[]
+): boolean {
 	if (!holder) return false;
 	return permissions.some((permission) => holder.permissions.includes(permission));
 }
 
 /** Vrai si le porteur detient toutes les permissions demandees. */
-export function canAll(holder: PermissionHolder | null, permissions: readonly Permission[]): boolean {
+export function canAll(
+	holder: PermissionHolder | null,
+	permissions: readonly Permission[]
+): boolean {
 	if (!holder) return false;
 	return permissions.every((permission) => holder.permissions.includes(permission));
 }

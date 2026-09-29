@@ -35,6 +35,12 @@ model User {
   notificationRead NotificationRead?
   weightings       SurveyWeighting[]
 
+  mailboxesOwned     Mailbox[]            @relation("MailboxOwner")
+  mailboxMemberships MailboxMember[]
+  mailMessagesSent   MailMessage[]        @relation("MailMessageSentBy")
+  campaignsCreated   NewsletterCampaign[] @relation("CampaignCreatedBy")
+  campaignsSent      NewsletterCampaign[] @relation("CampaignSentBy")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -1,0 +1,204 @@
+// Domaine messagerie.
+//
+// Le courrier de l'association, recu et envoye par Resend. Une boite est une
+// adresse du domaine : partagee (contact@, presse@...) et lue par ses membres,
+// ou personnelle et lue par son seul titulaire. Aucune permission ne donne a
+// lire une boite dont on n'est ni titulaire ni membre : administrer les boites
+// (`mail.admin`) permet de les creer et d'en choisir les membres, pas d'en lire
+// le courrier.
+//
+// Comme l'infolettre, ce domaine porte des donnees directement identifiantes
+// (adresses, noms, contenu des echanges). Il n'a et ne peut avoir aucune
+// relation vers `Response` (AGENTS.md section 4).
+
+enum MailboxKind {
+  SHARED
+  PERSONAL
+}
+
+/// Le classement d'un fil. « Envoyes » et « Suivis » ne sont pas des dossiers
+/// mais des filtres (`hasOutbound`, `starred`) : un fil suivi reste dans sa
+/// boite de reception.
+enum MailFolder {
+  INBOX
+  ARCHIVE
+  SPAM
+  TRASH
+}
+
+enum MailDirection {
+  INBOUND
+  OUTBOUND
+}
+
+/// Etat d'un courriel, entrant ou sortant, et d'un envoi d'infolettre.
+/// Les webhooks de Resend le font avancer ; `shared/mail/status.ts` interdit
+/// qu'un evenement arrive en retard fasse reculer un etat definitif.
+enum MailStatus {
+  RECEIVED
+  QUEUED
+  SENT
+  DELIVERED
+  DELAYED
+  BOUNCED
+  COMPLAINED
+  FAILED
+}
+
+model Mailbox {
+  id String @id @default(cuid())
+
+  /// Adresse complete, en minuscules : `contact@humanitour.fr`.
+  address String @unique
+
+  /// Le nom affiche aux destinataires : « Humanitour », « Elouan Passereau ».
+  displayName String
+
+  kind MailboxKind @default(SHARED)
+
+  /// Titulaire d'une boite personnelle. Supprimer le compte supprime sa boite.
+  ownerId String?
+  owner   User?   @relation("MailboxOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  /// Recoit le courrier adresse a une adresse du domaine qui n'est la boite de
+  /// personne. Sans elle, un courriel a `bonjour@` serait perdu en silence.
+  isCatchAll Boolean @default(false)
+
+  /// Signature ajoutee aux envois, en Markdown.
+  signature String?
+
+  members MailboxMember[]
+  threads MailThread[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model MailboxMember {
+  mailboxId String
+  mailbox   Mailbox @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([mailboxId, userId])
+  @@index([userId])
+}
+
+model MailThread {
+  id String @id @default(cuid())
+
+  mailboxId String
+  mailbox   Mailbox @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+
+  subject String
+
+  /// L'objet sans « Re: » ni « Tr: », pour rattacher une reponse arrivee sans
+  /// en-tete `In-Reply-To`.
+  baseSubject String
+
+  folder  MailFolder @default(INBOX)
+  starred Boolean    @default(false)
+  unread  Boolean    @default(true)
+
+  /// Debut du dernier message, pour la liste des fils.
+  snippet String @default("")
+
+  /// Adresses des correspondants, hors la boite elle-meme.
+  participants String[]
+
+  hasOutbound    Boolean @default(false)
+  hasAttachments Boolean @default(false)
+
+  lastMessageAt DateTime @default(now())
+
+  messages MailMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([mailboxId, folder, lastMessageAt])
+  @@index([mailboxId, baseSubject])
+}
+
+model MailMessage {
+  id String @id @default(cuid())
+
+  threadId String
+  thread   MailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  /// Recopie du fil : l'unicite `(mailboxId, resendId)` rend la reception
+  /// idempotente, et un meme courriel adresse a deux boites y entre deux fois.
+  mailboxId String
+
+  direction MailDirection
+  status    MailStatus
+
+  /// Motif d'un rebond ou d'un echec, tel que Resend le rapporte.
+  statusDetail String?
+
+  /// Identifiant du courriel chez Resend, envoye ou recu.
+  resendId String?
+
+  /// En-tetes de fil : `Message-ID`, `In-Reply-To`, `References`.
+  messageId  String?
+  inReplyTo  String?
+  references String?
+
+  fromAddress String
+  fromName    String?
+  to          String[]
+  cc          String[]
+  bcc         String[]
+  replyTo     String[]
+
+  subject String
+  text    String?
+
+  /// HTML tel que recu. Il n'est jamais insere dans une page du back-office :
+  /// il est rendu dans un cadre `sandbox` sans script, ni requete sortante.
+  html String?
+
+  /// Resultats SPF, DKIM et DMARC d'un courriel recu.
+  authentication Json?
+
+  sentById String?
+  sentBy   User?   @relation("MailMessageSentBy", fields: [sentById], references: [id], onDelete: SetNull)
+
+  /// Date du message : reception ou envoi.
+  sentAt DateTime @default(now())
+
+  attachments MailAttachment[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([mailboxId, resendId])
+  @@index([threadId, sentAt])
+  @@index([mailboxId, messageId])
+  @@index([resendId])
+}
+
+model MailAttachment {
+  id String @id @default(cuid())
+
+  messageId String
+  message   MailMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  filename    String
+  contentType String
+  size        Int
+
+  /// `cid:` d'une image integree au corps du message.
+  contentId String?
+  inline    Boolean @default(false)
+
+  /// Cle du registre de stockage. Les adresses de telechargement de Resend
+  /// expirent : le fichier est recopie ici a la reception.
+  storageKey String
+
+  @@index([messageId])
+}

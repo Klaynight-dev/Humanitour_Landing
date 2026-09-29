@@ -1,22 +1,22 @@
 // Domaine infolettre.
 //
-// La SEULE table du depot qui porte une donnee directement identifiante. Elle
-// est isolee, et elle doit le rester : aucune relation ne la lie a `Response`,
-// et aucune ne le peut, parce qu'une reponse ne porte elle-meme aucune
-// identite. Rapprocher un abonne d'une opinion politique est donc impossible,
-// pas seulement interdit (AGENTS.md section 4).
+// La table des abonnes porte une donnee directement identifiante. Elle est
+// isolee, et elle doit le rester : aucune relation ne la lie a `Response`, et
+// aucune ne le peut, parce qu'une reponse ne porte elle-meme aucune identite.
+// Rapprocher un abonne d'une opinion politique est donc impossible, pas
+// seulement interdit (AGENTS.md section 4).
 //
 // Trois entrees alimentent cette table, toutes sans lien vers `Response` :
 // le formulaire public `/infolettre`, l'import en lot du back-office, et un
 // champ email d'un formulaire Openforms relie a un sondage (compte dans
 // `OpenformsSync.newsletterCount`, voir `server/openforms/sync.ts`).
 //
-// Pas de colonne « confirme » ni de jeton de confirmation : rien n'envoie de
-// courriel dans ce depot aujourd'hui, et un double opt-in dont le second temps
-// n'existe pas ne protege personne — il ne fait qu'en donner l'air. La
-// desinscription se fait donc en saisissant son adresse, sans jeton, donc sans
-// courriel a recevoir. Le jour ou un expediteur sera branche, la confirmation
-// et le lien de desinscription signe s'ajouteront ici.
+// Double opt-in depuis le 29 septembre 2026, date a laquelle un expediteur
+// (Resend) a ete branche : une adresse saisie par un visiteur recoit un lien de
+// confirmation, et seules les adresses confirmees recoivent une campagne. Les
+// adresses deja en base a cette date, et celles qu'importe l'equipe, sont
+// confirmees d'office : le consentement a ete recueilli ailleurs, et l'import
+// est journalise avec son auteur.
 
 model NewsletterSubscriber {
   id String @id @default(cuid())
@@ -30,7 +30,86 @@ model NewsletterSubscriber {
   /// exportee.
   ipHash String?
 
+  /// Nul tant que la personne n'a pas suivi le lien de confirmation. Une
+  /// adresse non confirmee ne recoit aucune campagne.
+  confirmedAt DateTime?
+
+  /// SHA-256 du jeton de confirmation, comme pour les sessions. Efface a la
+  /// confirmation : un lien suivi deux fois ne sert plus a rien.
+  confirmationTokenHash String?   @unique
+  confirmationSentAt    DateTime?
+
+  deliveries NewsletterDelivery[]
+
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+  @@index([confirmedAt])
+}
+
+enum NewsletterCampaignStatus {
+  DRAFT
+  SENDING
+  SENT
+}
+
+model NewsletterCampaign {
+  id String @id @default(cuid())
+
+  subject String
+
+  /// Texte d'apercu affiche par la messagerie a cote de l'objet.
+  preheader String?
+
+  markdown String @default("")
+
+  status NewsletterCampaignStatus @default(DRAFT)
+
+  createdById String?
+  createdBy   User?   @relation("CampaignCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  sentById String?
+  sentBy   User?     @relation("CampaignSentBy", fields: [sentById], references: [id], onDelete: SetNull)
+  sentAt   DateTime?
+
+  /// Compteurs figes a l'envoi puis avances par les webhooks. Ils survivent a
+  /// la desinscription d'un destinataire, qui efface sa ligne d'envoi.
+  recipientCount  Int @default(0)
+  sentCount       Int @default(0)
+  deliveredCount  Int @default(0)
+  bouncedCount    Int @default(0)
+  complainedCount Int @default(0)
+  failedCount     Int @default(0)
+
+  /// Derniere erreur de Resend pendant la diffusion, affichee au back-office.
+  lastError String?
+
+  deliveries NewsletterDelivery[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
+/// Un envoi d'une campagne a un abonne. Cree avant l'appel a Resend : une
+/// diffusion interrompue reprend la ou elle s'est arretee, sans doublon.
+model NewsletterDelivery {
+  id String @id @default(cuid())
+
+  campaignId String
+  campaign   NewsletterCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  /// Supprimer l'abonne supprime ses envois : une desinscription efface
+  /// l'adresse partout, compteurs de campagne mis a part.
+  subscriberId String
+  subscriber   NewsletterSubscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  resendId String?    @unique
+  status   MailStatus @default(QUEUED)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([campaignId, subscriberId])
+  @@index([campaignId, status])
 }
