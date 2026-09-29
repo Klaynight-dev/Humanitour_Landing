@@ -4,6 +4,7 @@ import {
 	formatMailbox,
 	forwardHeader,
 	forwardSubject,
+	mailboxAddress,
 	messageIds,
 	parseMailbox,
 	parseRecipients,
@@ -143,5 +144,37 @@ describe('identifiants de message', () => {
 		expect(replyReferences('<a@x>', '<b@y>')).toBe('<a@x> <b@y>');
 		expect(replyReferences('<a@x> <b@y>', '<b@y>')).toBe('<a@x> <b@y>');
 		expect(replyReferences(null, null)).toBeNull();
+	});
+});
+
+describe('mailboxAddress', () => {
+	it('complete la partie locale avec le domaine, en minuscules', () => {
+		expect(mailboxAddress(' Presse ', 'Humanitour.fr')).toEqual({
+			ok: true,
+			address: 'presse@humanitour.fr'
+		});
+		expect(mailboxAddress('come.moudenner', 'humanitour.fr')).toEqual({
+			ok: true,
+			address: 'come.moudenner@humanitour.fr'
+		});
+	});
+
+	it('ignore un domaine tape par erreur', () => {
+		expect(mailboxAddress('presse@autre.fr', 'humanitour.fr')).toEqual({
+			ok: true,
+			address: 'presse@humanitour.fr'
+		});
+	});
+
+	it('refuse une saisie vide, accentuee ou mal bornee', () => {
+		expect(mailboxAddress('  ', 'humanitour.fr').ok).toBe(false);
+		expect(mailboxAddress('élodie', 'humanitour.fr').ok).toBe(false);
+		expect(mailboxAddress('.presse', 'humanitour.fr').ok).toBe(false);
+		expect(mailboxAddress('presse-', 'humanitour.fr').ok).toBe(false);
+		expect(mailboxAddress('a..b', 'humanitour.fr').ok).toBe(false);
+	});
+
+	it('accepte une adresse d une seule lettre', () => {
+		expect(mailboxAddress('a', 'humanitour.fr').ok).toBe(true);
 	});
 });

@@ -45,7 +45,13 @@ export default defineConfig({
 				'src/lib/server/newsletter/confirmation.ts',
 				// Diffusion d'une campagne : base, reseau et minuterie. La cle des lots
 				// et le texte des courriels vivent dans `batches.ts` et `emails.ts`.
-				'src/lib/server/newsletter/campaign.ts'
+				'src/lib/server/newsletter/campaign.ts',
+				// Messagerie : controle d'acces, envoi et suppression, tous trois base,
+				// stockage et reseau. Leurs regles vivent dans `shared/mail/*`,
+				// `mail/compose.ts` et `mail/routing.ts`, couverts a part.
+				'src/lib/server/mail/access.ts',
+				'src/lib/server/mail/outbound.ts',
+				'src/lib/server/mail/cleanup.ts'
 			],
 			// Les seuils sont justifies dans AGENTS.md section 3.2 : on couvre ce qui
 			// produit des chiffres publies, pas le cablage.

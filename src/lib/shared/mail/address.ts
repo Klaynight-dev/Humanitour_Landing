@@ -179,3 +179,69 @@ export function replyReferences(
 	if (messageId && !ids.includes(messageId)) ids.push(messageId);
 	return ids.length === 0 ? null : ids.join(' ');
 }
+
+export interface ReplySource {
+	readonly direction: 'INBOUND' | 'OUTBOUND';
+	readonly fromAddress: string;
+	readonly to: readonly string[];
+	readonly cc: readonly string[];
+	readonly replyTo: readonly string[];
+}
+
+/**
+ * Les destinataires d'une reponse.
+ *
+ * A un message recu, on repond a son `Reply-To` s'il en a un, sinon a son
+ * expediteur. A un message que l'equipe a envoye, on « repond » a ses
+ * destinataires : c'est la relance. « Repondre a tous » ajoute en copie les
+ * autres adresses du message, sans jamais y remettre la boite elle-meme.
+ */
+export function replyRecipients(
+	message: ReplySource,
+	mailboxAddress: string,
+	all: boolean
+): { readonly to: string[]; readonly cc: string[] } {
+	const normalize = (list: readonly string[]) =>
+		list
+			.map((raw) => parseMailbox(raw)?.address)
+			.filter((address): address is string => address !== undefined);
+
+	const primary =
+		message.direction === 'OUTBOUND'
+			? normalize(message.to)
+			: normalize(message.replyTo.length > 0 ? message.replyTo : [message.fromAddress]);
+
+	const to = [...new Set(primary)].filter((address) => address !== mailboxAddress);
+	if (!all) return { to, cc: [] };
+
+	const others = normalize([...message.to, ...message.cc, message.fromAddress]);
+	const cc = [...new Set(others)].filter(
+		(address) => address !== mailboxAddress && !to.includes(address)
+	);
+	return { to, cc };
+}
+
+/**
+ * L'adresse d'une nouvelle boite, a partir de ce qui precede l'arobase.
+ *
+ * Le domaine n'est pas saisi : Resend ne recoit que pour le domaine verifie,
+ * et une boite sur un autre domaine ne recevrait jamais rien.
+ */
+export function mailboxAddress(
+	localPart: string,
+	domain: string
+):
+	| { readonly ok: true; readonly address: string }
+	| { readonly ok: false; readonly reason: string } {
+	const local = localPart.trim().toLowerCase().replace(/@.*$/, '');
+	if (local === '')
+		return { ok: false, reason: 'Indiquez la partie de l’adresse avant l’arobase.' };
+	if (!/^[a-z0-9](?:[a-z0-9._+-]{0,62}[a-z0-9])?$/.test(local) || local.includes('..')) {
+		return {
+			ok: false,
+			reason:
+				'Lettres sans accent, chiffres, point, tiret, plus ou tiret bas ; ni au début ni à la fin pour les signes.'
+		};
+	}
+	return { ok: true, address: `${local}@${domain.toLowerCase()}` };
+}

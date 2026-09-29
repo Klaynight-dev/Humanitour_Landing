@@ -57,6 +57,23 @@ export const ADMIN_NAVIGATION: readonly AdminSection[] = [
 		]
 	},
 	{
+		label: 'Le courrier',
+		links: [
+			{
+				href: '/admin/courrier',
+				label: 'Courrier',
+				description: 'Les boîtes de l’association : lire, répondre, écrire.',
+				permission: 'mail.use'
+			},
+			{
+				href: '/admin/courrier/boites',
+				label: 'Boîtes',
+				description: 'Les adresses, leurs membres et la boîte attrape-tout.',
+				permission: 'mail.admin'
+			}
+		]
+	},
+	{
 		label: 'Les enquêtes',
 		links: [
 			{

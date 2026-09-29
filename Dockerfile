@@ -34,6 +34,12 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Taille maximale d'une requete. `adapter-node` la fixe a 512 Ko par defaut :
+# une image de la mediatheque (8 Mo au plus) ou une piece jointe de la
+# messagerie (25 Mo au plus, `shared/mail/attachments.ts`) serait refusee avant
+# meme d'atteindre la route.
+ENV BODY_SIZE_LIMIT=30M
+
 # Le serveur ne tourne pas en root : une faille applicative ne doit pas donner
 # les droits d'ecriture sur l'image.
 RUN addgroup -g 1001 app && adduser -u 1001 -G app -s /bin/sh -D app
