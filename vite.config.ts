@@ -39,7 +39,10 @@ export default defineConfig({
 				// stockage et reseau. Les regles qu'elles appliquent vivent dans
 				// `mail/routing.ts`, `mail/webhook-event.ts` et `shared/mail/status.ts`.
 				'src/lib/server/mail/inbound.ts',
-				'src/lib/server/mail/events.ts'
+				'src/lib/server/mail/events.ts',
+				// Envoi du lien de confirmation : base et reseau. Le texte du courriel
+				// et ses liens vivent dans `newsletter/emails.ts`, couvert a part.
+				'src/lib/server/newsletter/confirmation.ts'
 			],
 			// Les seuils sont justifies dans AGENTS.md section 3.2 : on couvre ce qui
 			// produit des chiffres publies, pas le cablage.

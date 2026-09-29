@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { PENDING_RETENTION_DAYS } from '$lib/shared/newsletter';
 	import { SITE } from '$lib/shared/site';
 	import type { ActionData, PageData } from './$types';
 
@@ -24,11 +25,20 @@
 		{#if data.subscribed}
 			<!-- Apres une inscription, la page revient en GET : un rafraichissement
 			     ne repose pas l'adresse. -->
-			<p class="border-ink/20 bg-paper rounded-panel mt-8 border px-5 py-4 text-lg leading-relaxed">
-				<strong class="font-semibold">C'est noté.</strong>
-				Votre adresse est enregistrée. Vous recevrez un message quand les résultats et la série documentaire
-				seront publiés, et rien d'autre.
-			</p>
+			<div
+				class="border-ink/20 bg-paper rounded-panel mt-8 border px-5 py-4 text-lg leading-relaxed"
+				role="status"
+			>
+				<p><strong class="font-semibold">Un dernier clic, dans votre boîte.</strong></p>
+				<p class="mt-2">
+					Si cette adresse n'était pas encore inscrite, un courriel vient de lui être envoyé. Suivez
+					le lien qu'il contient pour confirmer : sans ce clic, rien ne vous sera envoyé, et
+					l'adresse sera effacée dans {PENDING_RETENTION_DAYS} jours.
+				</p>
+				<p class="text-ink-soft mt-2 text-base">
+					Rien reçu au bout de quelques minutes ? Regardez dans les courriers indésirables.
+				</p>
+			</div>
 		{:else}
 			<p class="text-ink-soft mt-4 text-lg leading-relaxed">
 				Les résultats de l'enquête et la série documentaire seront publiés ici. Laissez votre
@@ -97,13 +107,24 @@
 				</li>
 				<li>
 					Elle sert uniquement à vous annoncer la publication des résultats et de la série
-					documentaire. Elle n'est ni vendue, ni cédée, ni confiée à un tiers.
+					documentaire. Elle n'est ni vendue, ni cédée.
+				</li>
+				<li>
+					Pour vous écrire, nous la transmettons à Resend, le service qui achemine nos courriels,
+					depuis ses serveurs d'Irlande. Il ne la reçoit que pour cet acheminement.
 				</li>
 				<li>
 					Elle n'est rapprochée d'aucune réponse au sondage. Les réponses ne portent aucune
 					identité, ce rapprochement est donc impossible, et pas seulement interdit.
 				</li>
-				<li>Elle est conservée jusqu'à votre désinscription, puis effacée.</li>
+				<li>
+					Elle n'est utilisée qu'après confirmation, par le lien que nous vous envoyons. Sans
+					confirmation, elle est effacée au bout de {PENDING_RETENTION_DAYS} jours.
+				</li>
+				<li>
+					Elle est conservée jusqu'à votre désinscription, puis effacée. Chaque envoi porte un lien
+					pour partir en un clic.
+				</li>
 				<li>
 					Pour accéder à vos données, les corriger ou les faire effacer :
 					<a href="mailto:{SITE.email}" class="underline decoration-2 underline-offset-2">

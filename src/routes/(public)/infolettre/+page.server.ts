@@ -3,6 +3,8 @@ import { hashIp } from '$lib/server/auth/session';
 import { check, createThrottle, recordFailure } from '$lib/server/auth/throttle';
 import { prisma } from '$lib/server/db';
 import { readCheckbox, readText } from '$lib/server/forms';
+import { siteOrigin } from '$lib/server/mail/config';
+import { purgeStalePending, requestConfirmation } from '$lib/server/newsletter/confirmation';
 import { parseEmail } from '$lib/shared/newsletter';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -23,6 +25,11 @@ import type { Actions, PageServerLoad } from './$types';
  *    n'importe qui pourrait verifier si une adresse est dans la liste.
  * 3. Le formulaire est freine par adresse IP. C'est un point d'ecriture ouvert
  *    a tous : sans frein, une seule boucle remplit la table.
+ *
+ * Double opt-in : l'adresse est enregistree non confirmee, et un courriel part
+ * avec le lien de confirmation (`server/newsletter/confirmation.ts`). Tant que
+ * la personne n'a pas clique, elle ne recoit aucune campagne ; sans clic dans
+ * les trente jours, l'adresse est effacee.
  */
 
 /**
@@ -44,7 +51,7 @@ export const load: PageServerLoad = ({ url }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, getClientAddress }) => {
+	default: async ({ request, getClientAddress, url }) => {
 		const form = await request.formData();
 		const raw = readText(form, 'email');
 		const consent = readCheckbox(form, 'consentement');
@@ -80,6 +87,14 @@ export const actions: Actions = {
 			create: { email: parsed.email, ipHash: hashIp(ip) },
 			update: {}
 		});
+
+		// Un echec d'envoi n'est pas dit au visiteur : la reponse doit rester la
+		// meme dans tous les cas. Il est journalise, et l'equipe peut renvoyer la
+		// confirmation depuis le back-office.
+		await requestConfirmation(parsed.email, siteOrigin(url.origin)).catch((error: unknown) => {
+			console.error('[infolettre] confirmation non envoyee', error);
+		});
+		await purgeStalePending().catch(() => 0);
 
 		redirect(303, '/infolettre?inscrit');
 	}

@@ -24,11 +24,40 @@
 				Si cette adresse était inscrite, elle ne l'est plus et a été effacée de la base.
 			</p>
 		{:else}
+			{#if data.signed}
+				<!-- Lien signe du pied de courriel : l'adresse est connue, un clic suffit.
+				     Le bouton poste, parce qu'une simple ouverture du lien par un
+				     antivirus ne doit desinscrire personne. -->
+				<p class="mt-6 text-lg leading-relaxed">
+					L'adresse <strong class="font-semibold break-all">{data.signed}</strong> ne recevra plus l'infolettre,
+					et sera effacée de la base.
+				</p>
+				<form method="POST" action="?/signed" use:enhance class="mt-8">
+					<input type="hidden" name="adresse" value={data.signed} />
+					<input type="hidden" name="cle" value={data.signature} />
+					<button
+						type="submit"
+						class="bg-ink text-paper press rounded-pill min-h-12 px-6 py-3 font-semibold"
+					>
+						Me désinscrire
+					</button>
+				</form>
+				<h2 class="mt-14 text-xl">Une autre adresse ?</h2>
+			{:else if data.signature}
+				<p
+					role="alert"
+					class="border-danger/40 bg-danger/10 text-danger rounded-field mt-8 border px-4 py-3"
+				>
+					Ce lien de désinscription a été abîmé en route. Saisissez votre adresse ci-dessous : le
+					résultat est le même.
+				</p>
+			{/if}
+
 			<p class="text-ink-soft mt-4 text-lg leading-relaxed">
 				Saisissez l'adresse à retirer. Elle est effacée de la base, pas désactivée.
 			</p>
 
-			<form method="POST" use:enhance class="mt-10 flex flex-col gap-5">
+			<form method="POST" action="?/typed" use:enhance class="mt-10 flex flex-col gap-5">
 				{#if form?.message}
 					<p
 						role="alert"
@@ -54,9 +83,12 @@
 
 				<button
 					type="submit"
-					class="bg-ink text-paper press rounded-pill mt-1 min-h-12 self-start px-6 py-3 font-semibold"
+					class={[
+						'press rounded-pill border-ink mt-1 min-h-12 self-start border px-6 py-3 font-semibold',
+						data.signed ? 'bg-paper' : 'bg-ink text-paper'
+					]}
 				>
-					Me désinscrire
+					Désinscrire cette adresse
 				</button>
 			</form>
 		{/if}

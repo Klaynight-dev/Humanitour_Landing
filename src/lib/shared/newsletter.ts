@@ -117,3 +117,11 @@ export function parseEmailList(raw: string): EmailListResult {
 
 	return { emails, invalid, duplicates };
 }
+
+/**
+ * Une inscription jamais confirmee est effacee au bout de ce delai. Partage
+ * parce qu'il est annonce au visiteur (courriel de confirmation, page
+ * d'inscription) autant qu'applique par le serveur.
+ */
+export const PENDING_RETENTION_DAYS = 30;
+export const PENDING_RETENTION_MS = PENDING_RETENTION_DAYS * 24 * 60 * 60 * 1000;

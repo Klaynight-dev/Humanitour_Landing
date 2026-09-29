@@ -1,5 +1,6 @@
-import type { Handle } from '@sveltejs/kit';
+import { text, type Handle } from '@sveltejs/kit';
 import { SESSION_COOKIE, validateSession } from '$lib/server/auth/session';
+import { isForbiddenCrossSiteForm } from '$lib/server/csrf';
 import { startSyncSchedule } from '$lib/server/openforms/schedule';
 
 /*
@@ -19,6 +20,14 @@ startSyncSchedule();
  * `locals.user`, jamais le cookie.
  */
 export const handle: Handle = async ({ event, resolve }) => {
+	// Le controle d'origine de SvelteKit est desactive dans `svelte.config.js`
+	// et refait ici, avant toute lecture de session : voir `server/csrf.ts`.
+	if (isForbiddenCrossSiteForm(event.request, event.url)) {
+		return text(`Cross-site ${event.request.method} form submissions are forbidden`, {
+			status: 403
+		});
+	}
+
 	event.locals.user = await resolveUser(event.cookies.get(SESSION_COOKIE));
 
 	const response = await resolve(event);

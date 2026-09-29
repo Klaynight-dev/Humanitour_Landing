@@ -28,7 +28,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 
 	const subscribers = await prisma.newsletterSubscriber.findMany({
 		orderBy: { createdAt: 'asc' },
-		select: { email: true, createdAt: true }
+		select: { email: true, createdAt: true, confirmedAt: true }
 	});
 
 	await recordAudit({
@@ -38,10 +38,16 @@ export const GET: RequestHandler = async ({ locals }) => {
 		metadata: { count: subscribers.length }
 	});
 
-	const lines = ['adresse,date_inscription'];
+	const lines = ['adresse,date_inscription,date_confirmation'];
 	for (const subscriber of subscribers) {
 		lines.push(
-			[subscriber.email, subscriber.createdAt.toISOString().slice(0, 10)].map(escapeCsv).join(',')
+			[
+				subscriber.email,
+				subscriber.createdAt.toISOString().slice(0, 10),
+				subscriber.confirmedAt?.toISOString().slice(0, 10) ?? ''
+			]
+				.map(escapeCsv)
+				.join(',')
 		);
 	}
 

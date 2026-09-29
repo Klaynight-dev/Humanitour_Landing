@@ -24,7 +24,11 @@
 		PENDING: { label: 'En attente', classes: NEUTRAL },
 		VALIDATED: { label: 'Vérifié', classes: PENDING_STEP },
 		COMMITTED: { label: 'Importé', classes: DONE },
-		REJECTED: { label: 'Refusé', classes: 'bg-danger/10 text-danger border-danger/30' }
+		REJECTED: { label: 'Refusé', classes: 'bg-danger/10 text-danger border-danger/30' },
+		CONFIRMED: { label: 'Confirmée', classes: DONE },
+		UNCONFIRMED: { label: 'À confirmer', classes: PENDING_STEP },
+		SENDING: { label: 'Envoi en cours', classes: PENDING_STEP },
+		SENT: { label: 'Envoyée', classes: DONE }
 	};
 
 	const entry = $derived(LABELS[status] ?? { label: status, classes: NEUTRAL });

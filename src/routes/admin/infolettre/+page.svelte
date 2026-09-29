@@ -5,6 +5,7 @@
 	import PageHeader from '$components/admin/PageHeader.svelte';
 	import Panel from '$components/admin/Panel.svelte';
 	import StatTile from '$components/admin/StatTile.svelte';
+	import StatusBadge from '$components/admin/StatusBadge.svelte';
 	import Table from '$components/admin/Table.svelte';
 	import { formatCount, formatDate } from '$lib/shared/format';
 	import type { ActionData, PageData } from './$types';
@@ -56,21 +57,45 @@
 	<StatTile label="Abonnés" total={data.total} current={data.lastThirty} />
 
 	<Panel title="Envoi">
-		<p class="text-sm">
-			Aucun expéditeur n'est branché sur ce site : rien ne part d'ici pour l'instant.
-		</p>
-		<p class="text-muted mt-2 text-sm">
-			Tant que c'est le cas, la confirmation par courriel n'existe pas non plus, et la
-			désinscription se fait en saisissant son adresse sur le site, sans lien signé.
-		</p>
+		{#if data.mailConfigured}
+			<dl class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm">
+				<dt>Confirmées, destinataires des campagnes</dt>
+				<dd class="font-mono font-semibold">{formatCount(data.confirmed)}</dd>
+				<dt>En attente du clic de confirmation</dt>
+				<dd class="font-mono font-semibold">{formatCount(data.pending)}</dd>
+			</dl>
+			<p class="text-muted mt-2 text-sm">
+				Une adresse saisie sur le site ou dans un sondage reçoit un lien de confirmation ; sans clic
+				dans les 30 jours, elle est effacée. Une adresse importée ici est confirmée d'office.
+			</p>
+		{:else}
+			<p class="text-sm">
+				L'envoi n'est pas configuré : <code class="font-mono text-xs">RESEND_TOKEN</code> manque dans
+				l'environnement du serveur.
+			</p>
+			<p class="text-muted mt-2 text-sm">
+				Les inscriptions sont enregistrées, mais aucun lien de confirmation ne part tant que la clé
+				n'est pas renseignée.
+			</p>
+		{/if}
+		{#snippet footer()}
+			<a
+				href="/admin/infolettre/campagnes"
+				class="text-sm font-semibold underline decoration-2 underline-offset-4"
+			>
+				Rédiger une campagne
+			</a>
+		{/snippet}
 	</Panel>
 
 	<Panel title="Ce que la base retient">
-		<p class="text-sm">L'adresse, la date, et l'empreinte tronquée de l'adresse IP quand elle existe.</p>
+		<p class="text-sm">
+			L'adresse, la date, et l'empreinte tronquée de l'adresse IP quand elle existe.
+		</p>
 		<p class="text-muted mt-2 text-sm">
-			L'empreinte prouve le consentement et ne sort jamais de la base : ni à l'écran, ni à
-			l'export. Aucune relation ne relie un abonné à une réponse de sondage — une adresse importée
-			ou reçue via un sondage ne porte pas d'empreinte, faute d'IP à prouver.
+			L'empreinte prouve le consentement et ne sort jamais de la base : ni à l'écran, ni à l'export.
+			Aucune relation ne relie un abonné à une réponse de sondage — une adresse importée ou reçue
+			via un sondage ne porte pas d'empreinte, faute d'IP à prouver.
 		</p>
 	</Panel>
 </div>
@@ -131,11 +156,12 @@
 	emptyDescription={data.search === ''
 		? "Le formulaire d'inscription vit sur la page d'accueil et sur /infolettre. Les inscriptions apparaîtront ici."
 		: 'Essayez une autre recherche, ou affichez toute la liste.'}
-	minWidth="34rem"
+	minWidth="44rem"
 >
 	{#snippet head()}
 		<th scope="col" class="px-4 py-3 font-semibold">Adresse</th>
 		<th scope="col" class="px-4 py-3 font-semibold">Inscription</th>
+		<th scope="col" class="px-4 py-3 font-semibold">État</th>
 		{#if data.manageable}
 			<th scope="col" class="px-4 py-3 text-right font-semibold">Action</th>
 		{/if}
@@ -146,6 +172,9 @@
 			<tr class="border-ink/10 border-b last:border-0">
 				<td class="px-4 py-3">{subscriber.email}</td>
 				<td class="text-muted px-4 py-3">{formatDate(subscriber.createdAt)}</td>
+				<td class="px-4 py-3">
+					<StatusBadge status={subscriber.confirmedAt ? 'CONFIRMED' : 'UNCONFIRMED'} />
+				</td>
 				{#if data.manageable}
 					<td class="px-4 py-3 text-right">
 						{#if confirming === subscriber.id}
@@ -174,6 +203,17 @@
 								</button>
 							</form>
 						{:else}
+							{#if !subscriber.confirmedAt && data.mailConfigured}
+								<form method="POST" action="?/resendConfirmation" use:enhance class="inline">
+									<input type="hidden" name="email" value={subscriber.email} />
+									<button
+										type="submit"
+										class="border-ink/25 bg-paper press rounded-pill inline-flex min-h-11 items-center border px-4 py-2 text-sm"
+									>
+										Renvoyer le lien
+									</button>
+								</form>
+							{/if}
 							<button
 								type="button"
 								onclick={() => (confirming = subscriber.id)}
