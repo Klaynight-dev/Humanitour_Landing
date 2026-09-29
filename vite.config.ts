@@ -34,7 +34,12 @@ export default defineConfig({
 				'src/lib/shared/site.ts',
 				// Lecture de l'environnement et fabrique du client : rien a tester
 				// sans reproduire l'environnement lui-meme.
-				'src/lib/server/mail/config.ts'
+				'src/lib/server/mail/config.ts',
+				// Orchestration de la reception et des evenements de remise : base,
+				// stockage et reseau. Les regles qu'elles appliquent vivent dans
+				// `mail/routing.ts`, `mail/webhook-event.ts` et `shared/mail/status.ts`.
+				'src/lib/server/mail/inbound.ts',
+				'src/lib/server/mail/events.ts'
 			],
 			// Les seuils sont justifies dans AGENTS.md section 3.2 : on couvre ce qui
 			// produit des chiffres publies, pas le cablage.
