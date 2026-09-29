@@ -31,7 +31,10 @@ export default defineConfig({
 				'src/lib/server/openforms/sync.ts',
 				'src/lib/server/openforms/schedule.ts',
 				// Constantes d'identite et de configuration : rien a executer.
-				'src/lib/shared/site.ts'
+				'src/lib/shared/site.ts',
+				// Lecture de l'environnement et fabrique du client : rien a tester
+				// sans reproduire l'environnement lui-meme.
+				'src/lib/server/mail/config.ts'
 			],
 			// Les seuils sont justifies dans AGENTS.md section 3.2 : on couvre ce qui
 			// produit des chiffres publies, pas le cablage.
