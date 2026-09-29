@@ -125,3 +125,10 @@ export function parseEmailList(raw: string): EmailListResult {
  */
 export const PENDING_RETENTION_DAYS = 30;
 export const PENDING_RETENTION_MS = PENDING_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+/**
+ * Pourquoi un abonne recoit une campagne : la phrase du pied de courriel.
+ * Partagee parce que l'apercu du back-office la montre telle qu'elle partira.
+ */
+export const CAMPAIGN_REASON =
+	'Vous recevez ce courriel parce que vous vous êtes inscrit·e à l’infolettre d’Humanitour et avez confirmé votre adresse.';

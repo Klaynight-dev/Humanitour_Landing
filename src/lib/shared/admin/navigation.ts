@@ -47,6 +47,12 @@ export const ADMIN_NAVIGATION: readonly AdminSection[] = [
 				label: 'Infolettre',
 				description: 'Les personnes abonnées et leur consentement.',
 				permission: 'newsletter.read'
+			},
+			{
+				href: '/admin/infolettre/campagnes',
+				label: 'Campagnes',
+				description: 'Rédiger, essayer et diffuser l’infolettre.',
+				permission: 'newsletter.send'
 			}
 		]
 	},

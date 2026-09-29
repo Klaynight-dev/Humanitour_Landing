@@ -1,5 +1,5 @@
 import { brandedEmail, type RenderedEmail } from '$lib/shared/mail/layout';
-import { PENDING_RETENTION_DAYS } from '$lib/shared/newsletter';
+import { CAMPAIGN_REASON, PENDING_RETENTION_DAYS } from '$lib/shared/newsletter';
 
 /**
  * Le texte des courriels de l'infolettre.
@@ -33,10 +33,6 @@ export interface CampaignContent {
 	readonly preheader: string | null;
 	readonly markdown: string;
 }
-
-/** Pourquoi un abonne recoit une campagne : la phrase du pied de courriel. */
-export const CAMPAIGN_REASON =
-	'Vous recevez ce courriel parce que vous vous êtes inscrit·e à l’infolettre d’Humanitour et avez confirmé votre adresse.';
 
 /**
  * Une campagne rendue pour un destinataire.

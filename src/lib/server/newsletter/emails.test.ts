@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CAMPAIGN_REASON, campaignEmail, confirmationEmail, confirmationUrl } from './emails';
+import { CAMPAIGN_REASON } from '$lib/shared/newsletter';
+import { campaignEmail, confirmationEmail, confirmationUrl } from './emails';
 
 describe('confirmation', () => {
 	it('construit le lien a partir de l origine publique', () => {
