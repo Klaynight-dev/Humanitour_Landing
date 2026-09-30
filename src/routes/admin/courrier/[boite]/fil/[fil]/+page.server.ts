@@ -65,7 +65,8 @@ function authenticationOf(value: unknown): Record<string, string> {
 	);
 }
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ locals, params, depends }) => {
+	depends('mail:live');
 	const { mailbox, thread } = await requireThread(locals.user, params.boite, params.fil);
 
 	if (thread.unread) {

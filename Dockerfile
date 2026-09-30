@@ -58,6 +58,10 @@ RUN chmod +x ./docker-entrypoint.sh
 # Depots des medias et des fichiers d'import. Monte en volume : sans cela, les
 # fichiers deposes disparaitraient au premier redeploiement.
 RUN mkdir -p /var/storage && chown app:app /var/storage
+# Sans cette variable, le stockage retombe sur `./var/storage`, soit `/app/var`,
+# que l'utilisateur `app` ne peut pas creer : l'envoi d'une piece jointe
+# echouait en EACCES.
+ENV STORAGE_LOCAL_PATH=/var/storage
 VOLUME ["/var/storage"]
 
 USER app

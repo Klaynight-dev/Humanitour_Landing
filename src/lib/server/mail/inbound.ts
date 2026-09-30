@@ -2,6 +2,7 @@ import { prisma } from '$lib/server/db';
 import { storage } from '$lib/server/storage';
 import { baseSubject, messageIds, parseMailbox, snippet } from '$lib/shared/mail/address';
 import { resend } from './config';
+import { publishMailbox } from './live';
 import type { ReceivedAttachment, ReceivedEmail } from './resend';
 import {
 	attachmentKey,
@@ -203,6 +204,7 @@ async function deliverToMailbox(
 		}
 	});
 
+	publishMailbox(mailbox.id);
 	return true;
 }
 

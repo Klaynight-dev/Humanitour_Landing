@@ -21,7 +21,8 @@ function readPage(raw: string | null): number {
 	return Number.isFinite(value) && value > 1 ? value : 1;
 }
 
-export const load: PageServerLoad = async ({ locals, params, url }) => {
+export const load: PageServerLoad = async ({ locals, params, url, depends }) => {
+	depends('mail:live');
 	const { mailbox } = await requireMailbox(locals.user, params.boite);
 
 	const view = folderView(url.searchParams.get('dossier'));

@@ -8,7 +8,8 @@ import type { LayoutServerLoad } from './$types';
  * le bouton de redaction. Chaque page en dessous refait son propre controle
  * d'acces : un cadre ne protege pas les actions de ses pages.
  */
-export const load: LayoutServerLoad = async ({ locals, params }) => {
+export const load: LayoutServerLoad = async ({ locals, params, depends }) => {
+	depends('mail:live');
 	const { user, mailbox } = await requireMailbox(locals.user, params.boite);
 
 	return {

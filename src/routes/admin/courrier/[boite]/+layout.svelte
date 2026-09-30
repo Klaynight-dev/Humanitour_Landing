@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
+	import { invalidate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { formatCount } from '$lib/shared/format';
 	import { DEFAULT_VIEW, FOLDER_VIEWS } from '$lib/shared/mail/folders';
@@ -8,6 +9,30 @@
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
 	const base = $derived(`/admin/courrier/${data.mailbox.id}`);
+
+	// Flux temps reel de la boite : un courriel arrive, la liste et les compteurs
+	// se rechargent sans action. Le navigateur se reconnecte seul ; a chaque
+	// reconnexion on recharge, pour rattraper ce qui a pu arriver entre-temps.
+	onMount(() => {
+		const source = new EventSource(`${base}/evenements`);
+		let opened = false;
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		const refresh = () => {
+			clearTimeout(timer);
+			timer = setTimeout(() => invalidate('mail:live'), 150);
+		};
+
+		source.addEventListener('mail', refresh);
+		source.addEventListener('open', () => {
+			if (opened) refresh();
+			opened = true;
+		});
+
+		return () => {
+			clearTimeout(timer);
+			source.close();
+		};
+	});
 
 	/** La vue en cours, seulement sur la liste : dans un fil, aucun dossier n'est « ouvert ». */
 	const currentView = $derived(

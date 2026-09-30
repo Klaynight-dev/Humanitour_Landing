@@ -7,6 +7,7 @@ import {
 	statusForEvent,
 	type MailStatusKey
 } from '$lib/shared/mail/status';
+import { publishMailbox } from './live';
 import { isPermanentFailure, type WebhookEvent } from './webhook-event';
 
 /**
@@ -45,7 +46,7 @@ async function updateMessages(
 ): Promise<number> {
 	const messages = await prisma.mailMessage.findMany({
 		where: { resendId: emailId, direction: 'OUTBOUND' },
-		select: { id: true, status: true }
+		select: { id: true, status: true, mailboxId: true }
 	});
 
 	let changed = 0;
@@ -57,6 +58,7 @@ async function updateMessages(
 			data: { status: next, statusDetail: detail ?? undefined }
 		});
 		changed += 1;
+		publishMailbox(message.mailboxId);
 	}
 	return changed;
 }
