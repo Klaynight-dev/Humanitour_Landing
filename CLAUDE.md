@@ -56,6 +56,7 @@ images de tiers, pas celles de l'association.
 | `humanitour.fr` | La plateforme — **ce dépôt** | |
 | `forms.humanitour.fr` | **Collecte des réponses — canal unique** | SvelteKit également ; code ouvert : `Klaynight/Openforms` (MIT). Toute réponse publiée ici vient de là, sans exception |
 | HelloAsso | Dons et adhésions | Lien sortant |
+| Resend | Envoi et réception des courriels : infolettre, confirmations, messagerie du back-office | Domaine `humanitour.fr`, région `eu-west-1`. Le webhook signé `POST /api/resend/webhook` reçoit le courrier et les accusés de remise ; son adresse est un contrat (`AGENTS.md` § 1.4). Clé `RESEND_TOKEN`, secret `RESEND_WEBHOOK_PRAVATE_KEY` |
 | `api.insee.fr/melodi` | Marges de référence du redressement (recensement de la population) | Appelée **par le serveur seulement**, depuis l'onglet Marges du redressement : accès public, sans clé, quota de 30 requêtes par minute. Trois requêtes par chargement, gardées 24 h en mémoire (`src/lib/server/insee/`). Aucune part n'est écrite en dur : elles sont recalculées des effectifs publiés |
 
 ---
@@ -96,6 +97,8 @@ src/
       openforms/        Client, synchronisation, minuterie
       normalize/        Normalisation des réponses, détection d'identifiants
       storage/          REGISTRE des backends de fichiers
+      mail/             Resend : client, webhook, réception, envoi, boîtes
+      newsletter/       Confirmation, liens signés, diffusion des campagnes
     charts/             REGISTRE des visualisations
     components/
       openforms/        REGISTRE des widgets de champ
@@ -106,6 +109,7 @@ src/
     admin/              Back-office
     api/public/         API ouverte — contrat stable, voir AGENTS.md §1.4
     api/openforms/      Webhook de synchronisation
+    api/resend/         Webhook du courrier : réception et remises
 ```
 
 **Le principe, en une phrase :** les dossiers marqués REGISTRE s'étendent en
@@ -262,7 +266,7 @@ raison, pas une préférence.
 | Pondération | Tranchée le 20 septembre 2026 (`AGENTS.md` § 6) : calage sur marges explicite, publié à côté du brut. Le back-office (`/admin/sondages/[id]/redressement`, cinq onglets) lit ses marges dans le recensement via Melodi, exige des sommes à exactement 100 %, publie une note méthodologique et exporte les poids. **Pas encore fait** : des profils de marges réutilisables d'une enquête à l'autre (chaque enquête porte les siennes) |
 | Portrait de Mareva Vaucher | Extrait de la plaquette en 210 px : nettement plus doux que les trois autres, à remplacer par un original |
 | Photographies de terrain | `static/photos/` ne contient que deux images, extraites de la plaquette et plafonnant à 480×640. **À remplacer par les originaux** (le compte Instagram `humanitour.france` en héberge d'autres, mais il est derrière un mur de connexion et rien ne peut en être récupéré automatiquement) |
-| Infolettre | Le formulaire existe (`/infolettre`, `/infolettre/desinscription`, table `NewsletterSubscriber`), **mais rien ne peut encore envoyer un courriel** : aucun expediteur n'est branche dans le depot. Il manque donc le double opt-in, le lien de desinscription signe, et une page du back-office pour lire la liste. L'inscription est en simple opt-in, la desinscription se fait par saisie de l'adresse |
+| Infolettre et messagerie | **En place depuis le 29 septembre 2026**, sur Resend : double opt-in, lien de désinscription signé et désinscription en un clic (RFC 8058), campagnes au back-office (`/admin/infolettre/campagnes`), boîtes partagées et personnelles (`/admin/courrier`). **Reste à faire** : activer la réception du domaine chez Resend (enregistrement MX), sans quoi aucun courriel entrant n'arrive ; nommer Resend dans la politique de confidentialité, comme sous-traitant qui achemine les courriels |
 | URL de la campagne HelloAsso | `TODO` explicite dans `src/lib/shared/site.ts` |
 | Contact | Le code utilise `contact@humanitour.fr`, la plaquette `humanitour.france@gmail.com` |
 | Externalisation des chaînes | `src/lib/i18n/` est annoncé en § 5 d'`AGENTS.md` mais n'existe pas |
